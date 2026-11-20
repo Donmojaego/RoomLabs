@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shake It — Room Labs</title>
+<style>
+:root{
+  --bg0:#100d0c;--bg1:#1b1716;--bg2:#262019;--panel:#1d1917;--line:#3a2f26;
+  --acc:#ff8a2a;--acc2:#ffb347;--accDim:#7a4316;--txt:#f3e7da;--muted:#a8978a;--metal1:#4a3d33;--metal2:#2a221d;
+}
+body.t-emeraude{--bg0:#0a100e;--bg1:#121a17;--bg2:#17241f;--panel:#141d19;--line:#24372f;--acc:#25d39a;--acc2:#7cf0c6;--accDim:#155e45;--txt:#e6f5ee;--muted:#8fa89d;--metal1:#2f4239;--metal2:#1b2722}
+body.t-bleu{--bg0:#0c1016;--bg1:#131a23;--bg2:#18222e;--panel:#151c26;--line:#273546;--acc:#5cc8ff;--acc2:#a9e3ff;--accDim:#1f5574;--txt:#e8f3fb;--muted:#93a6b6;--metal1:#334454;--metal2:#1d2732}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg0);color:var(--txt);
+  font:13px/1.25 "Segoe UI",system-ui,-apple-system,Helvetica,Arial,sans-serif;user-select:none;-webkit-user-select:none}
+#stage{position:absolute;left:0;top:0;width:1000px;height:640px;transform-origin:0 0;
+  background:radial-gradient(ellipse at 50% 45%,var(--bg2) 0%,var(--bg1) 45%,var(--bg0) 100%)}
+.panel{position:absolute;background:linear-gradient(180deg,var(--metal1),var(--metal2));border:1px solid var(--line);
+  border-radius:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 6px 18px rgba(0,0,0,.45)}
+.panel::before{content:"";position:absolute;inset:6px;border-radius:10px;border:1px solid rgba(255,255,255,.04);pointer-events:none}
+.rivet{position:absolute;width:7px;height:7px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#cfb79c,#5a4636);box-shadow:0 1px 1px #000}
+/* --- barre du haut */
+#top{left:12px;top:10px;width:976px;height:62px}
+#wordmark{position:absolute;left:18px;top:6px;height:50px}
+#browser{position:absolute;left:250px;top:12px;width:470px;height:38px;display:flex;align-items:center;gap:6px}
+.btn{background:linear-gradient(180deg,#2c241e,#1a1512);border:1px solid var(--line);color:var(--txt);border-radius:8px;
+  height:30px;min-width:30px;padding:0 10px;cursor:pointer;font:inherit;display:inline-flex;align-items:center;justify-content:center}
+.btn:hover{border-color:var(--accDim)}
+.btn.on{border-color:var(--acc);color:var(--acc2);box-shadow:0 0 10px -2px var(--acc)}
+#presetBox{flex:1;height:34px;border-radius:9px;background:#0d0b0a;border:1px solid var(--line);display:flex;flex-direction:column;
+  justify-content:center;padding:0 12px;cursor:pointer;overflow:hidden}
+#presetSection{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+#presetName{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#rootBadge{width:62px;height:34px;border-radius:9px;background:#0d0b0a;border:1px solid var(--line);display:flex;flex-direction:column;
+  align-items:center;justify-content:center}
+#rootBadge small{font-size:9px;color:var(--muted);letter-spacing:.1em}
+#rootBadge b{font-size:15px;color:var(--acc2)}
+#topRight{position:absolute;right:16px;top:16px;display:flex;gap:6px;align-items:center}
+.dot{width:18px;height:18px;border-radius:50%;border:2px solid #0006;cursor:pointer}
+.dot.on{outline:2px solid var(--txt);outline-offset:1px}
+select.btn{appearance:none;-webkit-appearance:none;padding:0 8px}
+/* --- panneau gauche */
+#left{left:12px;top:82px;width:228px;height:546px}
+.label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+#models{position:absolute;left:16px;top:16px;width:196px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#models .btn{height:34px;font-weight:700;letter-spacing:.06em}
+#knobs{position:absolute;left:10px;top:112px;width:208px;display:grid;grid-template-columns:1fr 1fr;row-gap:12px}
+.knob{display:flex;flex-direction:column;align-items:center;cursor:ns-resize;touch-action:none}
+.knob svg{width:84px;height:84px;overflow:visible}
+.knob .kl{font-size:11px;font-weight:700;letter-spacing:.12em;margin-top:-4px}
+.knob .kv{font-size:11px;color:var(--acc2);height:14px}
+/* --- centre */
+#center{position:absolute;left:250px;top:80px;width:500px;height:470px}
+#scene{position:absolute;left:0;top:0;width:500px;height:470px}
+#kbd{position:absolute;left:250px;top:556px;width:500px;height:72px;border-radius:10px;overflow:hidden;border:1px solid var(--line);
+  background:#0b0908;display:flex}
+#kbdKeys{position:relative;flex:1;height:100%}
+.wk{position:absolute;top:0;height:100%;background:linear-gradient(#efe6dc,#cbbcae);border-right:1px solid #6d5d50;border-radius:0 0 4px 4px}
+.bk{position:absolute;top:0;height:60%;background:linear-gradient(#2a2420,#0e0c0b);border-radius:0 0 4px 4px;z-index:2;border:1px solid #000}
+.wk.down{background:linear-gradient(var(--acc2),var(--acc))}.bk.down{background:linear-gradient(var(--acc),var(--accDim))}
+.wk.root::after{content:"";position:absolute;left:50%;bottom:6px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--acc)}
+#oct{width:46px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;border-left:1px solid var(--line)}
+#oct .btn{height:22px;min-width:30px;padding:0}
+#octLbl{font-size:10px;color:var(--muted)}
+/* --- panneau droit */
+#right{left:760px;top:82px;width:228px;height:546px}
+#tabs{position:absolute;left:14px;top:14px;width:200px;display:flex;gap:6px}
+#tabs .btn{flex:1;height:28px}
+#list{position:absolute;left:14px;top:50px;width:200px;height:262px;overflow-y:auto;border-radius:8px;background:#0d0b0a;border:1px solid var(--line)}
+#list::-webkit-scrollbar{width:6px}#list::-webkit-scrollbar-thumb{background:var(--accDim);border-radius:3px}
+.sec{position:sticky;top:0;background:#16120f;padding:5px 8px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--acc2);z-index:1}
+.it{padding:5px 10px;cursor:pointer;display:flex;justify-content:space-between;gap:6px;white-space:nowrap}
+.it span:first-child{overflow:hidden;text-overflow:ellipsis}
+.it:hover{background:#ffffff0d}.it.on{background:var(--accDim);color:#fff}
+.it small{color:var(--muted)}.it.on small{color:#fff}
+#search{position:absolute;left:14px;top:50px;width:200px;height:0;display:none}
+#adv{position:absolute;left:8px;top:50px;width:212px;height:262px;display:none;grid-template-columns:1fr 1fr 1fr;row-gap:2px;align-content:start}
+#adv .knob svg{width:58px;height:58px}#adv .knob .kl{font-size:9px;letter-spacing:.06em}#adv .knob .kv{font-size:10px}
+#advChoices{grid-column:1/4;display:flex;flex-direction:column;gap:6px;padding:6px}
+.seg{display:flex;gap:4px;align-items:center}.seg .label{width:58px}.seg .btn{flex:1;height:24px;padding:0 4px;font-size:11px}
+#stages{position:absolute;left:14px;top:322px;width:200px}
+#stageRow{display:flex;gap:6px;margin-top:6px}
+.stg{flex:1;height:100px;border-radius:8px;background:#0d0b0a;border:1px solid var(--line);display:flex;align-items:flex-end;justify-content:center;overflow:hidden;position:relative}
+.stg img{height:86px;opacity:.45;filter:grayscale(.6)}
+.stg.on{border-color:var(--acc);box-shadow:0 0 12px -3px var(--acc)}.stg.on img{opacity:1;filter:none}
+.stg b{position:absolute;top:3px;left:0;right:0;text-align:center;font-size:8px;letter-spacing:.1em;color:var(--muted)}
+#meter{position:absolute;left:14px;top:496px;width:200px;height:30px}
+#meterBar{position:absolute;left:0;top:16px;width:200px;height:8px;border-radius:4px;background:#0d0b0a;border:1px solid var(--line);overflow:hidden}
+#meterFill{height:100%;width:0;background:linear-gradient(90deg,var(--accDim),var(--acc),#ff4b3a)}
+#vis{position:absolute;left:14px;top:462px;width:200px;display:flex;gap:4px}
+#vis .btn{flex:1;height:24px;font-size:11px;padding:0}
+#perf{position:absolute;left:258px;top:88px;font:11px monospace;color:var(--acc2);background:#000a;padding:4px 6px;border-radius:6px;display:none;z-index:5;white-space:pre}
+#toast{position:absolute;left:50%;top:84px;transform:translateX(-50%);background:#000c;border:1px solid var(--accDim);padding:6px 12px;border-radius:8px;
+  opacity:0;transition:opacity .25s;pointer-events:none;z-index:9}
+#preview{position:absolute;left:258px;top:82px;width:484px;text-align:center;font-size:10px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="top" class="panel">
+    <img id="wordmark" src="assets/wordmark.webp" alt="Shake It">
+    <div id="browser">
+      <button class="btn" id="prev" title="Preset précédent">◀</button>
+      <div id="presetBox" title="Liste des presets"><div id="presetSection">—</div><div id="presetName">—</div></div>
+      <button class="btn" id="next" title="Preset suivant">▶</button>
+      <div id="rootBadge" title="Note de référence du preset"><small>NOTE</small><b id="rootName">—</b></div>
+    </div>
+    <div id="topRight">
+      <span class="dot" data-theme="bronze" style="background:#ff8a2a" title="Bronze"></span>
+      <span class="dot" data-theme="emeraude" style="background:#25d39a" title="Émeraude"></span>
+      <span class="dot" data-theme="bleu" style="background:#5cc8ff" title="Bleu clair"></span>
+      <select class="btn" id="zoom" title="Taille de la fenêtre">
+        <option value="50">50 %</option><option value="75">75 %</option><option value="100">100 %</option>
+        <option value="125">125 %</option><option value="150">150 %</option><option value="200">200 %</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="left" class="panel">
+    <div id="models">
+      <button class="btn" data-model="0">808</button><button class="btn" data-model="1">SUB</button>
+      <button class="btn" data-model="2">MOOG</button><button class="btn" data-model="3">BASS</button>
+    </div>
+    <div class="label" style="position:absolute;left:18px;top:92px">Réglages</div>
+    <div id="knobs"></div>
+  </div>
+
+  <div id="center"><canvas id="scene" width="500" height="470"></canvas></div>
+  <div id="kbd"><div id="kbdKeys"></div>
+    <div id="oct"><button class="btn" id="octUp">+</button><span id="octLbl">C1</span><button class="btn" id="octDn">−</button></div></div>
+
+  <div id="right" class="panel">
+    <div id="tabs"><button class="btn on" id="tabPresets">Presets</button><button class="btn" id="tabAdv">Avancé</button></div>
+    <div id="list"></div>
+    <div id="adv">
+      <div id="advChoices">
+        <div class="seg"><span class="label">Glide</span><button class="btn" data-gm="0">Toujours</button><button class="btn" data-gm="1">Legato</button></div>
+        <div class="seg"><span class="label">Drive</span><button class="btn" data-dt="0">Doux</button><button class="btn" data-dt="1">Dur</button><button class="btn" data-dt="2">Fold</button></div>
+      </div>
+    </div>
+    <div id="stages"><div class="label">Danse</div>
+      <div id="stageRow">
+        <div class="stg" data-p="0"><b>NEUTRE</b><img src="assets/dancer_neutral.webp" alt=""></div>
+        <div class="stg" data-p="1"><b>IMPACT</b><img src="assets/dancer_squash.webp" alt=""></div>
+        <div class="stg" data-p="2"><b>REBOND</b><img src="assets/dancer_rebound.webp" alt=""></div>
+      </div>
+    </div>
+    <div id="vis">
+      <button class="btn" data-vis="anime" title="Animation complète, 60 images/s">Animé</button>
+      <button class="btn" data-vis="reduit" title="Mouvement plus doux, 30 images/s">Réduit</button>
+      <button class="btn" data-vis="statique" title="Pas d'animation">Statique</button>
+    </div>
+    <div id="meter"><div class="label">Sortie</div><div id="meterBar"><div id="meterFill"></div></div></div>
+  </div>
+  <div id="perf"></div>
+  <div id="toast"></div>
+  <div id="preview"></div>
+</div>
+
+<script>
+"use strict";
+// =============================================================================
+// Pont avec le plugin (JUCE). Sans plugin (aperçu en ligne) : petit synthé WebAudio.
+// =============================================================================
+const NATIVE = !!(window.__JUCE__ && window.__JUCE__.backend);
+const call = NATIVE ? (() => {
+  let n = 0; const pend = new Map();
+  window.__JUCE__.backend.addEventListener("__juce__complete", ({promiseId, result}) => { const f = pend.get(promiseId); if (f) { pend.delete(promiseId); f(result); } });
+  return (name, ...params) => new Promise(res => { const id = n++; pend.set(id, res); window.__JUCE__.backend.emitEvent("__juce__invoke", {name, params, resultId: id}); });
+})() : null;
+const initPrefs = NATIVE ? ((window.__JUCE__.initialisationData.prefs || [])[0] || {}) : {};
+
+// ---- définition des paramètres (mêmes identifiants et plages que source/Params.h)
+const PDEF = {
+  tune:   {min:-24, max:24,    def:0,     skew:1,    fmt:v => (v>0?"+":"") + v.toFixed(1) + " st", label:"TUNE"},
+  glide:  {min:0,   max:1000,  def:120,   skew:.45,  fmt:v => Math.round(v) + " ms", label:"GLIDE"},
+  punch:  {min:0,   max:1,     def:.5,    skew:1,    fmt:v => Math.round(v*100) + " %", label:"PUNCH"},
+  decay:  {min:.05, max:8,     def:1.5,   skew:.4,   fmt:v => v < 1 ? Math.round(v*1000) + " ms" : v.toFixed(2) + " s", label:"DECAY"},
+  drive:  {min:0,   max:1,     def:0,     skew:1,    fmt:v => Math.round(v*100) + " %", label:"DRIVE"},
+  output: {min:-36, max:6,     def:-3,    skew:1,    fmt:v => v.toFixed(1) + " dB", label:"OUTPUT"},
+  harm:   {min:0,   max:1,     def:0,     skew:1,    fmt:v => Math.round(v*100) + " %", label:"HARM"},
+  tone:   {min:40,  max:18000, def:18000, skew:.25,  fmt:v => v >= 1000 ? (v/1000).toFixed(1) + " k" : Math.round(v) + " Hz", label:"TONE"},
+  reso:   {min:0,   max:1,     def:0,     skew:1,    fmt:v => Math.round(v*100) + " %", label:"RESO"},
+  attack: {min:0,   max:200,   def:1,     skew:.4,   fmt:v => v.toFixed(v < 10 ? 1 : 0) + " ms", label:"ATTACK"},
+  release:{min:5,   max:2000,  def:120,   skew:.4,   fmt:v => Math.round(v) + " ms", label:"RELEASE"},
+};
+const P = {}; for (const k in PDEF) P[k] = PDEF[k].def;
+P.model = 0; P.glideMode = 1; P.driveType = 0;
+const toNorm = (k, v) => { const d = PDEF[k]; return Math.pow((v - d.min) / (d.max - d.min), d.skew); };
+const fromNorm = (k, n) => { const d = PDEF[k]; return d.min + (d.max - d.min) * Math.pow(Math.min(1, Math.max(0, n)), 1 / d.skew); };
+
+let presets = [], current = 0;
+const prefs = Object.assign({theme:"bronze", zoom:100, visual:"anime", outfit:0, outfitLock:false}, initPrefs);
+const NOTE = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const noteName = n => NOTE[n % 12] + (Math.floor(n / 12) - 1);
+const $ = s => document.querySelector(s);
+const toast = t => { const e = $("#toast"); e.textContent = t; e.style.opacity = 1; clearTimeout(toast.h); toast.h = setTimeout(() => e.style.opacity = 0, 1400); };
+
+// =============================================================================
+// Mise à l'échelle de la page (la fenêtre du plugin garde le ratio 1000 × 640)
+// =============================================================================
+function fit() {
+  const s = Math.min(innerWidth / 1000, innerHeight / 640);
+  $("#stage").style.transform = `scale(${s})`;
+  scene.resize(s * (window.devicePixelRatio || 1));
+}
+addEventListener("resize", fit);
+
+// =============================================================================
+// Potards
+// =============================================================================
+const knobs = {};
+function makeKnob(parent, id) {
+  const d = PDEF[id];
+  const el = document.createElement("div"); el.className = "knob"; el.title = d.label + " — double-clic : valeur par défaut, Maj : réglage fin";
+  el.innerHTML = `<svg viewBox="0 0 84 84"><defs><radialGradient id="kg${id}" cx="40%" cy="35%"><stop offset="0" stop-color="#5b4a3d"/><stop offset="1" stop-color="#1b1512"/></radialGradient></defs>
+    <circle cx="42" cy="42" r="37" fill="#0b0908" stroke="#000" stroke-width="1"/>
+    <path class="trk" fill="none" stroke="#2c241f" stroke-width="5" stroke-linecap="round"/>
+    <path class="arc" fill="none" stroke="var(--acc)" stroke-width="5" stroke-linecap="round" style="filter:drop-shadow(0 0 4px var(--acc))"/>
+    <circle cx="42" cy="42" r="26" fill="url(#kg${id})" stroke="#000" stroke-width="1.5"/>
+    <line class="ptr" x1="42" y1="42" x2="42" y2="20" stroke="var(--acc2)" stroke-width="3" stroke-linecap="round"/></svg>
+    <div class="kl">${d.label}</div><div class="kv"></div>`;
+  parent.appendChild(el);
+  const arcPath = (a0, a1) => { const r = 33, p = a => [42 + r * Math.sin(a), 42 - r * Math.cos(a)]; const [x0, y0] = p(a0), [x1, y1] = p(a1);
+    return `M${x0} ${y0} A${r} ${r} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${x1} ${y1}`; };
+  const A0 = -2.4, A1 = 2.4;
+  el.querySelector(".trk").setAttribute("d", arcPath(A0, A1));
+  const k = {
+    set(v) {
+      const n = toNorm(id, v), a = A0 + (A1 - A0) * n;
+      el.querySelector(".arc").setAttribute("d", n > .002 ? arcPath(A0, a) : "");
+      el.querySelector(".ptr").setAttribute("transform", `rotate(${a * 180 / Math.PI} 42 42)`);
+      el.querySelector(".kv").textContent = d.fmt(v);
+    }
+  };
+  let drag = null;
+  el.addEventListener("pointerdown", e => { el.setPointerCapture(e.pointerId); drag = {y: e.clientY, n: toNorm(id, P[id])}; gesture(id, true); });
+  el.addEventListener("pointermove", e => { if (!drag) return; const sc = $("#stage").getBoundingClientRect().width / 1000;
+    const dy = (drag.y - e.clientY) / sc; drag.y = e.clientY; drag.n = Math.min(1, Math.max(0, drag.n + dy / (e.shiftKey ? 900 : 180)));
+    setParam(id, fromNorm(id, drag.n)); });
+  const end = () => { if (drag) { drag = null; gesture(id, false); } };
+  el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+  el.addEventListener("dblclick", () => setParam(id, d.def));
+  el.addEventListener("wheel", e => { e.preventDefault(); setParam(id, fromNorm(id, toNorm(id, P[id]) + (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? .005 : .02))); }, {passive:false});
+  knobs[id] = k; k.set(P[id]);
+}
+["tune","glide","punch","decay","drive","output"].forEach(id => makeKnob($("#knobs"), id));
+["harm","tone","reso","attack","release"].forEach(id => makeKnob($("#adv"), id));
+$("#adv").appendChild($("#advChoices"));
+
+function gesture(id, on) { if (NATIVE) call("gesture", id, on); }
+function setParam(id, v, fromHost) {
+  P[id] = v;
+  if (knobs[id]) knobs[id].set(v);
+  if (id === "model") document.querySelectorAll("[data-model]").forEach(b => b.classList.toggle("on", +b.dataset.model === Math.round(v)));
+  if (id === "glideMode") document.querySelectorAll("[data-gm]").forEach(b => b.classList.toggle("on", +b.dataset.gm === Math.round(v)));
+  if (id === "driveType") document.querySelectorAll("[data-dt]").forEach(b => b.classList.toggle("on", +b.dataset.dt === Math.round(v)));
+  if (!fromHost) { if (NATIVE) call("setParam", id, v); else synth.update(); }
+  scene.wake();
+}
+document.querySelectorAll("[data-model]").forEach(b => b.onclick = () => setParam("model", +b.dataset.model));
+document.querySelectorAll("[data-gm]").forEach(b => b.onclick = () => setParam("glideMode", +b.dataset.gm));
+document.querySelectorAll("[data-dt]").forEach(b => b.onclick = () => setParam("driveType", +b.dataset.dt));
+
+// =============================================================================
+// Presets
+// =============================================================================
+function renderList() {
+  const box = $("#list"); box.innerHTML = ""; let sec = null;
+  presets.forEach((p, i) => {
+    if (p.section !== sec) { sec = p.section; const s = document.createElement("div"); s.className = "sec"; s.textContent = sec; box.appendChild(s); }
+    const it = document.createElement("div"); it.className = "it" + (i === current ? " on" : ""); it.dataset.i = i;
+    it.innerHTML = `<span>${p.name}</span><small>${p.rootName}</small>`; it.onclick = () => loadPreset(i); box.appendChild(it);
+  });
+}
+function showPreset() {
+  const p = presets[current]; if (!p) return;
+  $("#presetSection").textContent = p.section; $("#presetName").textContent = p.name; $("#rootName").textContent = p.rootName;
+  document.querySelectorAll(".it").forEach(e => e.classList.toggle("on", +e.dataset.i === current));
+  const on = document.querySelector(".it.on"); if (on) on.scrollIntoView({block:"nearest"});
+  keyboard.markRoot(p.root);
+  if (!prefs.outfitLock) prefs.outfit = p.outfit || 0;   // tenue : suit le preset sauf si verrouillée (une seule tenue livrée en v0.1)
+}
+async function loadPreset(i) {
+  i = (i + presets.length) % presets.length; current = i;
+  if (NATIVE) { const st = await call("loadPreset", i); applyState(st); }
+  else { const v = presets[i].params; for (const k in v) setParam(k, v[k], true); synth.update(); }
+  showPreset();
+}
+$("#prev").onclick = () => loadPreset(current - 1);
+$("#next").onclick = () => loadPreset(current + 1);
+$("#presetBox").onclick = () => showTab("presets");
+function applyState(st) { if (!st) return; for (const k in st.params) setParam(k, st.params[k], true); if (st.preset !== undefined) current = st.preset; }
+
+function showTab(t) {
+  $("#tabPresets").classList.toggle("on", t === "presets"); $("#tabAdv").classList.toggle("on", t === "adv");
+  $("#list").style.display = t === "presets" ? "block" : "none"; $("#adv").style.display = t === "adv" ? "grid" : "none";
+}
+$("#tabPresets").onclick = () => showTab("presets"); $("#tabAdv").onclick = () => showTab("adv");
+
+// =============================================================================
+// Préférences d'interface (aucun effet sur le son)
+// =============================================================================
+function setPref(k, v, silent) { prefs[k] = v; if (NATIVE && !silent) call("setPref", k, v); applyPrefs(); }
+function applyPrefs() {
+  document.body.className = prefs.theme === "emeraude" ? "t-emeraude" : prefs.theme === "bleu" ? "t-bleu" : "";
+  document.querySelectorAll("[data-theme]").forEach(d => d.classList.toggle("on", d.dataset.theme === prefs.theme));
+  document.querySelectorAll("[data-vis]").forEach(b => b.classList.toggle("on", b.dataset.vis === prefs.visual));
+  $("#zoom").value = String(prefs.zoom);
+  scene.themeChanged(); scene.wake();
+}
+document.querySelectorAll("[data-theme]").forEach(d => d.onclick = () => setPref("theme", d.dataset.theme));
+document.querySelectorAll("[data-vis]").forEach(b => b.onclick = () => setPref("visual", b.dataset.vis));
+$("#zoom").onchange = e => setPref("zoom", +e.target.value);
+
+// =============================================================================
+// Clavier (souris + clavier d'ordinateur) — aperçu jouable, mono legato
+// =============================================================================
+const keyboard = (() => {
+  const box = $("#kbdKeys"); let base = 24; const keys = new Map(); const held = new Set();
+  const isBlack = n => [1,3,6,8,10].includes(n % 12);
+  function build() {
+    box.innerHTML = ""; keys.clear();
+    const whites = []; for (let n = base; n < base + 24; n++) if (!isBlack(n)) whites.push(n);
+    const w = 454 / whites.length;
+    whites.forEach((n, i) => { const k = document.createElement("div"); k.className = "wk"; k.style.left = i * w + "px"; k.style.width = w + "px"; k.dataset.n = n; box.appendChild(k); keys.set(n, k); });
+    for (let n = base; n < base + 24; n++) if (isBlack(n)) {
+      const wi = whites.indexOf(n - 1); const k = document.createElement("div"); k.className = "bk";
+      k.style.left = (wi + 1) * w - w * .32 + "px"; k.style.width = w * .64 + "px"; k.dataset.n = n; box.appendChild(k); keys.set(n, k); }
+    $("#octLbl").textContent = noteName(base);
+    if (presets[current]) markRoot(presets[current].root);
+  }
+  function markRoot(r) { keys.forEach((k, n) => k.classList.toggle("root", n === r)); }
+  function on(n, v = .85) { if (held.has(n)) return; held.add(n); keys.get(n)?.classList.add("down"); if (NATIVE) call("noteOn", n, v); else synth.noteOn(n, v); scene.wake(); }
+  function off(n) { if (!held.has(n)) return; held.delete(n); keys.get(n)?.classList.remove("down"); if (NATIVE) call("noteOff", n); else synth.noteOff(n); }
+  let mouseNote = null;
+  box.addEventListener("pointerdown", e => { const n = +e.target.dataset.n; if (!n && n !== 0) return; box.setPointerCapture(e.pointerId);
+    const r = e.target.getBoundingClientRect(); const v = .45 + .55 * Math.min(1, (e.clientY - r.top) / r.height); mouseNote = n; on(n, v); });
+  box.addEventListener("pointermove", e => { if (mouseNote === null) return; const t = document.elementFromPoint(e.clientX, e.clientY); const n = t && +t.dataset.n;
+    if (n && n !== mouseNote) { const old = mouseNote; mouseNote = n; on(n); off(old); } });   // glissé = legato
+  const up = () => { if (mouseNote !== null) { off(mouseNote); mouseNote = null; } };
+  box.addEventListener("pointerup", up); box.addEventListener("pointercancel", up);
+  const map = "awsedftgyhujkolp;"; const pc = new Map();
+  addEventListener("keydown", e => { if (e.repeat || e.target.tagName === "SELECT") return; const k = e.key.toLowerCase();
+    if (k === "z") { shift(-12); return; } if (k === "x") { shift(12); return; } if (k === "f2") { perf.toggle(); return; }
+    const i = map.indexOf(k); if (i >= 0) { const n = base + i; pc.set(k, n); on(n); } });
+  addEventListener("keyup", e => { const k = e.key.toLowerCase(); if (pc.has(k)) { off(pc.get(k)); pc.delete(k); } });
+  addEventListener("blur", () => { [...held].forEach(off); });
+  function shift(d) { [...held].forEach(off); base = Math.min(84, Math.max(12, base + d)); build(); }
+  $("#octUp").onclick = () => shift(12); $("#octDn").onclick = () => shift(-12);
+  build();
+  return {markRoot};
+})();
+
+// =============================================================================
+// Mouvement reçu du moteur
+// =============================================================================
+const motion = {e:0, o:0, g:0, n:-1, l:0, at:0};
+function onMotion(m) { const prevO = motion.o; Object.assign(motion, m); motion.at = performance.now();
+  if (m.o !== prevO) dance.kick(); scene.wake("motion"); }
+
+// =============================================================================
+// Danse : deux paramètres séparés.
+//  - les attaques donnent l'impulsion (ressort amorti) ;
+//  - l'énergie du grave augmente l'amplitude et l'échelle de TOUTE la scène (bornée).
+//  glide → mouvement étiré, drive → contour nerveux, Sub → oscillation plus ronde.
+//  Même logique quelle que soit la tenue.
+// =============================================================================
+const dance = (() => {
+  let y = 0, v = 0, energy = 0, groove = 0, pose = 0, poseFrom = 0, poseT = 1, sway = 0;
+  function kick() { const amp = prefs.visual === "reduit" ? .55 : 1; v += (7.5 + 3 * Math.min(1, motion.e)) * amp; }
+  function step(dt) {
+    const model = Math.round(P.model);
+    energy += (Math.min(1.2, motion.e) - energy) * Math.min(1, dt * (motion.e > energy ? 18 : 4));
+    // ressort : Sub plus rond (plus lent, plus amorti), glide plus étiré
+    const k = model === 1 ? 80 : 140 - 70 * motion.g, c = model === 1 ? 7 : 4.5 + 3 * motion.g;
+    const target = energy * .06;                     // le grave fait à peine plier les jambes
+    const a = -k * (y - target) - c * v; v += a * dt; y += v * dt;
+    groove += dt * (1.2 + energy * .8) * (1 - .5 * motion.g);   // glide : groove plus lent
+    sway += ((motion.g > .02 ? 1 : 0) - sway) * Math.min(1, dt * 3);
+    // choix de la pose (avec hystérésis) + fondu court
+    // le groove (énergie tenue) s'ajoute au rebond des attaques : amplitude progressive
+    const yd = y + Math.sin(groove * Math.PI * 2) * Math.min(1, energy) * .42 * (model === 1 ? .7 : 1);
+    let want = pose;
+    if (yd > .3) want = 1; else if (yd < -.14) want = 2; else if (yd > -.06 && yd < .2) want = 0;
+    if (want !== pose) { poseFrom = pose; pose = want; poseT = 0; }
+    poseT = Math.min(1, poseT + dt / .07);
+    return {y: yd, energy, groove, pose, poseFrom, poseT, sway};
+  }
+  function reset() { y = v = energy = 0; pose = poseFrom = 0; poseT = 1; }
+  function atRest() { return Math.abs(y) < .01 && Math.abs(v) < .01 && energy < .005; }
+  return {kick, step, reset, atRest};
+})();
+
+// =============================================================================
+// Scène (canvas) — calques mis en cache : anneau de la grosse caisse, lueur, danseur
+// =============================================================================
+const scene = (() => {
+  const cv = $("#scene"), ctx = cv.getContext("2d");
+  const W = 500, H = 470, CX = 250, CY = 228, R = 196;
+  let scale = 1, ring = null, glow = null, running = false, last = 0, idleSince = 0, acc = 0;
+  const imgs = ["neutral","squash","rebound"].map(n => { const im = new Image(); im.src = `assets/dancer_${n}.webp`; im.onload = () => wake(); return im; });
+  const css = n => getComputedStyle(document.body).getPropertyValue(n).trim();
+  function resize(s) { scale = s; cv.width = Math.round(W * s); cv.height = Math.round(H * s); themeChanged(); }
+  function themeChanged() {
+    // anneau : dessiné une fois par thème / taille
+    ring = document.createElement("canvas"); ring.width = cv.width; ring.height = cv.height;
+    const g = ring.getContext("2d"); g.scale(scale, scale);
+    const acc = css("--acc") || "#ff8a2a", dim = css("--accDim") || "#7a4316";
+    let gr = g.createRadialGradient(CX, CY, R * .2, CX, CY, R * 1.1);
+    gr.addColorStop(0, "#1a1512"); gr.addColorStop(.85, "#0d0b0a"); gr.addColorStop(1, "#000");
+    g.fillStyle = gr; g.beginPath(); g.arc(CX, CY, R, 0, Math.PI * 2); g.fill();
+    // cercle chromé et tirants
+    g.lineWidth = 14; gr = g.createLinearGradient(CX - R, CY - R, CX + R, CY + R);
+    gr.addColorStop(0, "#d9c3a6"); gr.addColorStop(.35, "#5a4636"); gr.addColorStop(.6, "#bfa58a"); gr.addColorStop(1, "#3a2c22");
+    g.strokeStyle = gr; g.beginPath(); g.arc(CX, CY, R + 8, 0, Math.PI * 2); g.stroke();
+    for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2; const x = CX + Math.cos(a) * (R + 8), y = CY + Math.sin(a) * (R + 8);
+      g.fillStyle = "#cdb59a"; g.beginPath(); g.ellipse(x, y, 6, 6, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = "#3b2d23"; g.beginPath(); g.arc(x, y, 2.4, 0, Math.PI * 2); g.fill(); }
+    g.strokeStyle = dim; g.lineWidth = 1.5; g.beginPath(); g.arc(CX, CY, R - 30, 0, Math.PI * 2); g.stroke();
+    // lueur (sprite)
+    glow = document.createElement("canvas"); glow.width = glow.height = 256; const q = glow.getContext("2d");
+    const rg = q.createRadialGradient(128, 128, 0, 128, 128, 128); rg.addColorStop(0, acc + "cc"); rg.addColorStop(.4, acc + "44"); rg.addColorStop(1, acc + "00");
+    q.fillStyle = rg; q.fillRect(0, 0, 256, 256);
+  }
+  let staticDrawn = false;
+  function wake(why) { if (why === "motion" && prefs.visual === "statique" && staticDrawn) return; if (why !== "motion") staticDrawn = false; idleSince = performance.now(); if (!running && !document.hidden) { running = true; last = performance.now(); requestAnimationFrame(frame); } }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) wake(); });
+
+  function frame(t) {
+    if (!running) return;
+    const vis = prefs.visual, minDt = vis === "reduit" || scale < .7 ? 1 / 31 : 0;
+    const dtRaw = Math.min(.05, (t - last) / 1000);
+    if (dtRaw < minDt - .002) { requestAnimationFrame(frame); return; }
+    last = t;
+    const t0 = performance.now();
+    if (vis === "statique") { staticDrawn = true; dance.reset(); draw({y:0, energy:0, groove:0, pose:0, poseFrom:0, poseT:1, sway:0}, 0, t); }
+    else draw(dance.step(dtRaw), dtRaw, t);
+    perf.sample(dtRaw, performance.now() - t0);
+    // arrêt du rendu : silence + danseur au repos depuis 3 s (ou mode statique)
+    const quiet = motion.e < .003 && (performance.now() - motion.at > 300) && dance.atRest();
+    if (vis === "statique" || (quiet && t - idleSince > 1000) || document.hidden) { running = false; perf.idle(); return; }
+    if (!quiet) idleSince = t;
+    requestAnimationFrame(frame);
+  }
+
+  function draw(s, dt, t) {
+    const reduce = prefs.visual === "reduit" ? .5 : 1;
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    // échelle de toute la scène : +8 % max avec l'énergie du grave
+    const sc = 1 + Math.min(.08, s.energy * .07) * reduce;
+    ctx.translate(CX, CY); ctx.scale(sc, sc); ctx.translate(-CX, -CY);
+    // lueur derrière
+    const ga = Math.min(1, .15 + s.energy * .9) * (prefs.visual === "statique" ? .25 : 1);
+    ctx.globalAlpha = ga; ctx.drawImage(glow, CX - R * 1.25, CY - R * 1.25, R * 2.5, R * 2.5); ctx.globalAlpha = 1;
+    ctx.drawImage(ring, 0, 0, ring.width, ring.height, 0, 0, W, H);
+    // barres autour de la peau
+    const acc = css("--acc"), n = 72, lvl = Math.min(1, motion.l * 1.2);
+    ctx.lineCap = "round";
+    for (let i = 0; i < n; i++) {
+      const a = i / n * Math.PI * 2 - Math.PI / 2;
+      const wob = .5 + .5 * Math.sin(i * 1.7 + t * .004 * (1 + s.energy)) * Math.sin(i * .63 - t * .0023);
+      const len = 6 + (s.energy * 26 + lvl * 10 * wob) * reduce;
+      ctx.strokeStyle = acc; ctx.globalAlpha = .35 + .65 * Math.min(1, s.energy + .1);
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(CX + Math.cos(a) * (R - 22), CY + Math.sin(a) * (R - 22));
+      ctx.lineTo(CX + Math.cos(a) * (R - 22 - len), CY + Math.sin(a) * (R - 22 - len)); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    // danseur
+    const im = imgs[s.pose], from = imgs[s.poseFrom];
+    const baseH = 300, footY = CY + 158;
+    const bob = 0;
+    const dy = s.y * 14 * reduce + bob;
+    const sy = 1 - Math.max(-.04, Math.min(.05, s.y * .04)) * reduce;           // squash/stretch
+    let jx = 0, jy = 0;
+    if (P.drive > .05 && s.energy > .05) { jx = (Math.random() - .5) * P.drive * 2.4 * reduce; jy = (Math.random() - .5) * P.drive * 1.6 * reduce; }  // contour nerveux
+    const rot = Math.sin(t * .0028) * s.sway * .06 * reduce;                   // glide : balancement étiré
+    ctx.save();
+    ctx.beginPath(); ctx.arc(CX, CY, R - 2, 0, Math.PI * 2); ctx.clip();
+    // ombre au sol
+    ctx.fillStyle = "rgba(0,0,0,.45)"; ctx.beginPath(); ctx.ellipse(CX, footY + 4, 70 + s.energy * 12, 10, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.translate(CX + jx, footY + jy); ctx.rotate(rot); ctx.scale(1, sy);
+    const drawPose = (img, alpha) => { if (!img.complete || !img.naturalWidth) return;
+      const h = baseH * img.naturalHeight / 845, w = h * img.naturalWidth / img.naturalHeight;   // même échelle que la planche d'origine
+      ctx.globalAlpha = alpha; ctx.drawImage(img, -w / 2, -h + dy, w, h); };
+    if (s.poseT < 1) drawPose(from, 1 - s.poseT);
+    drawPose(im, s.poseT < 1 ? s.poseT : 1);
+    ctx.restore(); ctx.globalAlpha = 1;
+    // accent lumineux à l'attaque
+    if (s.y > .2) { ctx.globalAlpha = Math.min(.5, s.y * .4) * reduce; ctx.drawImage(glow, CX - 90, footY - 30, 180, 60); ctx.globalAlpha = 1; }
+    // vignettes « Danse » + vumètre (DOM, peu coûteux)
+    if (s.pose !== draw.lastPose) { document.querySelectorAll(".stg").forEach(e => e.classList.toggle("on", +e.dataset.p === s.pose)); draw.lastPose = s.pose; (window.__poseLog = window.__poseLog || []).push(s.pose); }
+    $("#meterFill").style.width = Math.round(Math.min(1, Math.sqrt(motion.l)) * 100) + "%";
+  }
+  return {resize, themeChanged, wake};
+})();
+
+// =============================================================================
+// Mesures (F2) : cadence, temps de rendu — pour le rapport de tests
+// =============================================================================
+const perf = (() => {
+  let on = false, frames = 0, sumMs = 0, maxMs = 0, t0 = performance.now(), txt = "";
+  const el = $("#perf");
+  return {
+    toggle() { on = !on; el.style.display = on ? "block" : "none"; },
+    log: [],
+    sample(dt, ms) { this.log.push(ms); if (this.log.length > 20000) this.log.shift(); frames++; sumMs += ms; maxMs = Math.max(maxMs, ms); const now = performance.now();
+      if (now - t0 > 1000) { txt = `${Math.round(frames * 1000 / (now - t0))} i/s · rendu ${(sumMs / frames).toFixed(2)} ms (max ${maxMs.toFixed(1)})\nmode ${prefs.visual} · zoom ${prefs.zoom} %`;
+        frames = 0; sumMs = 0; maxMs = 0; t0 = now; if (on) el.textContent = txt; } },
+    idle() { if (on) el.textContent = "rendu suspendu (silence)\nmode " + prefs.visual; frames = 0; sumMs = 0; maxMs = 0; t0 = performance.now(); }
+  };
+})();
+
+// =============================================================================
+// Synthé de l'aperçu en ligne (sans plugin) — approximation du moteur C++
+// =============================================================================
+const synth = (() => {
+  let ac = null, out, an, lp, osc = null, vca = null, shaper, filt, stack = [], gate = false, curNote = 36, buf;
+  function init() {
+    if (ac) return; ac = new (window.AudioContext || window.webkitAudioContext)();
+    out = ac.createGain(); shaper = ac.createWaveShaper(); filt = ac.createBiquadFilter(); filt.type = "lowpass";
+    filt.connect(shaper); shaper.connect(out); out.connect(ac.destination);
+    lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 150; an = ac.createAnalyser(); an.fftSize = 512;
+    out.connect(lp); lp.connect(an); buf = new Float32Array(an.fftSize); update(); poll();
+  }
+  const hz = n => 440 * Math.pow(2, (n + P.tune - 69) / 12);
+  function update() {
+    if (!ac) return;
+    const d = P.drive, g = 1 + d * d * 24 + d * 3, c = new Float32Array(1024), dt = Math.round(P.driveType);
+    for (let i = 0; i < 1024; i++) { const x = (i / 511.5 - 1) * g; c[i] = (dt === 1 ? Math.max(-1, Math.min(1, x)) : dt === 2 ? Math.sin(x) : Math.tanh(x)) * (1 - .3 * d); }
+    shaper.curve = d > .001 ? c : null;
+    const m = Math.round(P.model);
+    filt.frequency.value = m === 3 ? Math.min(18000, P.tone) : P.tone; filt.Q.value = m === 2 ? .7 + P.reso * 18 : .5;
+    out.gain.value = Math.pow(10, P.output / 20) * (m === 2 ? .9 : .8);
+  }
+  function start(n, v) {
+    const t = ac.currentTime, m = Math.round(P.model);
+    if (vca) { const old = vca, o = osc; old.gain.cancelScheduledValues(t); old.gain.setValueAtTime(old.gain.value, t); old.gain.linearRampToValueAtTime(0, t + .006); o.stop(t + .01); }
+    osc = ac.createOscillator(); vca = ac.createGain(); vca.gain.value = 0;
+    osc.type = m === 2 ? (P.harm > .5 ? "square" : "sawtooth") : m === 3 ? "sawtooth" : "sine";
+    const f = hz(n), depth = m === 0 ? P.punch * 24 : m === 1 ? P.punch * 5 : 0, tau = .004 + (1 - P.punch) * .035;
+    osc.frequency.setValueAtTime(f * Math.pow(2, depth / 12), t); osc.frequency.setTargetAtTime(f, t, tau);
+    const a = Math.max(.0005, P.attack / 1000), lvl = .55 + .45 * v;
+    vca.gain.setValueAtTime(0, t); vca.gain.linearRampToValueAtTime(lvl, t + a);
+    const dec = m === 3 ? Math.min(P.decay, 2.5) : P.decay; vca.gain.setTargetAtTime(0, t + a, dec / 6.9);
+    if (m === 3) { filt.frequency.cancelScheduledValues(t); filt.frequency.setValueAtTime(Math.min(18000, P.tone), t); filt.frequency.setTargetAtTime(200, t, .25); }
+    if (m === 2) { filt.frequency.cancelScheduledValues(t); filt.frequency.setValueAtTime(Math.min(18000, P.tone * Math.pow(2, P.punch * 5)), t); filt.frequency.setTargetAtTime(P.tone, t, .12); }
+    osc.connect(vca); vca.connect(filt); osc.start(t); curNote = n; motion.o++; dance.kick();
+  }
+  function glideTo(n) { const t = ac.currentTime; osc.frequency.cancelScheduledValues(t); osc.frequency.setValueAtTime(osc.frequency.value, t);
+    const gt = Math.max(.001, P.glide / 1000); osc.frequency.linearRampToValueAtTime(hz(n), t + gt); motion.g = 1; glideTo.end = performance.now() + gt * 1000; curNote = n; }
+  function noteOn(n, v) { init(); stack = stack.filter(x => x !== n); stack.push(n);
+    if (gate && osc) glideTo(n); else { gate = true; if (Math.round(P.glideMode) === 0 && vca && vca.gain.value > .001) { start(curNote, v); glideTo(n); } else start(n, v); } }
+  function noteOff(n) { if (!ac) return; const top = stack[stack.length - 1]; stack = stack.filter(x => x !== n);
+    if (stack.length && top === n) { glideTo(stack[stack.length - 1]); return; }
+    if (!stack.length && vca) { gate = false; const t = ac.currentTime; vca.gain.cancelScheduledValues(t); vca.gain.setValueAtTime(vca.gain.value, t); vca.gain.setTargetAtTime(0, t, P.release / 1000 / 6.9); } }
+  function poll() {
+    an.getFloatTimeDomainData(buf); let pk = 0; for (const x of buf) pk = Math.max(pk, Math.abs(x));
+    motion.e = Math.min(1.5, pk * 1.1); motion.l = pk; motion.at = performance.now();
+    if (glideTo.end) { const r = (glideTo.end - performance.now()) / Math.max(1, P.glide); motion.g = Math.max(0, Math.min(1, r)); if (r <= 0) glideTo.end = 0; }
+    motion.n = gate ? curNote : -1; if (pk > .003 || gate) scene.wake();
+    setTimeout(poll, 16);
+  }
+  return {noteOn, noteOff, update};
+})();
+
+// =============================================================================
+// Démarrage
+// =============================================================================
+async function boot() {
+  fit(); applyPrefs();
+  if (NATIVE) {
+    const st = await call("getState");
+    presets = st.presets || []; renderList(); applyState(st);
+    window.__JUCE__.backend.addEventListener("params", o => { for (const k in o) setParam(k, o[k], true); });
+    window.__JUCE__.backend.addEventListener("preset", i => { current = i; showPreset(); });
+    window.__JUCE__.backend.addEventListener("motion", onMotion);
+  } else {
+    presets = (window.SHK_FACTORY && window.SHK_FACTORY.presets) || [];
+    renderList(); if (presets.length) await loadPreset(0);
+    $("#preview").textContent = "Aperçu en ligne · son approximatif · jouer : touches A à K, Z/X octave · F2 : mesures";
+  }
+  showPreset(); showTab("presets"); scene.wake();
+}
+// crochet pour les tests automatiques (aperçu uniquement)
+if (!NATIVE) window.SHK_TEST = { feed: onMotion, motion, dance, perf, prefs, setPref, poses: () => document.querySelector(".stg.on")?.dataset.p };
+boot();
+</script>
+</body>
+</html>

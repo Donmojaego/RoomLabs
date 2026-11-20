@@ -1,0 +1,8 @@
+Shake It — © 2026 Room Labs. Tous droits réservés.
+
+Illustrations, interface et sons d'usine : Room Labs.
+Les sons sont entièrement synthétisés par le moteur de Shake It (aucun échantillon tiers).
+
+Ce logiciel utilise le framework JUCE (https://juce.com), distribué selon
+les conditions de la licence JUCE 8 choisie par Room Labs.
+VST est une marque déposée de Steinberg Media Technologies GmbH.

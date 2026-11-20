@@ -1,0 +1,15 @@
+SHAKE IT — Room Labs
+Instrument 808 et basses (VST3 / AU / application autonome)
+
+Jouer
+- Clavier MIDI ou petit clavier de l'interface (souris, ou touches A W S E D F T G Y H U J K ; Z/X : octave).
+- Mono legato : une note jouée pendant qu'une autre est tenue glisse vers elle (Glide).
+- Chaque preset affiche sa note de référence (ex. F1) : c'est là qu'il sonne le mieux.
+
+Réglages principaux : Tune, Glide, Punch, Decay, Drive, Output.
+Onglet Avancé : Harm, Tone, Reso, Attack, Release, mode de glide, type de drive.
+
+Affichage (sans effet sur le son)
+- Thèmes : bronze, émeraude, bleu clair.
+- Animé / Réduit / Statique : choisissez Réduit ou Statique sur une petite machine ou avec beaucoup d'instances.
+- Taille de la fenêtre : 50 à 200 %, ou en tirant le coin.
