@@ -142,6 +142,7 @@ jobs:
           $v = "${{ steps.v.outputs.version }}"
           $d = "ShakeIt-Windows-$v"
           $rel = "build/ShakeIt_artefacts/Release"
+          New-Item -ItemType Directory -Force $d | Out-Null
           Copy-Item "$rel/VST3/ShakeIt.vst3" $d -Recurse
           Copy-Item "$rel/Standalone/ShakeIt.exe" $d
           (Get-Content docs/LIVRAISON-WINDOWS.md -Raw -Encoding UTF8).Replace('{{VERSION}}', $v) | Set-Content "$d/README.md" -Encoding UTF8
