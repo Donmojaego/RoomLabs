@@ -1,0 +1,16 @@
+CANDY SHOP — Room Labs
+Instrument pour les hooks, le club et la fête (VST3 / AU / application autonome)
+
+La vitrine
+- 8 bonbons = 8 familles de sons : Plug Seed Pack, Marimbas, Synths, Pads, Percussion, Sucette, Carrés fruités (accords), Lacets acidulés (arpèges).
+- Cliquer sur un bonbon : ses 10 presets apparaissent dans les pads du bas. Le bonbon s'illumine quand on joue.
+- 3e rangée de pads : les 5 kits de la boîte à rythmes.
+
+Boîte à rythmes
+- Notes C0 à B0 (MIDI 24 à 35), ou n'importe quelle note sur le canal MIDI 10.
+- Tam-tams, tambour, claves, claquement, tics d'horloge, bruits de machine, shaker.
+
+Réglages
+- Façade : A, D, S, R, Tone, Filter, Space, Level.
+- ⚙ : moteur (Maillet, Synthé, FM), onde, unisson, accords, arpège (calé sur le tempo de l'hôte), kit, affichage.
+- Thèmes Néon, Vert jour, Orange jour : sans effet sur le son.

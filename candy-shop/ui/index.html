@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Candy Shop — Room Labs</title>
+<style>
+/* Canevas d'origine 1536 × 1024 (manifest.json), affiché à 960 × 640 : facteur 0,625 */
+:root{--acc:#FF497F;--pan:#4A1024;--txt:#FFF0D4;--dark:#2a0812}
+body.t-vert{--acc:#D8E49C;--pan:#39451F;--txt:#FFF5DB;--dark:#1b2210}
+body.t-orange{--acc:#FFCF85;--pan:#692815;--txt:#FFF2D8;--dark:#2e1208}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--dark);color:var(--txt);
+  font:12px/1.2 "Segoe UI",system-ui,-apple-system,Helvetica,Arial,sans-serif;user-select:none;-webkit-user-select:none}
+#stage{position:absolute;left:0;top:0;width:960px;height:640px;transform-origin:0 0;overflow:hidden}
+#bg{position:absolute;inset:0;width:960px;height:640px}
+.abs{position:absolute}
+#title{left:341px;top:23px;width:278px;height:49px;border-radius:12px;background:color-mix(in srgb,var(--pan) 88%,#000);
+  border:1.5px solid var(--acc);box-shadow:0 0 12px -2px var(--acc);display:flex;flex-direction:column;align-items:center;justify-content:center}
+#title b{font-size:22px;letter-spacing:.06em;font-weight:800;color:var(--txt)}
+#title small{font-size:7.5px;letter-spacing:.18em;color:var(--acc);font-weight:700}
+#themes{left:720px;top:45px;display:flex;gap:6px}
+.th{width:16px;height:16px;border-radius:3px;border:1.5px solid #0008;cursor:pointer}
+.th.on{outline:2px solid var(--txt);outline-offset:1px}
+#gear{left:790px;top:41px;width:24px;height:24px;border-radius:6px;border:1px solid var(--acc);background:var(--pan);color:var(--txt);
+  font-size:14px;line-height:22px;text-align:center;cursor:pointer}
+/* bonbons */
+.candy{position:absolute;width:88px;height:88px;cursor:pointer;transform-origin:50% 80%}
+.candy img{position:absolute;inset:0;width:100%;height:100%;transition:opacity .12s}
+.candy .on{opacity:0}.candy.sel .on{opacity:1}.candy.sel .off{opacity:0}
+.candy.sel{filter:drop-shadow(0 0 10px var(--acc))}
+.lbl{position:absolute;transform:translate(-50%,-50%);padding:2px 10px;border-radius:10px;background:color-mix(in srgb,var(--pan) 92%,#000);
+  border:1px solid color-mix(in srgb,var(--acc) 70%,transparent);font-weight:700;font-size:11px;white-space:nowrap;cursor:pointer}
+.lbl.sel{background:var(--acc);color:var(--dark)}
+/* écran du preset */
+#screen{left:124px;top:422px;width:318px;height:24px;border-radius:7px;background:#0007;border:1px solid color-mix(in srgb,var(--acc) 50%,transparent);
+  display:flex;align-items:center;gap:6px;padding:0 4px}
+#screen .nav{width:20px;height:18px;border:0;border-radius:5px;background:var(--pan);color:var(--txt);cursor:pointer;font-size:10px}
+#pname{flex:1;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pnote{color:var(--acc);font-weight:700;font-size:11px}
+#bpm{color:color-mix(in srgb,var(--txt) 60%,transparent);font-size:10px}
+/* potards */
+.knob{position:absolute;width:44px;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;cursor:ns-resize;touch-action:none}
+.knob svg{width:26px;height:26px;overflow:visible}
+.knob .kl{font-size:7.5px;font-weight:800;letter-spacing:.08em;margin-top:4px}
+.knob .kv{font-size:7.5px;color:var(--acc);height:9px;white-space:nowrap}
+/* pads */
+#pads{left:124px;top:500px;width:330px;height:50px;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(3,1fr);gap:2px 8px}
+.pad{border-radius:3px;border:1px solid color-mix(in srgb,var(--acc) 70%,transparent);background:color-mix(in srgb,var(--pan) 70%,#000);
+  font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;cursor:pointer;padding:0 2px}
+.pad.on{background:var(--acc);color:var(--dark)}
+.pad.kit{border-style:dashed}
+.pad.empty{opacity:.25;cursor:default}
+/* percussions */
+.perc{position:absolute;width:66px;height:66px;cursor:pointer;transform-origin:50% 90%}
+.perc img{width:100%;height:100%}
+.plbl{position:absolute;transform:translateX(-50%);font-size:8px;font-weight:700}
+/* clavier sur le comptoir */
+#kbd{left:96px;top:572px;width:768px;height:54px;border-radius:6px;overflow:hidden;box-shadow:0 4px 10px #0009;display:flex;background:#0008}
+#keys{position:relative;flex:1}
+.wk{position:absolute;top:0;height:100%;background:linear-gradient(#fff8ef,#e6d6c6);border-right:1px solid #8a6b5b;border-radius:0 0 3px 3px}
+.bk{position:absolute;top:0;height:60%;background:linear-gradient(#3a1a22,#120509);border-radius:0 0 3px 3px;z-index:2}
+.wk.down{background:linear-gradient(var(--acc),color-mix(in srgb,var(--acc) 60%,#fff))}.bk.down{background:var(--acc)}
+.wk.drum{background:linear-gradient(#f4e2ff,#cdb6e0)}
+.wk.root::after{content:"";position:absolute;left:50%;bottom:4px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--acc)}
+#oct{width:34px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:var(--pan)}
+#oct button{width:24px;height:15px;border:0;border-radius:4px;background:#0006;color:var(--txt);cursor:pointer}
+#octLbl{font-size:8px}
+/* volet avancé */
+#adv{left:70px;top:92px;width:820px;height:378px;border-radius:14px;background:color-mix(in srgb,var(--pan) 94%,#000);border:1.5px solid var(--acc);
+  box-shadow:0 10px 30px #000c;display:none;padding:10px 14px;z-index:20}
+#adv h3{font-size:10px;letter-spacing:.14em;color:var(--acc);margin:4px 0 6px}
+#adv .row{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+#adv .knob{position:relative;transform:none;width:58px}
+#adv .knob svg{width:30px;height:30px}
+.seg{display:flex;gap:3px;align-items:center;margin:2px 0}
+.seg span{width:66px;font-size:9px;font-weight:700;color:color-mix(in srgb,var(--txt) 75%,transparent)}
+.seg button{border:1px solid color-mix(in srgb,var(--acc) 60%,transparent);background:#0005;color:var(--txt);border-radius:5px;font-size:9px;padding:2px 6px;cursor:pointer}
+.seg button.on{background:var(--acc);color:var(--dark)}
+#close{position:absolute;right:10px;top:8px;border:0;background:var(--acc);color:var(--dark);border-radius:6px;font-weight:800;padding:3px 9px;cursor:pointer}
+#perf{left:6px;top:6px;font:10px monospace;background:#000a;color:#fff;padding:3px 5px;border-radius:5px;display:none;z-index:30;white-space:pre}
+#hint{left:0;width:960px;top:628px;text-align:center;font-size:8px;color:color-mix(in srgb,var(--txt) 55%,transparent)}
+</style>
+</head>
+<body>
+<div id="stage">
+  <img id="bg" alt="">
+  <div id="title" class="abs"><b>CANDY SHOP</b><small>ROOM LABS AUDIO</small></div>
+  <div id="themes" class="abs">
+    <span class="th" data-theme="neon" style="background:#4A1024" title="Néon"></span>
+    <span class="th" data-theme="vert" style="background:#39451F" title="Vert jour"></span>
+    <span class="th" data-theme="orange" style="background:#692815" title="Orange jour"></span>
+  </div>
+  <div id="gear" class="abs" title="Réglages avancés et affichage">⚙</div>
+  <div id="candies"></div>
+  <div id="screen" class="abs"><button class="nav" id="prev">◀</button><span id="pname">—</span><span id="pnote">—</span><span id="bpm"></span><button class="nav" id="next">▶</button></div>
+  <div id="front"></div>
+  <div id="pads" class="abs"></div>
+  <div id="percs"></div>
+  <div id="kbd" class="abs"><div id="keys"></div><div id="oct"><button id="octUp">+</button><span id="octLbl">C3</span><button id="octDn">−</button></div></div>
+  <div id="hint" class="abs"></div>
+  <div id="adv" class="abs"><button id="close">OK</button><div id="advBody"></div></div>
+  <div id="perf" class="abs"></div>
+</div>
+<script>
+"use strict";
+// =============================================================================
+// Pont avec le plugin (JUCE) ; sans plugin : synthé WebAudio approximatif (aperçu)
+// =============================================================================
+const NATIVE = !!(window.__JUCE__ && window.__JUCE__.backend);
+const call = NATIVE ? (() => { let n = 0; const pend = new Map();
+  window.__JUCE__.backend.addEventListener("__juce__complete", ({promiseId, result}) => { const f = pend.get(promiseId); if (f) { pend.delete(promiseId); f(result); } });
+  return (name, ...params) => new Promise(res => { const id = n++; pend.set(id, res); window.__JUCE__.backend.emitEvent("__juce__invoke", {name, params, resultId: id}); });
+})() : null;
+const initPrefs = NATIVE ? ((window.__JUCE__.initialisationData.prefs || [])[0] || {}) : {};
+const $ = s => document.querySelector(s);
+const K = 0.625;                         // canevas 1536 → 960
+const ASSET = n => (window.SHK_ASSETS && window.SHK_ASSETS[n]) || ("assets/" + n);
+
+// ---- emplacements (manifest.json, canevas 1536 × 1024)
+const CANDIES = [
+  {id:"fraise", label:"Plug Seed Pack", c:[322,320], l:[322,395]}, {id:"banane", label:"Marimbas", c:[619,320], l:[619,395]},
+  {id:"cola", label:"Synths", c:[916,320], l:[916,395]},           {id:"violet", label:"Pads", c:[1213,320], l:[1213,395]},
+  {id:"cerise", label:"Percussion", c:[322,533], l:[322,608]},      {id:"sucette", label:"Sucette", c:[619,533], l:[619,608]},
+  {id:"carres", label:"Carrés fruités", c:[916,533], l:[916,608]}, {id:"lacets", label:"Lacets acidulés", c:[1213,533], l:[1213,608]}];
+const PERCS = [{id:"tamtam", label:"Tam-tam", c:[1018,786], note:24}, {id:"tambour", label:"Tambour", c:[1133,786], note:26}, {id:"claves", label:"Claves", c:[1248,786], note:25}];
+const FRONT = [["attack","A"],["decay","D"],["sustain","S"],["release","R"],["tone","TONE"],["cutoff","FILTER"],["space","SPACE"],["level","LEVEL"]];
+const FRONT_POS = [[222,747],[292,747],[362,747],[432,747],[547,747],[628,747],[709,747],[790,747]];
+
+// ---- paramètres (mêmes identifiants et plages que source/Params.h)
+const ms = v => v < 1000 ? Math.round(v) + " ms" : (v / 1000).toFixed(2) + " s";
+const pct = v => Math.round(v * 100) + " %";
+const PDEF = {
+  attack:{min:0,max:5000,def:2,skew:.3,fmt:ms}, decay:{min:5,max:5000,def:300,skew:.3,fmt:ms}, sustain:{min:0,max:1,def:.7,skew:1,fmt:pct},
+  release:{min:5,max:5000,def:250,skew:.3,fmt:ms}, tone:{min:-1,max:1,def:0,skew:1,fmt:v => (v > 0 ? "+" : "") + Math.round(v * 100)},
+  cutoff:{min:60,max:18000,def:8000,skew:.25,fmt:v => v >= 1000 ? (v / 1000).toFixed(1) + "k" : Math.round(v) + " Hz"},
+  space:{min:0,max:1,def:.2,skew:1,fmt:pct}, level:{min:-36,max:12,def:-6,skew:1,fmt:v => v.toFixed(1) + " dB"},
+  detune:{min:0,max:50,def:8,skew:1,fmt:v => Math.round(v) + " ct",label:"DETUNE"}, fmRatio:{min:.5,max:12,def:3.5,skew:.5,fmt:v => v.toFixed(2),label:"FM RATIO"},
+  fmAmount:{min:0,max:1,def:0,skew:1,fmt:pct,label:"FM"}, fmDecay:{min:.02,max:3,def:.4,skew:.4,fmt:v => ms(v * 1000),label:"FM/MAILLET"},
+  noise:{min:0,max:1,def:0,skew:1,fmt:pct,label:"NOISE"}, pitchDrop:{min:0,max:24,def:0,skew:1,fmt:v => v.toFixed(1) + " st",label:"PITCH DROP"},
+  tune:{min:-24,max:24,def:0,skew:1,fmt:v => (v > 0 ? "+" : "") + v.toFixed(1) + " st",label:"TUNE"}, reso:{min:0,max:1,def:.1,skew:1,fmt:pct,label:"RESO"},
+  fenv:{min:0,max:1,def:.3,skew:1,fmt:pct,label:"FILTER ENV"}, fdecay:{min:5,max:3000,def:250,skew:.3,fmt:ms,label:"F. DECAY"},
+  chorus:{min:0,max:1,def:0,skew:1,fmt:pct,label:"CHORUS"}, velSens:{min:0,max:1,def:.6,skew:1,fmt:pct,label:"VÉLOCITÉ"},
+  arpGate:{min:.1,max:1,def:.6,skew:1,fmt:pct,label:"ARP GATE"}, drumLevel:{min:-36,max:12,def:-4,skew:1,fmt:v => v.toFixed(1) + " dB",label:"PERCUS."}};
+const CHOICES = {algo:["Maillet","Synthé","FM"], wave:["Sinus","Triangle","Scie","Carré"], unison:["1","2","3"],
+  chord:["Aucun","Majeur","Mineur","Maj7","m7","Sus4","Quinte","Add9"], arpOn:["Off","On"], arpRate:["1/4","1/8","1/8T","1/16","1/16T","1/32"],
+  arpMode:["Montant","Descendant","Aller-retour","Hasard","Ordre joué"], arpOct:["1","2","3"], kit:["Bocal","Sucre Sec","Caramel Mou","Pétillant","Mécanique"]};
+const P = {}; for (const k in PDEF) P[k] = PDEF[k].def;
+Object.assign(P, {algo:1, wave:2, unison:1, chord:0, arpOn:0, arpRate:3, arpMode:0, arpOct:0, kit:0});
+const toN = (k, v) => { const d = PDEF[k]; return Math.pow((v - d.min) / (d.max - d.min), d.skew); };
+const fromN = (k, n) => { const d = PDEF[k]; return d.min + (d.max - d.min) * Math.pow(Math.min(1, Math.max(0, n)), 1 / d.skew); };
+
+let presets = [], current = 0, candy = "fraise", kits = CHOICES.kit;
+const prefs = Object.assign({theme:"neon", zoom:100, visual:"anime"}, initPrefs);
+const NOTE = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const noteName = n => NOTE[n % 12] + (Math.floor(n / 12) - 1);
+const place = (el, cx, cy, w, h) => { el.style.left = (cx * K - w / 2) + "px"; el.style.top = (cy * K - h / 2) + "px"; };
+
+function fit() { const s = Math.min(innerWidth / 960, innerHeight / 640); $("#stage").style.transform = `scale(${s})`; }
+addEventListener("resize", fit);
+
+// =============================================================================
+// Potards
+// =============================================================================
+const knobs = {};
+function makeKnob(parent, id, label, pos) {
+  const d = PDEF[id], el = document.createElement("div"); el.className = "knob"; el.title = label + " — double-clic : défaut, Maj : fin";
+  el.innerHTML = `<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="color-mix(in srgb,var(--pan) 70%,#000)" stroke="var(--acc)" stroke-width="2"/>
+    <path class="arc" fill="none" stroke="var(--acc)" stroke-width="3" stroke-linecap="round" opacity=".9"/>
+    <line class="ptr" x1="20" y1="20" x2="20" y2="7" stroke="var(--txt)" stroke-width="2.6" stroke-linecap="round"/></svg>
+    <div class="kl">${label}</div><div class="kv"></div>`;
+  if (pos) { el.style.left = pos[0] * K + "px"; el.style.top = (pos[1] * K + 6) + "px"; }
+  parent.appendChild(el);
+  const A0 = -2.4, A1 = 2.4, arc = (a0, a1) => { const r = 14.5, p = a => [20 + r * Math.sin(a), 20 - r * Math.cos(a)]; const [x0, y0] = p(a0), [x1, y1] = p(a1);
+    return `M${x0} ${y0} A${r} ${r} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${x1} ${y1}`; };
+  knobs[id] = { set(v) { const n = toN(id, v), a = A0 + (A1 - A0) * n;
+    el.querySelector(".arc").setAttribute("d", n > .003 ? arc(A0, a) : ""); el.querySelector(".ptr").setAttribute("transform", `rotate(${a * 180 / Math.PI} 20 20)`);
+    el.querySelector(".kv").textContent = d.fmt(v); } };
+  let drag = null;
+  el.addEventListener("pointerdown", e => { el.setPointerCapture(e.pointerId); drag = {y: e.clientY, n: toN(id, P[id])}; gesture(id, true); });
+  el.addEventListener("pointermove", e => { if (!drag) return; const sc = $("#stage").getBoundingClientRect().width / 960;
+    drag.n = Math.min(1, Math.max(0, drag.n + (drag.y - e.clientY) / sc / (e.shiftKey ? 700 : 150))); drag.y = e.clientY; setParam(id, fromN(id, drag.n)); });
+  const end = () => { if (drag) { drag = null; gesture(id, false); } };
+  el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+  el.addEventListener("dblclick", () => setParam(id, d.def));
+  el.addEventListener("wheel", e => { e.preventDefault(); setParam(id, fromN(id, toN(id, P[id]) + (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? .005 : .02))); }, {passive:false});
+  knobs[id].set(P[id]);
+}
+FRONT.forEach(([id, lab], i) => makeKnob($("#front"), id, lab, FRONT_POS[i]));
+
+function gesture(id, on) { if (NATIVE) call("gesture", id, on); }
+function setParam(id, v, fromHost) {
+  P[id] = v;
+  if (knobs[id]) knobs[id].set(v);
+  document.querySelectorAll(`[data-p="${id}"]`).forEach(b => b.classList.toggle("on", +b.dataset.v === Math.round(v)));
+  if (id === "kit") renderPads();
+  if (!fromHost) { if (NATIVE) call("setParam", id, v); }
+}
+
+// =============================================================================
+// Volet avancé
+// =============================================================================
+(function buildAdv() {
+  const body = $("#advBody");
+  const seg = (id, title) => `<div class="seg"><span>${title}</span>${CHOICES[id].map((c, i) => `<button data-p="${id}" data-v="${i}">${c}</button>`).join("")}</div>`;
+  body.innerHTML = `<h3>SON</h3>${seg("algo","Moteur")}${seg("wave","Onde")}${seg("unison","Unisson")}<div class="row" id="advK1"></div>
+    <h3>ACCORDS · ARPÈGE · PERCUSSIONS</h3>${seg("chord","Accord")}${seg("arpOn","Arpège")}${seg("arpRate","Vitesse")}${seg("arpMode","Ordre")}${seg("arpOct","Octaves")}${seg("kit","Kit")}
+    <div class="row" id="advK2"></div>
+    <h3>AFFICHAGE</h3><div class="seg"><span>Animation</span><button data-pref="visual" data-val="anime">Animé</button><button data-pref="visual" data-val="reduit">Réduit</button><button data-pref="visual" data-val="statique">Statique</button></div>
+    <div class="seg"><span>Taille</span>${[50,75,100,125,150,200].map(z => `<button data-pref="zoom" data-val="${z}">${z} %</button>`).join("")}</div>`;
+  ["detune","fmRatio","fmAmount","fmDecay","noise","pitchDrop","tune","reso","fenv","fdecay","chorus","velSens"].forEach(id => makeKnob($("#advK1"), id, PDEF[id].label));
+  ["arpGate","drumLevel"].forEach(id => makeKnob($("#advK2"), id, PDEF[id].label));
+  body.querySelectorAll("[data-p]").forEach(b => b.onclick = () => setParam(b.dataset.p, +b.dataset.v));
+  body.querySelectorAll("[data-pref]").forEach(b => b.onclick = () => setPref(b.dataset.pref, b.dataset.pref === "zoom" ? +b.dataset.val : b.dataset.val));
+  $("#adv").style.overflowY = "auto";
+})();
+$("#gear").onclick = () => { $("#adv").style.display = "block"; };
+$("#close").onclick = () => { $("#adv").style.display = "none"; };
+
+// =============================================================================
+// Bonbons, pads (presets du bonbon + kits), percussions
+// =============================================================================
+const candyEls = {};
+CANDIES.forEach(c => {
+  const el = document.createElement("div"); el.className = "candy"; el.dataset.id = c.id; place(el, c.c[0], c.c[1], 88, 88);
+  el.innerHTML = `<img class="off" alt=""><img class="on" alt="">`; $("#candies").appendChild(el);
+  const lb = document.createElement("div"); lb.className = "lbl"; lb.textContent = c.label; lb.style.left = c.l[0] * K + "px"; lb.style.top = c.l[1] * K + "px";
+  $("#candies").appendChild(lb);
+  const pick = () => selectCandy(c.id, true); el.onclick = pick; lb.onclick = pick;
+  candyEls[c.id] = {el, lb};
+});
+function candyImages() {
+  CANDIES.forEach(c => { const e = candyEls[c.id].el; e.querySelector(".off").src = ASSET(`${c.id}_off.webp`); e.querySelector(".on").src = ASSET(`${c.id}_on_${prefs.theme}.webp`); });
+  $("#bg").src = ASSET(`vitrine_${prefs.theme}.webp`);
+}
+const lastOfCandy = {};
+function selectCandy(id, load) {
+  candy = id;
+  CANDIES.forEach(c => { candyEls[c.id].el.classList.toggle("sel", c.id === id); candyEls[c.id].lb.classList.toggle("sel", c.id === id); });
+  renderPads();
+  if (load) { const list = presets.map((p, i) => [p, i]).filter(([p]) => p.candy === id); const i = lastOfCandy[id] ?? (list[0] && list[0][1]); if (i !== undefined) loadPreset(i); }
+}
+function renderPads() {
+  const box = $("#pads"); box.innerHTML = "";
+  const list = presets.map((p, i) => [p, i]).filter(([p]) => p.candy === candy).slice(0, 10);
+  for (let k = 0; k < 10; k++) {
+    const pad = document.createElement("div"); const it = list[k];
+    if (it) { pad.className = "pad" + (it[1] === current ? " on" : ""); pad.textContent = it[0].name; pad.title = it[0].name + " · " + it[0].rootName; pad.onclick = () => loadPreset(it[1]); }
+    else pad.className = "pad empty";
+    box.appendChild(pad);
+  }
+  kits.forEach((k, i) => { const pad = document.createElement("div"); pad.className = "pad kit" + (Math.round(P.kit) === i ? " on" : ""); pad.textContent = "Kit " + k;
+    pad.title = "Kit de la boîte à rythmes (notes C0 à B0, ou canal MIDI 10)"; pad.onclick = () => setParam("kit", i); box.appendChild(pad); });
+}
+const percEls = {};
+PERCS.forEach(p => { const el = document.createElement("div"); el.className = "perc"; place(el, p.c[0], p.c[1], 66, 66);
+  el.innerHTML = `<img alt="" src="${ASSET(p.id + ".webp")}">`; el.title = p.label + " — clic pour jouer"; $("#percs").appendChild(el);
+  const lb = document.createElement("div"); lb.className = "plbl"; lb.textContent = p.label; lb.style.left = p.c[0] * K + "px"; lb.style.top = (p.c[1] + 58) * K + "px"; $("#percs").appendChild(lb);
+  el.onpointerdown = () => { noteOn(p.note, 1, 10); setTimeout(() => noteOff(p.note, 10), 120); };
+  percEls[p.id] = el; });
+
+// =============================================================================
+// Presets
+// =============================================================================
+function showPreset() {
+  const p = presets[current]; if (!p) return;
+  $("#pname").textContent = p.section + " · " + p.name; $("#pnote").textContent = p.rootName;
+  lastOfCandy[p.candy] = current;
+  selectCandy(p.candy, false);
+  keyboard.markRoot(p.root);
+}
+async function loadPreset(i) {
+  i = (i + presets.length) % presets.length; current = i;
+  if (NATIVE) { const st = await call("loadPreset", i); applyState(st); }
+  else { const v = presets[i].params; for (const k in v) setParam(k, (k === "unison" || k === "arpOct") ? v[k] - 1 : v[k], true); }
+  showPreset();
+}
+$("#prev").onclick = () => loadPreset(current - 1); $("#next").onclick = () => loadPreset(current + 1);
+function applyState(st) { if (!st) return; for (const k in st.params) setParam(k, st.params[k], true); if (st.preset !== undefined) current = st.preset; }
+
+function setPref(k, v, silent) { prefs[k] = v; if (NATIVE && !silent) call("setPref", k, v); applyPrefs(); }
+function applyPrefs() {
+  document.body.className = prefs.theme === "vert" ? "t-vert" : prefs.theme === "orange" ? "t-orange" : "";
+  document.querySelectorAll(".th").forEach(t => t.classList.toggle("on", t.dataset.theme === prefs.theme));
+  document.querySelectorAll("[data-pref]").forEach(b => b.classList.toggle("on", String(prefs[b.dataset.pref]) === b.dataset.val));
+  candyImages(); anim.wake();
+}
+document.querySelectorAll(".th").forEach(t => t.onclick = () => setPref("theme", t.dataset.theme));   // garde preset, réglages et notes
+
+// =============================================================================
+// Clavier (comptoir) : 2 octaves ; touches C0–B0 = percussions
+// =============================================================================
+function noteOn(n, v = .85, ch = 1) { if (NATIVE) call("noteOn", n, v, ch); else synth.noteOn(n, v, ch); anim.wake(); }
+function noteOff(n, ch = 1) { if (NATIVE) call("noteOff", n, ch); else synth.noteOff(n, ch); }
+const keyboard = (() => {
+  const box = $("#keys"); let base = 24; const keys = new Map(), held = new Set();
+  const black = n => [1,3,6,8,10].includes(n % 12);
+  function build() {
+    box.innerHTML = ""; keys.clear(); const whites = []; for (let n = base; n < base + 36; n++) if (!black(n)) whites.push(n);
+    const w = 734 / whites.length;
+    whites.forEach((n, i) => { const k = document.createElement("div"); k.className = "wk" + (n >= 24 && n <= 35 ? " drum" : ""); k.style.left = i * w + "px"; k.style.width = w + "px"; k.dataset.n = n; box.appendChild(k); keys.set(n, k); });
+    for (let n = base; n < base + 36; n++) if (black(n)) { const wi = whites.indexOf(n - 1), k = document.createElement("div"); k.className = "bk";
+      k.style.left = (wi + 1) * w - w * .32 + "px"; k.style.width = w * .64 + "px"; k.dataset.n = n; box.appendChild(k); keys.set(n, k); }
+    $("#octLbl").textContent = noteName(base); if (presets[current]) markRoot(presets[current].root);
+  }
+  function markRoot(r) { keys.forEach((k, n) => k.classList.toggle("root", n === r)); }
+  function on(n, v) { if (held.has(n)) return; held.add(n); keys.get(n)?.classList.add("down"); noteOn(n, v); }
+  function off(n) { if (!held.has(n)) return; held.delete(n); keys.get(n)?.classList.remove("down"); noteOff(n); }
+  let mouse = null;
+  box.addEventListener("pointerdown", e => { const n = +e.target.dataset.n; if (!e.target.dataset.n) return; box.setPointerCapture(e.pointerId);
+    const r = e.target.getBoundingClientRect(); mouse = n; on(n, .4 + .6 * Math.min(1, (e.clientY - r.top) / r.height)); });
+  box.addEventListener("pointermove", e => { if (mouse === null) return; const t = document.elementFromPoint(e.clientX, e.clientY); const n = t && t.dataset && +t.dataset.n;
+    if (n && n !== mouse) { const o = mouse; mouse = n; on(n, .8); off(o); } });
+  const up = () => { if (mouse !== null) { off(mouse); mouse = null; } };
+  box.addEventListener("pointerup", up); box.addEventListener("pointercancel", up);
+  const map = "awsedftgyhujkolp;"; const pc = new Map();
+  addEventListener("keydown", e => { if (e.repeat) return; const k = e.key.toLowerCase();
+    if (k === "z") return shift(-12); if (k === "x") return shift(12); if (k === "f2") return perf.toggle();
+    const i = map.indexOf(k); if (i >= 0) { pc.set(k, base + 12 + i); on(base + 12 + i, .85); } });
+  addEventListener("keyup", e => { const k = e.key.toLowerCase(); if (pc.has(k)) { off(pc.get(k)); pc.delete(k); } });
+  addEventListener("blur", () => [...held].forEach(off));
+  function shift(d) { [...held].forEach(off); base = Math.min(84, Math.max(24, base + d)); build(); }
+  $("#octUp").onclick = () => shift(12); $("#octDn").onclick = () => shift(-12);
+  build(); return {markRoot};
+})();
+
+// =============================================================================
+// Animation : le bonbon choisi s'illumine et rebondit quand on joue ; les percussions sautent
+// =============================================================================
+const fb = {e:0, h:0, d:[0,0,0], v:0, l:0, a:0, bpm:120, at:0};
+function onFb(m) { const ph = fb.h, pd = fb.d.slice(); Object.assign(fb, m); fb.at = performance.now();
+  if (m.h !== ph) anim.kickCandy(); m.d.forEach((x, i) => { if (x !== pd[i]) anim.kickPerc(i); });
+  if (m.bpm) $("#bpm").textContent = Math.round(m.bpm) + " BPM"; anim.wake(); }
+const anim = (() => {
+  let running = false, last = 0, idle = 0, y = 0, v = 0, glow = 0;
+  const py = [0,0,0], pv = [0,0,0];
+  function kickCandy() { v += prefs.visual === "reduit" ? 2.5 : 5; }
+  function kickPerc(i) { pv[i] += prefs.visual === "reduit" ? 3 : 6; }
+  function wake() { idle = performance.now(); if (!running && !document.hidden && prefs.visual !== "statique") { running = true; last = performance.now(); requestAnimationFrame(frame); }
+    if (prefs.visual === "statique") reset(); }
+  function reset() { y = v = glow = 0; py.fill(0); pv.fill(0); draw(); }
+  function frame(t) {
+    if (!running) return;
+    const minDt = prefs.visual === "reduit" ? 1 / 31 : 0, dt = Math.min(.05, (t - last) / 1000);
+    if (dt < minDt - .002) { requestAnimationFrame(frame); return; }
+    last = t; const t0 = performance.now();
+    const k = 220, c = 11;
+    v += (-k * y - c * v) * dt; y += v * dt;
+    for (let i = 0; i < 3; i++) { pv[i] += (-260 * py[i] - 12 * pv[i]) * dt; py[i] += pv[i] * dt; }
+    glow += (Math.min(1, fb.e * 1.6) - glow) * Math.min(1, dt * (fb.e > glow ? 20 : 5));
+    draw(); perf.sample(performance.now() - t0);
+    const quiet = fb.e < .003 && fb.v === 0 && Math.abs(y) + Math.abs(v) < .003 && pv.every(x => Math.abs(x) < .01) && performance.now() - fb.at > 200;
+    if ((quiet && t - idle > 1000) || document.hidden) { running = false; perf.idle(); return; }
+    if (!quiet) idle = t;
+    requestAnimationFrame(frame);
+  }
+  function draw() {
+    const r = prefs.visual === "reduit" ? .5 : 1, e = candyEls[candy]; if (!e) return;
+    const s = 1 + Math.max(-.06, Math.min(.12, y * .05)) * r + glow * .05 * r;
+    e.el.style.transform = `translateY(${-Math.max(0, y) * 3 * r}px) scale(${s.toFixed(4)})`;
+    e.el.style.filter = `drop-shadow(0 0 ${(6 + glow * 16 * r).toFixed(1)}px var(--acc)) brightness(${(1 + glow * .25 * r).toFixed(3)})`;
+    CANDIES.forEach(c => { if (c.id !== candy) { const o = candyEls[c.id].el; if (o.style.transform) { o.style.transform = ""; o.style.filter = ""; } } });
+    PERCS.forEach((p, i) => { percEls[p.id].style.transform = `translateY(${(-Math.max(0, py[i]) * 4 * r).toFixed(2)}px) rotate(${(py[i] * 3 * r).toFixed(2)}deg)`; });
+  }
+  return {wake, kickCandy, kickPerc};
+})();
+const perf = (() => { let on = false, n = 0, sum = 0, t0 = performance.now(); const el = $("#perf"), log = [];
+  return { log, toggle() { on = !on; el.style.display = on ? "block" : "none"; },
+    sample(ms) { log.push(ms); if (log.length > 20000) log.shift(); n++; sum += ms; const now = performance.now();
+      if (now - t0 > 1000) { if (on) el.textContent = `${Math.round(n * 1000 / (now - t0))} i/s · rendu ${(sum / n).toFixed(2)} ms\nmode ${prefs.visual}`; n = 0; sum = 0; t0 = now; } },
+    idle() { if (on) el.textContent = "rendu suspendu (silence)"; } }; })();
+
+// =============================================================================
+// Synthé de l'aperçu (sans plugin) — approximation du moteur C++
+// =============================================================================
+const synth = (() => {
+  let ac = null, out, rev, an, buf, hits = 0, drumsHit = [0,0,0]; const voices = new Map(); let arpTimer = null, arpHeld = [], arpI = -1, arpVoice = null;
+  const CH = [[0],[0,4,7],[0,3,7],[0,4,7,11],[0,3,7,10],[0,5,7],[0,7,12],[0,4,7,14]];
+  function init() { if (ac) return; ac = new (window.AudioContext || window.webkitAudioContext)(); out = ac.createGain(); out.connect(ac.destination);
+    rev = ac.createConvolver(); const len = ac.sampleRate * 2, ir = ac.createBuffer(2, len, ac.sampleRate);
+    for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3); }
+    rev.buffer = ir; const rg = ac.createGain(); rg.gain.value = .5; rev.connect(rg); rg.connect(out);
+    an = ac.createAnalyser(); an.fftSize = 512; out.connect(an); buf = new Float32Array(512); poll(); }
+  const hz = n => 440 * Math.pow(2, (n + P.tune - 69) / 12);
+  function voice(n, v) {
+    const t = ac.currentTime, g = ac.createGain(), algo = Math.round(P.algo), lvl = Math.pow(10, P.level / 20) * (.15 + .25 * v);
+    const f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = algo === 0 ? 18000 : P.cutoff; f.Q.value = .7 + P.reso * 12;
+    const src = []; const drop = P.pitchDrop;
+    const mk = (type, mul, det) => { const o = ac.createOscillator(); o.type = type; o.frequency.setValueAtTime(hz(n) * mul * Math.pow(2, drop / 12), t); o.frequency.setTargetAtTime(hz(n) * mul, t, .03); o.detune.value = det; src.push(o); return o; };
+    if (algo === 0) { [[1,1],[3.93,.38],[9.24,.14]].forEach(([m, a]) => { const o = mk("sine", m, 0), og = ac.createGain(); og.gain.setValueAtTime(a, t); og.gain.setTargetAtTime(0, t, P.fmDecay / (m > 1 ? 4 : 1) / 6.9); o.connect(og); og.connect(f); }); }
+    else if (algo === 2) { const c = mk("sine", 1, 0), m = mk("sine", P.fmRatio, 0), mg = ac.createGain(); mg.gain.setValueAtTime(P.fmAmount * 7 * hz(n), t); mg.gain.setTargetAtTime(0, t, P.fmDecay / 6.9); m.connect(mg); mg.connect(c.frequency); c.connect(f); }
+    else { const U = Math.round(P.unison) + 1; for (let u = 0; u < U; u++) mk(["sine","triangle","sawtooth","square"][Math.round(P.wave)], 1, (u - (U - 1) / 2) * P.detune).connect(f); }
+    f.connect(g); g.connect(out); const sg = ac.createGain(); sg.gain.value = P.space; g.connect(sg); sg.connect(rev);
+    const a = Math.max(.002, P.attack / 1000); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(lvl, t + a);
+    g.gain.setTargetAtTime(lvl * P.sustain, t + a, P.decay / 1000 / 6.9);
+    src.forEach(o => o.start(t)); hits++;
+    return {g, src, stop() { const t2 = ac.currentTime; g.gain.cancelScheduledValues(t2); g.gain.setValueAtTime(g.gain.value, t2); g.gain.setTargetAtTime(0, t2, P.release / 1000 / 6.9); src.forEach(o => o.stop(t2 + P.release / 1000 * 1.5 + .05)); } };
+  }
+  function drum(n) { const slot = n % 12, t = ac.currentTime, g = ac.createGain(), grp = [0,2,1,1,0,2,0,2,2,1,2,1][slot]; drumsHit[grp]++;
+    const tone = [95,2400,230,0,140,3200,210,1700,540,0,800,820][slot] * [1,1.12,.88,1.25,.94][Math.round(P.kit)];
+    const dec = [.32,.022,.1,.12,.26,.01,.2,.012,.18,.06,.12,.03][slot] * [1,.7,1.4,.55,1.15][Math.round(P.kit)];
+    g.gain.setValueAtTime(.5 * Math.pow(10, P.drumLevel / 20), t); g.gain.setTargetAtTime(0, t, dec); g.connect(out);
+    if (tone) { const o = ac.createOscillator(); o.frequency.setValueAtTime(tone * 1.5, t); o.frequency.setTargetAtTime(tone, t, .015); o.connect(g); o.start(t); o.stop(t + dec * 8); }
+    else { const b = ac.createBuffer(1, ac.sampleRate * .3, ac.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const s = ac.createBufferSource(); s.buffer = b; const f = ac.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = slot === 9 ? 7000 : 1100; s.connect(f); f.connect(g); s.start(t); } }
+  function arpStep() { if (!arpHeld.length) return; const seq = []; const base = [...arpHeld].sort((a, b) => a - b);
+    for (let o = 0; o <= Math.round(P.arpOct); o++) base.forEach(n => CH[Math.round(P.chord)].forEach(iv => seq.push(n + iv + 12 * o)));
+    arpI = (arpI + 1) % seq.length; if (arpVoice) arpVoice.stop(); arpVoice = voice(seq[arpI], .8);
+    const step = 60 / 120 * [1,.5,1/3,.25,1/6,.125][Math.round(P.arpRate)]; setTimeout(() => { if (arpVoice) { arpVoice.stop(); arpVoice = null; } }, step * P.arpGate * 1000); }
+  function noteOn(n, v, ch) { init(); if (ch === 10 || (n >= 24 && n <= 35)) { drum(n); return; }
+    if (Math.round(P.arpOn)) { arpHeld.push(n); if (!arpTimer) { arpI = -1; arpStep(); arpTimer = setInterval(arpStep, 60 / 120 * [1,.5,1/3,.25,1/6,.125][Math.round(P.arpRate)] * 1000); } return; }
+    voices.set(n, CH[Math.round(P.chord)].map(iv => voice(n + iv, v))); }
+  function noteOff(n, ch) { if (!ac || ch === 10 || (n >= 24 && n <= 35)) return;
+    if (arpHeld.includes(n)) { arpHeld = arpHeld.filter(x => x !== n); if (!arpHeld.length) { clearInterval(arpTimer); arpTimer = null; if (arpVoice) { arpVoice.stop(); arpVoice = null; } } return; }
+    (voices.get(n) || []).forEach(x => x.stop()); voices.delete(n); }
+  function poll() { an.getFloatTimeDomainData(buf); let pk = 0; for (const x of buf) pk = Math.max(pk, Math.abs(x));
+    onFb({e: Math.min(1, pk * 1.4), h: hits, d: drumsHit.slice(), v: voices.size + (arpVoice ? 1 : 0), l: pk, bpm: 120}); if (pk < .002 && !voices.size && !arpTimer) fb.e = 0;
+    setTimeout(poll, 33); }
+  return {noteOn, noteOff};
+})();
+
+// crochet de test (aperçu uniquement)
+if (!NATIVE) window.SHK_TEST = { feed: onFb, fb, perf, setPref, prefs, P, get current() { return current; }, selectCandy, loadPreset };
+
+async function boot() {
+  fit(); applyPrefs();
+  if (NATIVE) {
+    const st = await call("getState"); presets = st.presets || []; if (st.kits) kits = st.kits;
+    applyState(st);
+    window.__JUCE__.backend.addEventListener("params", o => { for (const k in o) setParam(k, o[k], true); });
+    window.__JUCE__.backend.addEventListener("preset", i => { current = i; showPreset(); });
+    window.__JUCE__.backend.addEventListener("fb", onFb);
+    showPreset();
+  } else {
+    presets = (window.SHK_FACTORY && window.SHK_FACTORY.presets) || []; kits = (window.SHK_FACTORY && window.SHK_FACTORY.kits) || kits;
+    if (presets.length) await loadPreset(0);
+    $("#hint").textContent = "Aperçu en ligne · son approximatif · touches A à K (Z/X octave) · touches violettes du clavier = percussions · F2 : mesures";
+  }
+  anim.wake();
+}
+boot();
+</script>
+</body>
+</html>

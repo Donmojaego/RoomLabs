@@ -1,0 +1,637 @@
+{
+  "canvas": [
+    1536,
+    1024
+  ],
+  "sprite_canvas": [
+    1024,
+    1024
+  ],
+  "theme_par_defaut": "neon",
+  "themes": {
+    "neon": {
+      "vitrine": "neon/candyshop_neon_vitrine@2x.png",
+      "palette": {
+        "accent": "#FF497F",
+        "panneau": "#4A1024",
+        "texte": "#FFF0D4"
+      },
+      "bonbons": [
+        {
+          "id": "fraise",
+          "label": "Plug Seed Pack",
+          "off": "commun/candyshop_commun_fraise_off@2x.png",
+          "on": "neon/candyshop_neon_fraise_on@2x.png",
+          "sprite_center_px": [
+            322,
+            320
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            322,
+            395
+          ]
+        },
+        {
+          "id": "banane",
+          "label": "Marimbas",
+          "off": "commun/candyshop_commun_banane_off@2x.png",
+          "on": "neon/candyshop_neon_banane_on@2x.png",
+          "sprite_center_px": [
+            619,
+            320
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            619,
+            395
+          ]
+        },
+        {
+          "id": "cola",
+          "label": "Synths",
+          "off": "commun/candyshop_commun_cola_off@2x.png",
+          "on": "neon/candyshop_neon_cola_on@2x.png",
+          "sprite_center_px": [
+            916,
+            320
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            916,
+            395
+          ]
+        },
+        {
+          "id": "violet",
+          "label": "Pads",
+          "off": "commun/candyshop_commun_violet_off@2x.png",
+          "on": "neon/candyshop_neon_violet_on@2x.png",
+          "sprite_center_px": [
+            1213,
+            320
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            1213,
+            395
+          ]
+        },
+        {
+          "id": "cerise",
+          "label": "Percussion",
+          "off": "commun/candyshop_commun_cerise_off@2x.png",
+          "on": "neon/candyshop_neon_cerise_on@2x.png",
+          "sprite_center_px": [
+            322,
+            533
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            322,
+            608
+          ]
+        },
+        {
+          "id": "sucette",
+          "label": "Sucette",
+          "off": "commun/candyshop_commun_sucette_off@2x.png",
+          "on": "neon/candyshop_neon_sucette_on@2x.png",
+          "sprite_center_px": [
+            619,
+            533
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            619,
+            608
+          ]
+        },
+        {
+          "id": "carres",
+          "label": "Carrés fruités",
+          "off": "commun/candyshop_commun_carres_off@2x.png",
+          "on": "neon/candyshop_neon_carres_on@2x.png",
+          "sprite_center_px": [
+            916,
+            533
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            916,
+            608
+          ]
+        },
+        {
+          "id": "lacets",
+          "label": "Lacets acidulés",
+          "off": "commun/candyshop_commun_lacets_off@2x.png",
+          "on": "neon/candyshop_neon_lacets_on@2x.png",
+          "sprite_center_px": [
+            1213,
+            533
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            1213,
+            608
+          ]
+        }
+      ],
+      "percussions": [
+        {
+          "id": "tamtam",
+          "asset": "commun/candyshop_commun_tamtam@2x.png",
+          "centre_px": [
+            1018,
+            786
+          ],
+          "taille_px": 105
+        },
+        {
+          "id": "tambour",
+          "asset": "commun/candyshop_commun_tambour@2x.png",
+          "centre_px": [
+            1133,
+            786
+          ],
+          "taille_px": 105
+        },
+        {
+          "id": "claves",
+          "asset": "commun/candyshop_commun_claves@2x.png",
+          "centre_px": [
+            1248,
+            786
+          ],
+          "taille_px": 105
+        }
+      ],
+      "commandes": {
+        "potards_centres_px": [
+          [
+            222,
+            747
+          ],
+          [
+            292,
+            747
+          ],
+          [
+            362,
+            747
+          ],
+          [
+            432,
+            747
+          ],
+          [
+            547,
+            747
+          ],
+          [
+            628,
+            747
+          ],
+          [
+            709,
+            747
+          ],
+          [
+            790,
+            747
+          ]
+        ],
+        "pads_zone_px": [
+          198,
+          804,
+          705,
+          860
+        ],
+        "selecteur_theme_zone_px": [
+          1152,
+          72,
+          1256,
+          100
+        ]
+      },
+      "planche": "neon/candyshop_neon_planche@2x.png"
+    },
+    "vert": {
+      "vitrine": "vert/candyshop_vert_vitrine@2x.png",
+      "palette": {
+        "accent": "#D8E49C",
+        "panneau": "#39451F",
+        "texte": "#FFF5DB"
+      },
+      "bonbons": [
+        {
+          "id": "fraise",
+          "label": "Plug Seed Pack",
+          "off": "commun/candyshop_commun_fraise_off@2x.png",
+          "on": "vert/candyshop_vert_fraise_on@2x.png",
+          "sprite_center_px": [
+            322,
+            305
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            322,
+            380
+          ]
+        },
+        {
+          "id": "banane",
+          "label": "Marimbas",
+          "off": "commun/candyshop_commun_banane_off@2x.png",
+          "on": "vert/candyshop_vert_banane_on@2x.png",
+          "sprite_center_px": [
+            619,
+            305
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            619,
+            380
+          ]
+        },
+        {
+          "id": "cola",
+          "label": "Synths",
+          "off": "commun/candyshop_commun_cola_off@2x.png",
+          "on": "vert/candyshop_vert_cola_on@2x.png",
+          "sprite_center_px": [
+            916,
+            305
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            916,
+            380
+          ]
+        },
+        {
+          "id": "violet",
+          "label": "Pads",
+          "off": "commun/candyshop_commun_violet_off@2x.png",
+          "on": "vert/candyshop_vert_violet_on@2x.png",
+          "sprite_center_px": [
+            1213,
+            305
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            1213,
+            380
+          ]
+        },
+        {
+          "id": "cerise",
+          "label": "Percussion",
+          "off": "commun/candyshop_commun_cerise_off@2x.png",
+          "on": "vert/candyshop_vert_cerise_on@2x.png",
+          "sprite_center_px": [
+            322,
+            495
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            322,
+            570
+          ]
+        },
+        {
+          "id": "sucette",
+          "label": "Sucette",
+          "off": "commun/candyshop_commun_sucette_off@2x.png",
+          "on": "vert/candyshop_vert_sucette_on@2x.png",
+          "sprite_center_px": [
+            619,
+            495
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            619,
+            570
+          ]
+        },
+        {
+          "id": "carres",
+          "label": "Carrés fruités",
+          "off": "commun/candyshop_commun_carres_off@2x.png",
+          "on": "vert/candyshop_vert_carres_on@2x.png",
+          "sprite_center_px": [
+            916,
+            495
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            916,
+            570
+          ]
+        },
+        {
+          "id": "lacets",
+          "label": "Lacets acidulés",
+          "off": "commun/candyshop_commun_lacets_off@2x.png",
+          "on": "vert/candyshop_vert_lacets_on@2x.png",
+          "sprite_center_px": [
+            1213,
+            495
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            1213,
+            570
+          ]
+        }
+      ],
+      "percussions": [
+        {
+          "id": "tamtam",
+          "asset": "commun/candyshop_commun_tamtam@2x.png",
+          "centre_px": [
+            1018,
+            786
+          ],
+          "taille_px": 105
+        },
+        {
+          "id": "tambour",
+          "asset": "commun/candyshop_commun_tambour@2x.png",
+          "centre_px": [
+            1133,
+            786
+          ],
+          "taille_px": 105
+        },
+        {
+          "id": "claves",
+          "asset": "commun/candyshop_commun_claves@2x.png",
+          "centre_px": [
+            1248,
+            786
+          ],
+          "taille_px": 105
+        }
+      ],
+      "commandes": {
+        "potards_centres_px": [
+          [
+            222,
+            747
+          ],
+          [
+            292,
+            747
+          ],
+          [
+            362,
+            747
+          ],
+          [
+            432,
+            747
+          ],
+          [
+            547,
+            747
+          ],
+          [
+            628,
+            747
+          ],
+          [
+            709,
+            747
+          ],
+          [
+            790,
+            747
+          ]
+        ],
+        "pads_zone_px": [
+          198,
+          804,
+          705,
+          860
+        ],
+        "selecteur_theme_zone_px": [
+          1152,
+          72,
+          1256,
+          100
+        ]
+      },
+      "planche": "vert/candyshop_vert_planche@2x.png"
+    },
+    "orange": {
+      "vitrine": "orange/candyshop_orange_vitrine@2x.png",
+      "palette": {
+        "accent": "#FFCF85",
+        "panneau": "#692815",
+        "texte": "#FFF2D8"
+      },
+      "bonbons": [
+        {
+          "id": "fraise",
+          "label": "Plug Seed Pack",
+          "off": "commun/candyshop_commun_fraise_off@2x.png",
+          "on": "orange/candyshop_orange_fraise_on@2x.png",
+          "sprite_center_px": [
+            322,
+            301
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            322,
+            376
+          ]
+        },
+        {
+          "id": "banane",
+          "label": "Marimbas",
+          "off": "commun/candyshop_commun_banane_off@2x.png",
+          "on": "orange/candyshop_orange_banane_on@2x.png",
+          "sprite_center_px": [
+            619,
+            301
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            619,
+            376
+          ]
+        },
+        {
+          "id": "cola",
+          "label": "Synths",
+          "off": "commun/candyshop_commun_cola_off@2x.png",
+          "on": "orange/candyshop_orange_cola_on@2x.png",
+          "sprite_center_px": [
+            916,
+            301
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            916,
+            376
+          ]
+        },
+        {
+          "id": "violet",
+          "label": "Pads",
+          "off": "commun/candyshop_commun_violet_off@2x.png",
+          "on": "orange/candyshop_orange_violet_on@2x.png",
+          "sprite_center_px": [
+            1213,
+            301
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            1213,
+            376
+          ]
+        },
+        {
+          "id": "cerise",
+          "label": "Percussion",
+          "off": "commun/candyshop_commun_cerise_off@2x.png",
+          "on": "orange/candyshop_orange_cerise_on@2x.png",
+          "sprite_center_px": [
+            322,
+            490
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            322,
+            565
+          ]
+        },
+        {
+          "id": "sucette",
+          "label": "Sucette",
+          "off": "commun/candyshop_commun_sucette_off@2x.png",
+          "on": "orange/candyshop_orange_sucette_on@2x.png",
+          "sprite_center_px": [
+            619,
+            490
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            619,
+            565
+          ]
+        },
+        {
+          "id": "carres",
+          "label": "Carrés fruités",
+          "off": "commun/candyshop_commun_carres_off@2x.png",
+          "on": "orange/candyshop_orange_carres_on@2x.png",
+          "sprite_center_px": [
+            916,
+            490
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            916,
+            565
+          ]
+        },
+        {
+          "id": "lacets",
+          "label": "Lacets acidulés",
+          "off": "commun/candyshop_commun_lacets_off@2x.png",
+          "on": "orange/candyshop_orange_lacets_on@2x.png",
+          "sprite_center_px": [
+            1213,
+            490
+          ],
+          "sprite_side_px": 140,
+          "label_center_px": [
+            1213,
+            565
+          ]
+        }
+      ],
+      "percussions": [
+        {
+          "id": "tamtam",
+          "asset": "commun/candyshop_commun_tamtam@2x.png",
+          "centre_px": [
+            1018,
+            752
+          ],
+          "taille_px": 105
+        },
+        {
+          "id": "tambour",
+          "asset": "commun/candyshop_commun_tambour@2x.png",
+          "centre_px": [
+            1133,
+            752
+          ],
+          "taille_px": 105
+        },
+        {
+          "id": "claves",
+          "asset": "commun/candyshop_commun_claves@2x.png",
+          "centre_px": [
+            1248,
+            752
+          ],
+          "taille_px": 105
+        }
+      ],
+      "commandes": {
+        "potards_centres_px": [
+          [
+            222,
+            713
+          ],
+          [
+            292,
+            713
+          ],
+          [
+            362,
+            713
+          ],
+          [
+            432,
+            713
+          ],
+          [
+            547,
+            713
+          ],
+          [
+            628,
+            713
+          ],
+          [
+            709,
+            713
+          ],
+          [
+            790,
+            713
+          ]
+        ],
+        "pads_zone_px": [
+          198,
+          770,
+          705,
+          826
+        ],
+        "selecteur_theme_zone_px": [
+          1152,
+          72,
+          1256,
+          100
+        ]
+      },
+      "planche": "orange/candyshop_orange_planche@2x.png"
+    }
+  }
+}

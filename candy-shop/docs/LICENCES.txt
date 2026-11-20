@@ -1,0 +1,8 @@
+Candy Shop — © 2026 Room Labs. Tous droits réservés.
+
+Illustrations, interface et sons d'usine : Room Labs.
+Tous les sons sont synthétisés par le moteur de Candy Shop (aucun échantillon tiers).
+Bonbons et emballages originaux, sans marque.
+
+Ce logiciel utilise le framework JUCE (https://juce.com), selon la licence JUCE 8 choisie par Room Labs.
+VST est une marque déposée de Steinberg Media Technologies GmbH.
