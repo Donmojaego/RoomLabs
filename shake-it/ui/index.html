@@ -81,10 +81,11 @@ select.btn{appearance:none;-webkit-appearance:none;padding:0 8px}
 .seg{display:flex;gap:4px;align-items:center}.seg .label{width:58px}.seg .btn{flex:1;height:24px;padding:0 4px;font-size:11px}
 #stages{position:absolute;left:14px;top:322px;width:200px}
 #stageRow{display:flex;gap:6px;margin-top:6px}
-.stg{flex:1;height:100px;border-radius:8px;background:#0d0b0a;border:1px solid var(--line);display:flex;align-items:flex-end;justify-content:center;overflow:hidden;position:relative}
-.stg img{height:86px;opacity:.45;filter:grayscale(.6)}
-.stg.on{border-color:var(--acc);box-shadow:0 0 12px -3px var(--acc)}.stg.on img{opacity:1;filter:none}
-.stg b{position:absolute;top:3px;left:0;right:0;text-align:center;font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--muted)}
+.stg{flex:1;height:100px;border-radius:10px;background:linear-gradient(180deg,#1a1512,#0d0b0a);border:1px solid var(--line);overflow:hidden;position:relative;cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .12s}
+.stg:hover{transform:translateY(-1px)}
+.stg i{position:absolute;left:50%;top:16px;bottom:0;background-repeat:no-repeat;background-position:0 0;opacity:.5;filter:grayscale(.5);transition:opacity .2s,filter .2s}
+.stg.on{border-color:var(--acc);box-shadow:0 0 14px -3px var(--acc)}.stg.on i{opacity:1;filter:none}
+.stg b{position:absolute;top:3px;left:0;right:0;text-align:center;font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--muted);z-index:1}.stg.on b{color:#fff}
 #meter{position:absolute;left:14px;top:496px;width:200px;height:30px}
 #meterBar{position:absolute;left:0;top:16px;width:200px;height:8px;border-radius:4px;background:#0d0b0a;border:1px solid var(--line);overflow:hidden}
 #meterFill{height:100%;width:0;background:linear-gradient(90deg,var(--accDim),var(--acc),#ff4b3a)}
@@ -139,11 +140,10 @@ select.btn{appearance:none;-webkit-appearance:none;padding:0 8px}
         <div class="seg"><span class="label">Drive</span><button class="btn" data-dt="0">Doux</button><button class="btn" data-dt="1">Dur</button><button class="btn" data-dt="2">Fold</button></div>
       </div>
     </div>
-    <div id="stages"><div class="label">Danse</div>
+    <div id="stages"><div class="label">Danseuse</div>
       <div id="stageRow">
-        <div class="stg" data-p="0"><b>NEUTRE</b><img src="assets/dancer_neutral.webp" alt=""></div>
-        <div class="stg" data-p="1"><b>IMPACT</b><img src="assets/dancer_squash.webp" alt=""></div>
-        <div class="stg" data-p="2"><b>REBOND</b><img src="assets/dancer_rebound.webp" alt=""></div>
+        <div class="stg" data-d="0" title="Ceylon (short noir)"><b>CEYLON</b><i></i></div>
+        <div class="stg" data-d="1" title="Émeraude (survêtement vert)"><b>ÉMERAUDE</b><i></i></div>
       </div>
     </div>
     <div id="vis">
@@ -280,7 +280,6 @@ function showPreset() {
   document.querySelectorAll(".it").forEach(e => e.classList.toggle("on", +e.dataset.i === current));
   const on = document.querySelector(".it.on"); if (on) on.scrollIntoView({block:"nearest"});
   keyboard.markRoot(p.root);
-  if (!prefs.outfitLock) prefs.outfit = p.outfit || 0;   // tenue : suit le preset sauf si verrouillée (une seule tenue livrée en v0.1)
 }
 async function loadPreset(i) {
   i = (i + presets.length) % presets.length; current = i;
@@ -308,9 +307,12 @@ function applyPrefs() {
   document.querySelectorAll("[data-theme]").forEach(d => d.classList.toggle("on", d.dataset.theme === prefs.theme));
   document.querySelectorAll("[data-vis]").forEach(b => b.classList.toggle("on", b.dataset.vis === prefs.visual));
   $("#zoom").value = String(prefs.zoom);
+  document.querySelectorAll(".stg").forEach(d => d.classList.toggle("on", +d.dataset.d === (prefs.outfit | 0)));
   scene.themeChanged(); scene.wake();
 }
-document.querySelectorAll("[data-theme]").forEach(d => d.onclick = () => setPref("theme", d.dataset.theme));
+// thème Émeraude -> danseuse Émeraude, les autres -> Ceylon (on peut ensuite choisir l'autre)
+document.querySelectorAll("[data-theme]").forEach(d => d.onclick = () => { prefs.outfit = d.dataset.theme === "emeraude" ? 1 : 0; if (NATIVE) call("setPref", "outfit", prefs.outfit); setPref("theme", d.dataset.theme); });
+document.querySelectorAll(".stg").forEach(d => d.onclick = () => setPref("outfit", +d.dataset.d));
 document.querySelectorAll("[data-vis]").forEach(b => b.onclick = () => setPref("visual", b.dataset.vis));
 $("#zoom").onchange = e => setPref("zoom", +e.target.value);
 
@@ -368,8 +370,9 @@ function onMotion(m) { const prevO = motion.o; Object.assign(motion, m); motion.
 //  Même logique quelle que soit la tenue.
 // =============================================================================
 const dance = (() => {
-  let y = 0, v = 0, energy = 0, groove = 0, pose = 0, poseFrom = 0, poseT = 1, sway = 0;
-  function kick() { const amp = prefs.visual === "reduit" ? .55 : 1; v += (7.5 + 3 * Math.min(1, motion.e)) * amp; }
+  let y = 0, v = 0, energy = 0, groove = 0, pose = 0, poseFrom = 0, poseT = 1, sway = 0, squat = 0, phase = 0, hold = 0;
+  function kick() { const amp = prefs.visual === "reduit" ? .55 : 1; v += (7.5 + 3 * Math.min(1, motion.e)) * amp; hold = .45;
+    if (squat < .5) phase = 2 / 12; }   // elle descend dès l'attaque
   function step(dt) {
     const model = Math.round(P.model);
     energy += (Math.min(1.2, motion.e) - energy) * Math.min(1, dt * (motion.e > energy ? 18 : 4));
@@ -386,10 +389,16 @@ const dance = (() => {
     if (yd > .3) want = 1; else if (yd < -.14) want = 2; else if (yd > -.06 && yd < .2) want = 0;
     if (want !== pose) { poseFrom = pose; pose = want; poseT = 0; }
     poseT = Math.min(1, poseT + dt / .07);
-    return {y: yd, energy, groove, pose, poseFrom, poseT, sway};
+    // danseuse : se met en position (accroupie) dès que ça joue, se relève au silence
+    hold = Math.max(0, hold - dt);
+    const down = energy > .03 || hold > 0 ? 1 : 0;
+    squat += (down - squat) * Math.min(1, dt * (down > squat ? 11 : 3.2));
+    // mouvement du bassin de haut en bas : boucle de 12 images, plus rapide avec l'énergie, étirée par le glide
+    phase = (phase + dt * (1.5 + 1.6 * Math.min(1, energy)) * (1 - .45 * motion.g) * (model === 1 ? .8 : 1) * squat) % 1;
+    return {y: yd, energy, groove, pose, poseFrom, poseT, sway, squat, phase};
   }
-  function reset() { y = v = energy = 0; pose = poseFrom = 0; poseT = 1; }
-  function atRest() { return Math.abs(y) < .01 && Math.abs(v) < .01 && energy < .005; }
+  function reset() { y = v = energy = 0; pose = poseFrom = 0; poseT = 1; squat = 0; phase = 0; hold = 0; }
+  function atRest() { return Math.abs(y) < .01 && Math.abs(v) < .01 && energy < .005 && squat < .004; }
   return {kick, step, reset, atRest};
 })();
 
@@ -400,7 +409,12 @@ const scene = (() => {
   const cv = $("#scene"), ctx = cv.getContext("2d");
   const W = 500, H = 470, CX = 250, CY = 228, R = 196;
   let scale = 1, ring = null, glow = null, running = false, last = 0, idleSince = 0, acc = 0;
-  const imgs = ["neutral","squash","rebound"].map(n => { const im = new Image(); im.src = `assets/dancer_${n}.webp`; im.onload = () => wake(); return im; });
+  // planches : 13 images côte à côte (debout, puis la boucle 01 à 12)
+  const DANCERS = [{n: "ceylon", fw: 290}, {n: "emeraude", fw: 325}].map(d => { const im = new Image(); im.src = `assets/dancer_${d.n}.webp`;
+    im.onload = () => { d.ok = true; wake(); document.querySelectorAll(`.stg[data-d="${d.n === "ceylon" ? 0 : 1}"] i`).forEach(e => {
+      const w = 84 * d.fw / 600; e.style.backgroundImage = `url(${im.src})`; e.style.backgroundSize = `${13 * w}px 84px`; e.style.width = w + "px"; e.style.marginLeft = -w / 2 + "px"; }); };
+    d.im = im; return d; });
+  const FH = 600, buf = document.createElement("canvas"), bg2 = buf.getContext("2d"), wrp = document.createElement("canvas"), wg = wrp.getContext("2d");
   const css = n => getComputedStyle(document.body).getPropertyValue(n).trim();
   function resize(s) { scale = s; cv.width = Math.round(W * s); cv.height = Math.round(H * s); themeChanged(); }
   function themeChanged() {
@@ -434,7 +448,7 @@ const scene = (() => {
     if (dtRaw < minDt - .002) { requestAnimationFrame(frame); return; }
     last = t;
     const t0 = performance.now();
-    if (vis === "statique") { staticDrawn = true; dance.reset(); draw({y:0, energy:0, groove:0, pose:0, poseFrom:0, poseT:1, sway:0}, 0, t); }
+    if (vis === "statique") { staticDrawn = true; dance.reset(); draw({y:0, energy:0, groove:0, pose:0, poseFrom:0, poseT:1, sway:0, squat:0, phase:0}, 0, t); }
     else draw(dance.step(dtRaw), dtRaw, t);
     perf.sample(dtRaw, performance.now() - t0);
     // arrêt du rendu : silence + danseur au repos depuis 3 s (ou mode statique)
@@ -468,30 +482,47 @@ const scene = (() => {
       ctx.lineTo(CX + Math.cos(a) * (R - 22 - len), CY + Math.sin(a) * (R - 22 - len)); ctx.stroke();
     }
     ctx.globalAlpha = 1;
-    // danseur
-    const im = imgs[s.pose], from = imgs[s.poseFrom];
-    const baseH = 300, footY = CY + 158;
-    const bob = 0;
-    const dy = s.y * 14 * reduce + bob;
-    const sy = 1 - Math.max(-.04, Math.min(.05, s.y * .04)) * reduce;           // squash/stretch
+    // danseuse : pose debout <-> boucle accroupie (fondu court), images voisines fondues pour 60 i/s,
+    // et déformation verticale par bandes : le bassin monte et descend, les pieds restent au sol.
+    const D = DANCERS[(prefs.outfit | 0) ? 1 : 0], dispH = 336, footY = CY + 160;
     let jx = 0, jy = 0;
     if (P.drive > .05 && s.energy > .05) { jx = (Math.random() - .5) * P.drive * 2.4 * reduce; jy = (Math.random() - .5) * P.drive * 1.6 * reduce; }  // contour nerveux
-    const rot = Math.sin(t * .0028) * s.sway * .06 * reduce;                   // glide : balancement étiré
+    const rot = Math.sin(t * .0028) * s.sway * .04 * reduce;                   // glide : balancement étiré
     ctx.save();
     ctx.beginPath(); ctx.arc(CX, CY, R - 2, 0, Math.PI * 2); ctx.clip();
-    // ombre au sol
-    ctx.fillStyle = "rgba(0,0,0,.45)"; ctx.beginPath(); ctx.ellipse(CX, footY + 4, 70 + s.energy * 12, 10, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.translate(CX + jx, footY + jy); ctx.rotate(rot); ctx.scale(1, sy);
-    const drawPose = (img, alpha) => { if (!img.complete || !img.naturalWidth) return;
-      const h = baseH * img.naturalHeight / 845, w = h * img.naturalWidth / img.naturalHeight;   // même échelle que la planche d'origine
-      ctx.globalAlpha = alpha; ctx.drawImage(img, -w / 2, -h + dy, w, h); };
-    if (s.poseT < 1) drawPose(from, 1 - s.poseT);
-    drawPose(im, s.poseT < 1 ? s.poseT : 1);
+    ctx.fillStyle = "rgba(0,0,0,.45)"; ctx.beginPath(); ctx.ellipse(CX, footY + 4, 74 + s.energy * 12 + s.squat * 10, 10, 0, 0, Math.PI * 2); ctx.fill();
+    if (D.ok) {
+      const fw = D.fw, k = dispH / FH, bw = Math.ceil(fw * k * scale), bh = Math.ceil(dispH * scale);
+      if (buf.width !== bw || buf.height !== bh) { buf.width = bw; buf.height = bh; }
+      bg2.setTransform(1, 0, 0, 1, 0, 0); bg2.clearRect(0, 0, bw, bh);
+      const f = s.phase * 12, i0 = Math.floor(f) % 12, i1 = (i0 + 1) % 12, a = f - Math.floor(f);
+      const put = (idx, alpha) => { if (alpha <= .004) return; bg2.globalAlpha = alpha; bg2.drawImage(D.im, idx * fw, 0, fw, FH, 0, 0, bw, bh); };
+      if (s.squat < .995) put(0, 1);                                         // debout
+      if (s.squat > .005) { bg2.globalAlpha = 1;
+        // fondu des deux images voisines de la boucle, posé sur la pose debout selon « squat »
+        put(1 + i0, s.squat); put(1 + i1, s.squat * a); }   // A opaque puis B par-dessus : pas de transparence
+      bg2.globalAlpha = 1;
+      // déplacement du bassin (en px de scène) : boucle + rebond des attaques
+      const pump = (Math.sin(s.phase * Math.PI * 2) * (5 + 6 * Math.min(1, s.energy)) + s.y * 9) * s.squat * reduce;
+      const w = fw * k, x0 = CX + jx - w / 2, top = footY + jy - dispH, pad = Math.ceil(16 * scale);
+      // déformation par bandes sur des lignes entières de pixels (aucune couture visible)
+      if (wrp.width !== bw || wrp.height !== bh + 2 * pad) { wrp.width = bw; wrp.height = bh + 2 * pad; }
+      wg.clearRect(0, 0, wrp.width, wrp.height);
+      const N = 40, d = v => { const hip = Math.exp(-Math.pow((v - .5) / .2, 2)), feet = Math.max(0, (v - .82) / .18); return pump * hip * (1 - feet) + pump * .45 * (v < .5 ? 1 - hip : 0) * (1 - v * 2); };
+      let prev = Math.round(pad + d(0) * scale);
+      for (let b = 0; b < N; b++) {
+        const v1 = (b + 1) / N, next = Math.round(pad + v1 * bh + d(v1) * scale), sy0 = Math.round(b / N * bh), sy1 = Math.round(v1 * bh);
+        if (next > prev && sy1 > sy0) wg.drawImage(buf, 0, sy0, bw, sy1 - sy0, 0, prev, bw, next - prev);
+        prev = next;
+      }
+      ctx.translate(CX + jx, footY + jy); ctx.rotate(rot); ctx.translate(-(CX + jx), -(footY + jy));
+      ctx.drawImage(wrp, x0, top - pad / scale, w, (bh + 2 * pad) / scale);
+    }
     ctx.restore(); ctx.globalAlpha = 1;
     // accent lumineux à l'attaque
     if (s.y > .2) { ctx.globalAlpha = Math.min(.5, s.y * .4) * reduce; ctx.drawImage(glow, CX - 90, footY - 30, 180, 60); ctx.globalAlpha = 1; }
     // vignettes « Danse » + vumètre (DOM, peu coûteux)
-    if (s.pose !== draw.lastPose) { document.querySelectorAll(".stg").forEach(e => e.classList.toggle("on", +e.dataset.p === s.pose)); draw.lastPose = s.pose; (window.__poseLog = window.__poseLog || []).push(s.pose); }
+    if (s.pose !== draw.lastPose) { draw.lastPose = s.pose; (window.__poseLog = window.__poseLog || []).push(s.pose); }
     $("#meterFill").style.width = Math.round(Math.min(1, Math.sqrt(motion.l)) * 100) + "%";
   }
   return {resize, themeChanged, wake};

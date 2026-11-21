@@ -16,10 +16,10 @@ html = (root / "ui" / "index.html").read_text(encoding="utf-8")
 for f in sorted((root / "ui" / "assets").glob("*.webp")):
     uri = "data:image/webp;base64," + base64.b64encode(f.read_bytes()).decode()
     html = html.replace(f"assets/{f.name}", uri)
-# le danseur est chargé par un modèle `assets/dancer_${n}.webp` : on remplace le modèle par une table
+# les danseuses sont chargées par un modèle `assets/dancer_${d.n}.webp` : on remplace le modèle par une table
 dancers = {n: "data:image/webp;base64," + base64.b64encode((root / "ui" / "assets" / f"dancer_{n}.webp").read_bytes()).decode()
-           for n in ("neutral", "squash", "rebound")}
-html = html.replace("im.src = `assets/dancer_${n}.webp`;", "im.src = window.SHK_DANCERS[n];")
+           for n in ("ceylon", "emeraude")}
+html = html.replace("im.src = `assets/dancer_${d.n}.webp`;", "im.src = window.SHK_DANCERS[d.n];")
 
 factory = json.loads((root / "presets" / "factory.json").read_text(encoding="utf-8"))
 inject = ("<script>window.SHK_FACTORY=" + json.dumps(factory, ensure_ascii=False)
