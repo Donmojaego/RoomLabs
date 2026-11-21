@@ -1,0 +1,9 @@
+NOTE POUR CLAUDE — ANIMATION DES MÉCANISMES
+
+Je souhaite que les mécanismes et les engrenages soient animés dans le plugin.
+Les roues doivent tourner autour de leur axe fixe en boucle fluide. Dans le train
+mécanique, les engrenages doivent s'engrener correctement et tourner dans le bon
+sens les uns par rapport aux autres. Ne pas déplacer tout le mécanisme comme un
+seul bloc : chaque pièce mobile doit pouvoir être animée séparément. Le ressort,
+le cylindre musical et le marteau de cloche peuvent aussi avoir un mouvement
+cyclique léger et régulier, synchronisé avec le fonctionnement du jouet.

@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Windup Dogs · Room Labs Audio</title>
+<style>
+:root{--gold:#f3d79b;--gold2:#ffe7b0;--brass:#c9a227;--ink:#2a1a08;--teal:#0f3b40;--red:#a3262e;--panel:rgba(10,32,35,.95);--line:rgba(243,215,155,.35)}
+*{box-sizing:border-box;-webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#070d0e;font-family:Georgia,"Times New Roman",serif;color:var(--gold)}
+#stage{position:absolute;left:0;top:0;width:960px;height:640px;transform-origin:0 0;overflow:hidden}
+.abs{position:absolute}
+#bg{left:0;top:0;width:960px;height:640px}
+.spr{position:absolute;pointer-events:none;will-change:transform}
+canvas{position:absolute;pointer-events:none}
+.eng{font-weight:700;letter-spacing:2px;color:var(--gold);text-shadow:0 1px 0 #000,0 0 6px rgba(0,0,0,.8);text-transform:uppercase}
+
+/* clé et clochettes cliquables */
+.hot{position:absolute;cursor:pointer;border-radius:12px}
+.hot:hover{box-shadow:0 0 0 2px rgba(243,215,155,.35),0 0 18px rgba(243,215,155,.25)}
+
+/* couvercle : écran du preset */
+#lid{left:690px;top:88px;width:226px;height:94px;display:flex;align-items:center}
+#lid button{width:34px;height:34px;flex:none;border-radius:50%;border:1px solid #6b4f14;background:radial-gradient(circle at 40% 35%,#ffe7a8,#c9a227 55%,#7a5a12);color:#2a1a08;font-size:15px;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.5);transition:transform .1s}
+#lid button:active{transform:scale(.94)}
+#pname{flex:1;text-align:center;cursor:pointer;padding:0 4px;line-height:1.2}
+#pname span{display:block;font-size:12px;letter-spacing:2px;white-space:nowrap;color:#d9b36a;font-weight:700;text-transform:uppercase}
+#pname b{display:block;font-size:18px;color:var(--gold2);text-shadow:0 1px 0 #000,0 0 10px rgba(255,200,90,.25);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pname small{display:block;font-size:12px;color:#b8a27a;margin-top:2px}
+
+/* puits gauche : les musiciens */
+#dogs{left:40px;top:234px;width:206px;height:152px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:2px 2px}
+.dog{position:relative;cursor:pointer;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:2px;transition:background .2s,box-shadow .2s}
+.dog img{height:50px;max-width:64px;object-fit:contain;filter:drop-shadow(0 3px 3px rgba(0,0,0,.6)) saturate(.75) brightness(.85);transition:transform .2s,filter .2s;transform-origin:50% 100%}
+.dog b{font-size:12px;letter-spacing:1px;margin-top:2px;color:#d8c08a;text-shadow:0 1px 0 #000}
+.dog:hover img{filter:drop-shadow(0 3px 3px rgba(0,0,0,.6));transform:translateY(-2px)}
+.dog.on{background:radial-gradient(ellipse at 50% 70%,rgba(255,206,110,.22),rgba(255,206,110,0) 70%);box-shadow:inset 0 0 0 1px rgba(243,215,155,.45)}
+.dog.on img{filter:drop-shadow(0 0 8px rgba(255,210,120,.55)) drop-shadow(0 3px 3px rgba(0,0,0,.6));transform:scale(1.08)}
+.dog.on b{color:var(--gold2)}
+
+/* molettes (puits droit) */
+.knob{position:absolute;cursor:ns-resize;touch-action:none}
+.knob .ring{position:absolute;left:0;top:0;width:100%}
+.knob .cap{position:absolute;will-change:transform}
+.knob .lbl{position:absolute;left:-30px;right:-30px;text-align:center;font-size:12px}
+.knob .val{position:absolute;left:-30px;right:-30px;text-align:center;font-size:12px;color:#e9d3a2;font-family:"Segoe UI",Arial,sans-serif;font-variant-numeric:tabular-nums;text-shadow:0 1px 2px #000}
+
+/* curseurs */
+.sld{position:absolute;width:30px;cursor:ns-resize;touch-action:none}
+.sld img{position:absolute;left:3px;width:24px;height:24px;filter:drop-shadow(0 3px 2px rgba(0,0,0,.7))}
+.sld .lbl{position:absolute;left:-22px;right:-22px;text-align:center;font-size:12px;letter-spacing:1px}
+
+/* boutons et plaque */
+.btn{position:absolute;width:28px;height:28px;border-radius:50%;cursor:pointer}
+.btn img{position:absolute;left:-1px;top:-1px;width:30px;opacity:0;transition:opacity .15s}
+.btn.on img{opacity:1}
+.btn:active{transform:translateY(1px)}
+#plaque{left:688px;top:444px;width:92px;height:54px;color:#3a2608;text-shadow:0 1px 0 rgba(255,240,200,.55);font-weight:700}
+#plaque .r1{display:flex;justify-content:space-between;font-size:12px;letter-spacing:0;padding:4px 2px 0}
+#plaque .r2{display:flex;align-items:center;gap:5px;font-size:13px;padding:5px 5px 0}
+#tdiv{cursor:pointer;padding:0 3px;border-radius:4px;border:1px solid rgba(58,38,8,.45)}
+#tdiv:hover{background:rgba(58,38,8,.12)}
+#tbar{flex:1;height:8px;border-radius:4px;background:rgba(58,38,8,.25);overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.4)}
+#tbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#7a1d22,#c9562e,#e8b04a)}
+
+/* clavier : touches jouables posées sur celles de la planche */
+#kb{left:290px;top:440px;width:381px;height:78px;touch-action:none}
+#kb .w{position:absolute;top:0;height:78px;cursor:pointer}
+#kb .b{position:absolute;top:0;height:35px;cursor:pointer;z-index:2;border-radius:0 0 3px 3px}
+#kb .w.dn{background:linear-gradient(180deg,rgba(255,214,120,.0),rgba(255,200,90,.42));box-shadow:inset 0 -3px 0 rgba(160,110,20,.5)}
+#kb .b.dn{background:linear-gradient(180deg,rgba(255,200,90,.15),rgba(255,190,80,.6))}
+#kb .lab{position:absolute;bottom:3px;left:0;right:0;text-align:center;font:600 12px "Segoe UI",Arial,sans-serif;color:#6b5636;pointer-events:none}
+
+#med{left:887px;top:548px;width:40px;height:40px;cursor:pointer;border-radius:50%;filter:drop-shadow(0 3px 3px rgba(0,0,0,.6));transition:transform .15s}
+#med:hover{transform:rotate(30deg) scale(1.06)}
+#hint{left:180px;top:622px;width:600px;text-align:center;font:12px "Segoe UI",Arial,sans-serif;color:#c8b48a;text-shadow:0 1px 2px #000;pointer-events:none}
+
+/* panneaux */
+.panel{left:150px;top:70px;width:660px;height:480px;border-radius:22px;background:var(--panel);border:2px solid #b08a2a;box-shadow:0 18px 50px rgba(0,0,0,.7),inset 0 0 0 1px rgba(255,230,160,.15);padding:18px 26px;display:none;z-index:20;font-family:"Segoe UI",Arial,sans-serif}
+.panel.open{display:block;animation:pop .18s ease-out}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+.panel h2{margin:0 0 12px;font:700 19px Georgia,serif;letter-spacing:4px;text-transform:uppercase;color:var(--gold2)}
+.panel .x{position:absolute;right:14px;top:12px;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--gold);font-size:18px;cursor:pointer}
+.row{display:flex;align-items:center;gap:12px;margin:8px 0}
+.row .lab{width:150px;font-size:13px;letter-spacing:1px;color:#e2c98f;font-weight:600;text-transform:uppercase}
+.row .val{width:82px;text-align:right;font-size:14px;color:var(--gold2);font-variant-numeric:tabular-nums}
+.sl{flex:1;height:26px;position:relative;cursor:ew-resize;touch-action:none}
+.sl .tr{position:absolute;left:0;right:0;top:11px;height:5px;border-radius:3px;background:rgba(255,255,255,.12)}
+.sl .fi{position:absolute;left:0;top:11px;height:5px;border-radius:3px;background:linear-gradient(90deg,#7a5a12,#e8c46a)}
+.sl .th{position:absolute;top:3px;width:21px;height:21px;margin-left:-10px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff3cf,#e2b94e 50%,#7a5a12);box-shadow:0 2px 5px rgba(0,0,0,.6)}
+.seg{display:flex;flex-wrap:wrap;gap:7px;flex:1}
+.chip{height:32px;padding:0 13px;border-radius:16px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.3));color:var(--gold);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.chip:hover{border-color:var(--gold)}
+.chip.on{background:linear-gradient(180deg,#e8c46a,#9c7419);color:#2a1a08;border-color:#ffe7a8;box-shadow:0 0 12px rgba(243,215,155,.4)}
+#list{display:grid;grid-template-columns:repeat(5,1fr);gap:4px 10px;max-height:410px;overflow:auto}
+#list .hd{font:700 13px Georgia,serif;letter-spacing:1px;color:#e8c46a;margin:2px 0 5px;text-transform:uppercase}
+#list .it{font-size:13px;padding:6px 7px;border-radius:8px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#ecdcb8}
+#list .it:hover{background:rgba(255,255,255,.07)}
+#list .it.on{background:rgba(232,196,106,.3);color:#fff}
+.ver{font-size:13px;color:#c8b48a;margin-top:14px;line-height:1.6}
+#toast{left:330px;top:196px;width:300px;text-align:center;font:600 14px "Segoe UI",Arial,sans-serif;padding:7px 12px;border-radius:16px;background:rgba(0,0,0,.65);color:var(--gold2);opacity:0;transition:opacity .3s;pointer-events:none;z-index:30}
+#perf{left:6px;top:6px;font:12px monospace;background:#000c;color:#fff;padding:4px 7px;border-radius:6px;display:none;z-index:50;white-space:pre}
+</style>
+</head>
+<body>
+<div id="stage">
+  <img id="bg" class="abs" data-src="fond.webp" alt="">
+  <!-- pièces découpées de la planche -->
+  <img id="sDog" class="spr" data-src="chien_batteur.webp" alt="">
+  <img id="sKey" class="spr" data-src="cle_haut.webp" alt="">
+  <img id="sBellL" class="spr" data-src="cloche_g.webp" alt="">
+  <img id="sBellR" class="spr" data-src="cloche_d.webp" alt="">
+  <!-- mécanismes animés -->
+  <canvas id="cvWin"></canvas>
+  <img id="glass" class="spr" data-src="vitre_reflet.webp" alt="">
+  <canvas id="cvSpring"></canvas>
+  <canvas id="cvHammer"></canvas>
+  <canvas id="cvPipes"></canvas>
+  <div id="hotKey" class="hot" title="Remonter le jouet (clé)"></div>
+  <div id="hotBells" class="hot" title="Clochettes"></div>
+  <div id="hotSpring" class="hot" title="Remonter le ressort"></div>
+
+  <div id="lid" class="abs"><button id="prev" title="Preset précédent">◀</button><div id="pname" title="Liste des presets"><span>—</span><b>—</b><small></small></div><button id="next" title="Preset suivant">▶</button></div>
+  <div id="dogs" class="abs"></div>
+  <div id="knobs"></div>
+  <div id="sliders"></div>
+  <div id="bWind" class="btn" title="Remonter le jouet (clé)"><img data-src="bouton_rouge_on.webp" alt=""></div>
+  <div id="bTick" class="btn" title="Tic-tac au tempo : marche / arrêt"><img data-src="bouton_creme_on.webp" alt=""></div>
+  <div id="bSpring" class="btn" title="Ressort qui se détend : marche / arrêt"><img data-src="bouton_vert_on.webp" alt=""></div>
+  <div id="plaque" class="abs"><div class="r1"><span>CLÉ</span><span>TIC</span><span>RES.</span></div><div class="r2"><span id="tdiv" title="Division du tic-tac">1/8</span><div id="tbar" title="Tension du ressort"><i></i></div></div></div>
+  <div id="kb" class="abs"></div>
+  <img id="med" class="abs" data-src="med_reglages.webp" alt="Réglages" title="Réglages">
+  <div id="hint" class="abs"></div>
+
+  <div id="pSound" class="abs panel"><button class="x">✕</button><h2>Réglages du jouet</h2><div id="soundRows"></div><div class="ver" id="ver"></div></div>
+  <div id="pList" class="abs panel"><button class="x">✕</button><h2>Presets</h2><div id="list"></div></div>
+  <div id="toast" class="abs"></div>
+  <div id="perf" class="abs"></div>
+</div>
+<script>
+"use strict";
+// =============================================================================
+// Pont avec le plugin (JUCE) ; sans plugin : aperçu WebAudio approximatif
+// =============================================================================
+const NATIVE = !!(window.__JUCE__ && window.__JUCE__.backend);
+const call = NATIVE ? (() => { let n = 0; const pend = new Map();
+  window.__JUCE__.backend.addEventListener("__juce__complete", ({promiseId, result}) => { const f = pend.get(promiseId); if (f) { pend.delete(promiseId); f(result); } });
+  return (name, ...params) => new Promise(res => { const id = n++; pend.set(id, res); window.__JUCE__.backend.emitEvent("__juce__invoke", {name, params, resultId: id}); });
+})() : null;
+const initPrefs = NATIVE ? ((window.__JUCE__.initialisationData.prefs || [])[0] || {}) : {};
+const VERSION = NATIVE ? ((window.__JUCE__.initialisationData.version || [])[0] || "") : "aperçu";
+const $ = s => document.querySelector(s), $$ = s => document.querySelectorAll(s);
+const ASSET = n => (window.WD_ASSETS && window.WD_ASSETS[n]) || ("assets/" + n);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const toast = t => { const e = $("#toast"); e.textContent = t; e.style.opacity = 1; clearTimeout(toast.h); toast.h = setTimeout(() => e.style.opacity = 0, 1500); };
+const img = n => { const i = new Image(); i.src = ASSET(n); i.onload = () => anim.wake("img"); return i; };
+
+// ---- paramètres (mêmes identifiants et plages que source/Params.h)
+const pct = v => Math.round(v * 100) + " %", ms = v => v < 1000 ? Math.round(v) + " ms" : (v / 1000).toFixed(2) + " s";
+const PDEF = {
+  tone:{min:0,max:1,def:.75,skew:1,fmt:pct,label:"Tone"}, meca:{min:0,max:1,def:.35,skew:1,fmt:pct,label:"Méca"}, wobble:{min:0,max:1,def:.15,skew:1,fmt:pct,label:"Wobble"},
+  echo:{min:0,max:1,def:.15,skew:1,fmt:pct,label:"Écho"}, space:{min:0,max:1,def:.3,skew:1,fmt:pct,label:"Espace"},
+  level:{min:-30,max:12,def:-6,skew:1,fmt:v => (v > 0 ? "+" : "") + v.toFixed(1) + " dB",label:"Niveau"},
+  attack:{min:0,max:5000,def:1,skew:.3,fmt:ms,label:"Attaque"}, decay:{min:5,max:8000,def:2500,skew:.3,fmt:ms,label:"Résonance"},
+  sustain:{min:0,max:1,def:0,skew:1,fmt:pct,label:"Tenue (fanfare)"}, release:{min:5,max:12000,def:600,skew:.3,fmt:ms,label:"Relâchement"},
+  bright:{min:0,max:1,def:.5,skew:1,fmt:pct,label:"Couleur"}, tune:{min:-24,max:24,def:0,skew:1,fmt:v => (v > 0 ? "+" : "") + v.toFixed(1) + " st",label:"Accordage"},
+  tickLevel:{min:0,max:1,def:.4,skew:1,fmt:pct,label:"Tic-tac"}, swing:{min:0,max:.6,def:0,skew:1,fmt:pct,label:"Swing"},
+  springTime:{min:2,max:120,def:40,skew:.5,fmt:v => Math.round(v) + " s",label:"Durée du ressort"}};
+const INSTS = ["Boîte à musique","Piano jouet","Clochettes","Fanfare","Tambour"];
+const DIVS = ["1/4","1/8","1/16","1/8T"];
+const P = {inst:0, tickOn:0, tickDiv:1, springOn:1}; for (const k in PDEF) P[k] = PDEF[k].def;
+const toN = (k, v) => { const d = PDEF[k]; return Math.pow(clamp((v - d.min) / (d.max - d.min), 0, 1), d.skew); };
+const fromN = (k, n) => { const d = PDEF[k]; return d.min + (d.max - d.min) * Math.pow(clamp(n, 0, 1), 1 / d.skew); };
+let presets = [], current = 0, BANKS = INSTS.slice(), L = null, stageScale = 1;
+const prefs = Object.assign({zoom:100, visual:"anime"}, initPrefs);
+
+const fit = () => { stageScale = Math.min(innerWidth / 960, innerHeight / 640); $("#stage").style.transform = `scale(${stageScale})`; anim.resize(); };
+addEventListener("resize", () => fit());
+
+// =============================================================================
+// Envoi des réglages
+// =============================================================================
+const ui = {};
+function setParam(k, v, fromHost) { P[k] = v; if (ui[k]) ui[k](v); if (!fromHost && NATIVE) call("setParam", k, v); }
+const gesture = (k, on) => { if (NATIVE) call("gesture", k, on); };
+const addUi = (k, f) => { const prev = ui[k]; ui[k] = v => { if (prev) prev(v); f(v); }; };
+
+// ---- molette : couronne fixe, chapeau qui tourne (repère gravé)
+function knob(id, cx, cy, size) {
+  const M = L.molette, k = size / M.w, el = document.createElement("div"); el.className = "knob";
+  Object.assign(el.style, {left: cx - size / 2 + "px", top: cy - M.cy * k + "px", width: size + "px", height: M.h * k + "px"});
+  const capD = M.capR * 2 * k;
+  el.innerHTML = `<img class="ring" src="${ASSET("molette.webp")}" alt=""><img class="cap" src="${ASSET("molette_chapeau.webp")}" alt="" style="left:${M.cx * k - capD / 2}px;top:${M.cy * k - capD / 2}px;width:${capD}px;height:${capD}px">
+    <div class="lbl eng" style="top:${M.h * k - 3}px">${PDEF[id].label}</div><div class="val" style="top:${M.h * k + 10}px"></div>`;
+  $("#knobs").appendChild(el);
+  const cap = el.querySelector(".cap"), val = el.querySelector(".val");
+  addUi(id, v => { cap.style.transform = `rotate(${(-135 + 270 * toN(id, v)).toFixed(1)}deg)`; val.textContent = PDEF[id].fmt(v); });
+  let sy = 0, sn = 0;
+  el.addEventListener("pointerdown", e => { el.setPointerCapture(e.pointerId); sy = e.clientY; sn = toN(id, P[id]); gesture(id, true); anim.nudge(); });
+  el.addEventListener("pointermove", e => { if (!el.hasPointerCapture(e.pointerId)) return; const kk = (e.shiftKey ? .0012 : .0055) / stageScale; sn = clamp(sn + (sy - e.clientY) * kk, 0, 1); sy = e.clientY; setParam(id, fromN(id, sn)); anim.nudge(); });
+  const end = e => { if (el.hasPointerCapture(e.pointerId)) { el.releasePointerCapture(e.pointerId); gesture(id, false); } };
+  el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+  el.addEventListener("dblclick", () => { gesture(id, true); setParam(id, PDEF[id].def); gesture(id, false); });
+  el.addEventListener("wheel", e => { e.preventDefault(); setParam(id, fromN(id, toN(id, P[id]) - Math.sign(e.deltaY) * (e.shiftKey ? .01 : .04))); }, {passive: false});
+  ui[id](P[id]);
+}
+// ---- curseur vertical dans les fentes de la planche
+function vslider(id, x, row) {
+  const C = L.curseurs, el = document.createElement("div"); el.className = "sld";
+  const top = C.top - 4, h = C.bottom - C.top + 8;
+  Object.assign(el.style, {left: x - 15 + "px", top: top + "px", height: h + "px"});
+  el.innerHTML = `<img src="${ASSET("curseur_bille.webp")}" alt=""><div class="lbl eng" style="top:${h + 1 + row * 13}px">${PDEF[id].label}</div>`;
+  $("#sliders").appendChild(el);
+  const ball = el.querySelector("img");
+  addUi(id, v => { ball.style.top = (1 - toN(id, v)) * (h - 24) + "px"; });
+  const at = e => { const r = el.getBoundingClientRect(); return clamp(1 - (e.clientY - r.top - 12 * stageScale) / (r.height - 24 * stageScale), 0, 1); };
+  el.addEventListener("pointerdown", e => { el.setPointerCapture(e.pointerId); gesture(id, true); setParam(id, fromN(id, at(e))); anim.nudge(); });
+  el.addEventListener("pointermove", e => { if (el.hasPointerCapture(e.pointerId)) { setParam(id, fromN(id, at(e))); anim.nudge(); } });
+  const end = e => { if (el.hasPointerCapture(e.pointerId)) { el.releasePointerCapture(e.pointerId); gesture(id, false); } };
+  el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+  el.addEventListener("dblclick", () => { gesture(id, true); setParam(id, PDEF[id].def); gesture(id, false); });
+  ui[id](P[id]);
+}
+// ---- curseurs horizontaux et sélecteurs du panneau Réglages
+function slider(parent, id) {
+  const row = document.createElement("div"); row.className = "row";
+  row.innerHTML = `<div class="lab">${PDEF[id].label}</div><div class="sl"><div class="tr"></div><div class="fi"></div><div class="th"></div></div><div class="val"></div>`;
+  parent.appendChild(row);
+  const sl = row.querySelector(".sl"), fi = row.querySelector(".fi"), th = row.querySelector(".th"), val = row.querySelector(".val");
+  addUi(id, v => { const n = toN(id, v); fi.style.width = n * 100 + "%"; th.style.left = n * 100 + "%"; val.textContent = PDEF[id].fmt(v); });
+  const at = e => { const r = sl.getBoundingClientRect(); return clamp((e.clientX - r.left) / r.width, 0, 1); };
+  sl.addEventListener("pointerdown", e => { sl.setPointerCapture(e.pointerId); gesture(id, true); setParam(id, fromN(id, at(e))); });
+  sl.addEventListener("pointermove", e => { if (sl.hasPointerCapture(e.pointerId)) setParam(id, fromN(id, at(e))); });
+  const end = e => { if (sl.hasPointerCapture(e.pointerId)) { sl.releasePointerCapture(e.pointerId); gesture(id, false); } };
+  sl.addEventListener("pointerup", end); sl.addEventListener("pointercancel", end);
+  sl.addEventListener("dblclick", () => { gesture(id, true); setParam(id, PDEF[id].def); gesture(id, false); });
+  ui[id](P[id]);
+}
+function segment(parent, label, names, get, set) {
+  const row = document.createElement("div"); row.className = "row";
+  row.innerHTML = `<div class="lab">${label}</div><div class="seg">${names.map((n, i) => `<div class="chip" data-i="${i}">${n}</div>`).join("")}</div>`;
+  parent.appendChild(row);
+  const chips = row.querySelectorAll(".chip"); const upd = () => chips.forEach(c => c.classList.toggle("on", +c.dataset.i === get()));
+  chips.forEach(c => c.addEventListener("click", () => { set(+c.dataset.i); upd(); }));
+  return upd;
+}
+
+// =============================================================================
+// Construction de l'interface (positions mesurées sur la planche : layout.json)
+// =============================================================================
+const place = (el, box) => Object.assign(el.style, {left: box[0] + "px", top: box[1] + "px", width: box[2] - box[0] + "px", height: box[3] - box[1] + "px"});
+function build() {
+  $$("[data-src]").forEach(i => i.src = ASSET(i.dataset.src));
+  place($("#sDog"), L.chien_batteur.box); place($("#sKey"), L.cle_haut.box); place($("#sBellL"), L.cloche_g.box); place($("#sBellR"), L.cloche_d.box);
+  $("#sDog").style.transformOrigin = "50% 100%"; $("#sKey").style.transformOrigin = "57% 50%";
+  $("#sBellL").style.transformOrigin = "48% 4%"; $("#sBellR").style.transformOrigin = "52% 4%";
+  place($("#glass"), L.vitrine);
+  place($("#hotKey"), [L.cle_haut.box[0], L.cle_haut.box[1], L.cle_haut.box[2], L.cle_haut.box[3]]);
+  place($("#hotBells"), [L.cloche_g.box[0] - 4, L.cloche_g.box[1] - 20, L.cloche_d.box[2] + 4, L.cloche_d.box[3]]);
+  // musiciens : un instrument par chien (et les clochettes)
+  const D = [["chien_coureur.webp","Boîte"],["chien_chef.webp","Piano"],["med_cloche.webp","Cloches"],["chien_trompette.webp","Fanfare"],["chien_tambour.webp","Tambour"]];
+  D.forEach(([f, n], i) => { const d = document.createElement("div"); d.className = "dog"; d.dataset.i = i; d.title = INSTS[i];
+    d.innerHTML = `<img src="${ASSET(f)}" alt="" ${i === 2 ? 'style="height:44px;margin-bottom:6px"' : ""}><b>${n}</b>`;
+    d.onclick = () => selectBank(i); $("#dogs").appendChild(d); });
+  ui.inst = v => $$(".dog").forEach(d => d.classList.toggle("on", +d.dataset.i === Math.round(v)));
+  $("#hotBells").onclick = () => selectBank(2);
+  // molettes et curseurs
+  knob("echo", 768, 257, 50); knob("space", 876, 257, 50); knob("tickLevel", 768, 334, 50); knob("level", 876, 334, 50);
+  vslider("tone", L.curseurs.x[0], 0); vslider("meca", L.curseurs.x[1], 1); vslider("wobble", L.curseurs.x[2], 0);
+  // boutons de la console
+  [["#bWind", 700.6], ["#bTick", 731.3], ["#bSpring", 761.9]].forEach(([s, x]) => Object.assign($(s).style, {left: x - 14 + "px", top: 399.8 + "px"}));
+  $("#bWind").onclick = () => windUp(); $("#hotKey").onclick = () => windUp(); $("#hotSpring").onclick = () => windUp();
+  $("#bTick").onclick = () => { gesture("tickOn", true); setParam("tickOn", P.tickOn ? 0 : 1); gesture("tickOn", false); toast(P.tickOn ? "Tic-tac en marche" : "Tic-tac arrêté"); };
+  $("#bSpring").onclick = () => { gesture("springOn", true); setParam("springOn", P.springOn ? 0 : 1); gesture("springOn", false); toast(P.springOn ? "Le ressort se détend en jouant" : "Ressort bloqué (toujours remonté)"); };
+  ui.tickOn = v => $("#bTick").classList.toggle("on", v > .5); ui.springOn = v => $("#bSpring").classList.toggle("on", v > .5);
+  ui.tickDiv = v => $("#tdiv").textContent = DIVS[Math.round(v)] || "1/8";
+  $("#tdiv").onclick = () => { gesture("tickDiv", true); setParam("tickDiv", (Math.round(P.tickDiv) + 1) % 4); gesture("tickDiv", false); };
+  // clavier : 12 touches blanches (Do à Sol) posées sur celles de la planche
+  buildKeys();
+  // panneaux
+  const sr = $("#soundRows");
+  ["decay","attack","sustain","release","bright","tune","swing","springTime"].forEach(k => slider(sr, k));
+  const updVis = segment(sr, "Animation", ["Animé","Réduit","Statique"], () => ["anime","reduit","statique"].indexOf(prefs.visual), i => setPref("visual", ["anime","reduit","statique"][i]));
+  const updZoom = segment(sr, "Taille", ["75 %","100 %","125 %","150 %"], () => [75,100,125,150].indexOf(+prefs.zoom), i => setPref("zoom", [75,100,125,150][i]));
+  applyPrefs.extra = () => { updVis(); updZoom(); };
+  $("#ver").innerHTML = `Windup Dogs ${VERSION} · Room Labs Audio — molettes et curseurs : glisser · Maj : réglage fin · double-clic : valeur par défaut<br>Clé, bouton rouge ou ressort : remonter le jouet · jouer au clavier d'ordinateur : touches A à K, Z / X pour l'octave · F2 : mesures`;
+  const open = id => $$(".panel").forEach(p => p.classList.toggle("open", p.id === id && !p.classList.contains("open")));
+  $("#med").onclick = () => open("pSound"); $("#pname").onclick = () => { fillList(); open("pList"); };
+  $$(".panel .x").forEach(b => b.onclick = () => open(""));
+  $("#prev").onclick = () => loadPreset(current - 1); $("#next").onclick = () => loadPreset(current + 1);
+  for (const k of ["inst","tickOn","tickDiv","springOn"]) ui[k](P[k]);
+}
+function windUp() { if (NATIVE) call("wind"); else synth.wind(); anim.windStart(); }
+
+// ---- clavier
+const WK = {x0: 290, w: 31.69, y: 440.6, h: 77, bw: 17.5, bh: 34.4};
+const BLACKS = [[518, 1], [576, 3], [662, 6], [719, 8], [782, 10], [870, 13], [928, 15], [1016, 18]];   // centres sur la planche (px d'origine), demi-tons
+let octave = 60;
+function buildKeys() {
+  const kb = $("#kb"); const whites = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19];
+  whites.forEach((st, i) => { const e = document.createElement("div"); e.className = "w"; e.dataset.st = st; Object.assign(e.style, {left: i * WK.w + "px", width: WK.w + "px"});
+    if (st % 12 === 0) e.innerHTML = `<span class="lab"></span>`; kb.appendChild(e); });
+  BLACKS.forEach(([x, st]) => { const e = document.createElement("div"); e.className = "b"; e.dataset.st = st; Object.assign(e.style, {left: x * .625 - WK.x0 - WK.bw / 2 + "px", width: WK.bw + "px", height: WK.bh + "px"}); kb.appendChild(e); });
+  labelKeys();
+  let held = null;
+  const keyAt = e => { const t = document.elementFromPoint(e.clientX, e.clientY); return t && t.dataset && t.dataset.st !== undefined && t.closest("#kb") ? t : null; };
+  const vel = (e, el) => { const r = el.getBoundingClientRect(); return clamp(.35 + .65 * (e.clientY - r.top) / r.height, .2, 1); };
+  kb.addEventListener("pointerdown", e => { kb.setPointerCapture(e.pointerId); const k = keyAt(e); if (k) { held = octave + +k.dataset.st; noteOn(held, vel(e, k)); } });
+  kb.addEventListener("pointermove", e => { if (!kb.hasPointerCapture(e.pointerId)) return; const k = keyAt(e); if (k && octave + +k.dataset.st !== held) { if (held !== null) noteOff(held); held = octave + +k.dataset.st; noteOn(held, vel(e, k)); } });
+  const up = e => { if (kb.hasPointerCapture(e.pointerId)) kb.releasePointerCapture(e.pointerId); if (held !== null) noteOff(held); held = null; };
+  kb.addEventListener("pointerup", up); kb.addEventListener("pointercancel", up);
+}
+function labelKeys() { $$("#kb .lab").forEach(l => { const st = +l.parentNode.dataset.st; l.textContent = "C" + ((octave + st) / 12 - 1); }); }
+function keyVis(n, on) { const el = $(`#kb [data-st="${n - octave}"]`); if (el) el.classList.toggle("dn", on); }
+
+// =============================================================================
+// Presets
+// =============================================================================
+function showPreset() {
+  const p = presets[current]; if (!p) return;
+  const inBank = presets.filter(q => (q.bank | 0) === (p.bank | 0));
+  $("#pname span").textContent = BANKS[p.bank | 0] || ""; $("#pname b").textContent = p.name; $("#pname small").textContent = `${inBank.indexOf(p) + 1} / ${inBank.length} · note ${p.rootName}`;
+  $$("#list .it").forEach(e => e.classList.toggle("on", +e.dataset.i === current));
+}
+async function loadPreset(i) {
+  if (!presets.length) return; current = (i + presets.length) % presets.length;
+  if (NATIVE) applyState(await call("loadPreset", current));
+  else { const pp = presets[current].params || {}; for (const k in pp) setParam(k, pp[k], true); }
+  showPreset(); anim.nudge();
+}
+function selectBank(b) { const first = presets.findIndex(p => (p.bank | 0) === b); if (first >= 0) { if ((presets[current].bank | 0) !== b) loadPreset(first); else toast(BANKS[b]); } anim.dogHop(b); }
+function fillList() {
+  const l = $("#list"); l.innerHTML = "";
+  BANKS.forEach((b, bi) => { const col = document.createElement("div"); col.innerHTML = `<div class="hd">${b}</div>`;
+    presets.forEach((p, i) => { if ((p.bank | 0) !== bi) return; const it = document.createElement("div"); it.className = "it" + (i === current ? " on" : ""); it.dataset.i = i; it.textContent = p.name; it.title = p.name;
+      it.onclick = () => { loadPreset(i); $("#pList").classList.remove("open"); }; col.appendChild(it); });
+    l.appendChild(col); });
+}
+function applyState(st) { if (!st) return; const ps = st.params || {}; for (const k in ps) setParam(k, ps[k], true); if (st.preset !== undefined) current = st.preset; }
+function setPref(k, v) { prefs[k] = v; if (NATIVE) call("setPref", k, v); applyPrefs(); }
+function applyPrefs() { if (applyPrefs.extra) applyPrefs.extra(); anim.wake("prefs"); }
+
+// =============================================================================
+// Jeu au clavier d'ordinateur
+// =============================================================================
+function noteOn(n, v = .85) { if (NATIVE) call("noteOn", n, v, 1); else synth.noteOn(n, v); keyVis(n, true); anim.note(n, v, true); }
+function noteOff(n) { if (NATIVE) call("noteOff", n, 1); else synth.noteOff(n); keyVis(n, false); }
+(() => { const map = "awsedftgyhujkolp;"; const pc = new Map();
+  addEventListener("keydown", e => { if (e.repeat || e.ctrlKey || e.metaKey) return; const k = e.key.toLowerCase();
+    if (k === "z") { octave = Math.max(24, octave - 12); labelKeys(); toast("Octave " + (octave / 12 - 1)); return; }
+    if (k === "x") { octave = Math.min(96, octave + 12); labelKeys(); toast("Octave " + (octave / 12 - 1)); return; }
+    if (k === "f2") { perf.toggle(); return; }
+    if (k === "escape") { $$(".panel").forEach(p => p.classList.remove("open")); return; }
+    const i = map.indexOf(k); if (i >= 0 && !pc.has(k)) { pc.set(k, octave + i); noteOn(octave + i, .85); } });
+  addEventListener("keyup", e => { const k = e.key.toLowerCase(); if (pc.has(k)) { noteOff(pc.get(k)); pc.delete(k); } });
+  addEventListener("blur", () => { pc.forEach(n => noteOff(n)); pc.clear(); });
+})();
+
+// =============================================================================
+// Retour du moteur : e énergie, h notes, note, vel, k touches, t tension, tk tic-tac, w remontages, b position
+// =============================================================================
+const fbk = {e:0, h:0, note:60, vel:0, k:0, v:0, t:1, tk:0, w:0, b:0, at:0};
+function onFb(m) {
+  const ph = fbk.h, pt = fbk.tk, pw = fbk.w; Object.assign(fbk, m); fbk.at = performance.now();
+  if (m.h !== undefined && m.h !== ph && NATIVE) anim.note(m.note, m.vel, false);
+  if (m.tk !== undefined && m.tk !== pt) anim.tick(m.tk);
+  if (m.w !== undefined && m.w !== pw) anim.windStart();
+  anim.wake("fb");
+}
+
+// =============================================================================
+// Animation : chaque pièce tourne sur son axe fixe ; une seule boucle ; arrêt au repos
+// - train d'engrenages : sens et vitesses par le nombre de dents (layout.json), avance d'un cran à chaque tic
+// - cylindre : picots en rotation (projection cylindrique), lames du peigne qui vibrent sur les notes
+// - ressort : la spirale suit la tension, les clés tournent quand on remonte ou quand le ressort se détend
+// - marteau : frappe la cloche sur chaque note ; chien batteur : bat le tic-tac ; tuyaux : s'allument
+// =============================================================================
+const anim = (() => {
+  let running = false, last = 0, idle = 0;
+  const S = {g: 0, gv: 0, step: 0, cyl: 0, tension: 1, keyPh: 0, keyV: 0, hammer: 7, hv: 0, dog: 0, dv: 0, bellL: 0, bvL: 0, bellR: 0, bvR: 0, bellSide: 0, nudge: 0, wind: 0};
+  const pipes = new Float32Array(17), tines = new Float32Array(32), keysFlash = new Map();
+  let I = null, pins = [], cv = {};
+  function loadImgs() {
+    I = {trainBg: img("train_fond.webp"), cyl: img("cylindre_fond.webp"), cylKey: img("cylindre_cle.webp"), pin: img("picot.webp"),
+         spBg: img("ressort_fond.webp"), spiral: img("ressort_spirale.webp"), pawl: img("ressort_cliquet.webp"), spKey: img("ressort_cle.webp"),
+         hBg: img("marteau_fond.webp"), lever: img("marteau_levier.webp"), hub: img("marteau_pivot.webp"), gears: {}};
+    for (const g of L.train.gears) I.gears[g.name] = img("train_" + g.name + ".webp");
+    // picots : répartis sur toute la circonférence, colonnes alignées sur les lames du peigne
+    const T = L.cylindre.tines; let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    pins = []; for (let i = 0; i < 120; i++) pins.push({x: T[Math.floor(rnd() * T.length)], a: rnd() * Math.PI * 2});
+  }
+  // zones des canevas (coordonnées scène)
+  const AREA = {};
+  function layoutAreas() {
+    const V = L.vitrine; AREA.win = [V[0], V[1], V[2] - V[0], V[3] - V[1]];
+    AREA.spring = [28, 420, 125, 100]; AREA.hammer = [803, 422, 128, 98]; AREA.pipes = [350, 340, 260, 100];
+    for (const [k, id] of [["win", "#cvWin"], ["spring", "#cvSpring"], ["hammer", "#cvHammer"], ["pipes", "#cvPipes"]]) {
+      const c = $(id), a = AREA[k]; Object.assign(c.style, {left: a[0] + "px", top: a[1] + "px", width: a[2] + "px", height: a[3] + "px"}); cv[k] = {c, g: c.getContext("2d"), a};
+    }
+    const sp = AREA.spring, R = L.ressort, k = 96 / R.h; place($("#hotSpring"), [sp[0] + (sp[2] - R.w * k) / 2, sp[1], sp[0] + (sp[2] + R.w * k) / 2, sp[1] + sp[3]]);
+  }
+  function resize() { const r = stageScale * Math.min(2, window.devicePixelRatio || 1); for (const k in cv) { const o = cv[k]; o.r = r; o.c.width = Math.max(2, Math.round(o.a[2] * r)); o.c.height = Math.max(2, Math.round(o.a[3] * r)); } paint(0, performance.now()); }
+  const ok = i => i && i.complete && i.naturalWidth;
+
+  function paintWindow() {
+    const {g, a, r} = cv.win, W = a[2], H = a[3]; g.setTransform(r, 0, 0, r, 0, 0); g.clearRect(0, 0, W, H);
+    // train d'engrenages, à gauche
+    const T = L.train, s = (H - 6) / T.h, tx = 8, ty = 3;
+    g.save(); g.translate(tx, ty); g.scale(s, s);
+    if (ok(I.trainBg)) g.drawImage(I.trainBg, 0, 0, T.w, T.h);
+    // ordre : les petites roues par-dessus les grandes
+    for (const gr of [...T.gears].sort((x, y) => y.w - x.w)) { const im = I.gears[gr.name]; if (!ok(im)) continue;
+      g.save(); g.translate(gr.cx, gr.cy); g.rotate((S.g * gr.speed) * Math.PI / 180); g.drawImage(im, -gr.ox, -gr.oy, gr.w, gr.h); g.restore(); }
+    g.restore();
+    // cylindre et peigne, à droite
+    const C = L.cylindre, cs = (H - 6) / C.h, cx0 = W - C.w * cs - 8;
+    g.save(); g.translate(cx0, 3); g.scale(cs, cs);
+    if (ok(I.cyl)) g.drawImage(I.cyl, 0, 0, C.w, C.h);
+    // clé du cylindre : tourne autour de l'axe horizontal
+    if (ok(I.cylKey)) { const k = C.key, sy = Math.cos(S.keyPh * 1.3); g.save(); g.translate(0, C.keyAxisY); g.scale(1, Math.abs(sy) < .08 ? .08 : sy); g.translate(0, -C.keyAxisY);
+      g.globalAlpha = .75 + .25 * Math.abs(sy); g.drawImage(I.cylKey, k[0], k[1], k[2], k[3]); g.restore(); g.globalAlpha = 1; }
+    // picots : projection sur le cylindre (seule la face avant est visible)
+    if (ok(I.pin)) { const B = C.band, cyc = (B[1] + B[3]) / 2, Rr = (B[3] - B[1]) / 2 - 1.5;
+      for (const p of pins) { const ang = p.a + S.cyl, c = Math.cos(ang); if (c < .08) continue;
+        const y = cyc + Rr * Math.sin(ang), sz = 3.2 * (.55 + .45 * c); g.globalAlpha = Math.min(1, c * 1.6); g.drawImage(I.pin, p.x - sz / 2, y - sz / 2, sz, sz); }
+      g.globalAlpha = 1; }
+    // lames du peigne qui vibrent
+    const cb = L.cylindre.comb;
+    for (let i = 0; i < C.tines.length; i++) { const v = tines[i]; if (v < .02) continue;
+      const x = C.tines[i] + Math.sin(performance.now() * .09 + i) * .5 * v; g.fillStyle = `rgba(255,236,190,${(.55 * v).toFixed(3)})`; g.fillRect(x - .9, cb[1] + 2, 1.8, (cb[3] - cb[1]) - 8); }
+    g.restore();
+  }
+  function paintSpring() {
+    const {g, a, r} = cv.spring, W = a[2], H = a[3]; g.setTransform(r, 0, 0, r, 0, 0); g.clearRect(0, 0, W, H);
+    const R = L.ressort, s = (H - 4) / R.h; g.save(); g.translate((W - R.w * s) / 2, 2); g.scale(s, s);
+    if (ok(I.spBg)) g.drawImage(I.spBg, 0, 0, R.w, R.h);
+    if (ok(I.spiral)) { g.save(); g.translate(R.cx, R.cy); g.rotate(-S.tension * Math.PI * 3.2); g.drawImage(I.spiral, -R.r, -R.r, R.r * 2, R.r * 2); g.restore(); }
+    if (ok(I.pawl)) { g.save(); const kick = S.wind > 0 ? Math.abs(Math.sin(S.keyPh * 4)) * .12 : 0; g.translate(R.cx + R.r * .62, R.cy - R.r * .5); g.rotate(-kick); g.translate(-(R.cx + R.r * .62), -(R.cy - R.r * .5)); g.drawImage(I.pawl, 0, 0, R.w, R.h); g.restore(); }
+    if (ok(I.spKey)) { const k = R.key, sx = Math.cos(S.keyPh); g.save(); g.translate(R.keyAxisX, 0); g.scale(Math.abs(sx) < .08 ? .08 : sx, 1); g.translate(-R.keyAxisX, 0);
+      g.globalAlpha = .75 + .25 * Math.abs(sx); g.drawImage(I.spKey, k[0], k[1], k[2], k[3]); g.restore(); g.globalAlpha = 1; }
+    g.restore();
+  }
+  function paintHammer() {
+    const {g, a, r} = cv.hammer, W = a[2], H = a[3]; g.setTransform(r, 0, 0, r, 0, 0); g.clearRect(0, 0, W, H);
+    const M = L.marteau, s = Math.min((W - 4) / M.w, (H - 4) / M.h); g.save(); g.translate((W - M.w * s) / 2, (H - M.h * s) / 2); g.scale(s, s);
+    if (ok(I.hBg)) g.drawImage(I.hBg, 0, 0, M.w, M.h);
+    if (ok(I.lever)) { g.save(); g.translate(M.px, M.py); g.rotate(S.hammer * Math.PI / 180); g.translate(-M.px, -M.py); g.drawImage(I.lever, 0, 0, M.w, M.h); g.restore(); }
+    if (ok(I.hub)) g.drawImage(I.hub, 0, 0, M.w, M.h);
+    // éclat de la cloche frappée
+    const flash = clamp(1 - S.hammer / 3, 0, 1) * (S.hv < 0 ? 1 : .6);
+    if (flash > .02) { const gr = g.createRadialGradient(M.bell[0], M.bell[1], 0, M.bell[0], M.bell[1], 26); gr.addColorStop(0, `rgba(255,236,170,${(.45 * flash).toFixed(3)})`); gr.addColorStop(1, "rgba(255,236,170,0)"); g.fillStyle = gr; g.fillRect(0, 0, M.w, M.h); }
+    g.restore();
+  }
+  // tuyaux : centres mesurés sur la planche
+  const PIPES = [581.5, 604.5, 627.5, 650, 672.5, 695, 718, 742, 766, 790, 814, 836.5, 859.5, 881.5, 904.5, 926.5, 949];
+  function paintPipes() {
+    const {g, a, r} = cv.pipes, W = a[2], H = a[3]; g.setTransform(r, 0, 0, r, 0, 0); g.clearRect(0, 0, W, H);
+    g.globalCompositeOperation = "lighter";
+    for (let i = 0; i < 17; i++) { const v = pipes[i]; if (v < .02) continue;
+      const x = PIPES[i] * .625 - a[0], top = (560 + Math.abs(PIPES[i] - 805) * .3) * .625 - a[1], bot = 692 * .625 - a[1];
+      const gr = g.createLinearGradient(0, top, 0, bot); gr.addColorStop(0, `rgba(255,240,190,${(.7 * v).toFixed(3)})`); gr.addColorStop(1, `rgba(255,190,80,${(.25 * v).toFixed(3)})`);
+      g.fillStyle = gr; g.fillRect(x - 6, top, 12, bot - top);
+      const halo = g.createRadialGradient(x, top, 0, x, top, 16); halo.addColorStop(0, `rgba(255,230,160,${(.5 * v).toFixed(3)})`); halo.addColorStop(1, "rgba(255,230,160,0)"); g.fillStyle = halo; g.fillRect(x - 16, top - 16, 32, 32); }
+    g.globalCompositeOperation = "source-over";
+  }
+  function paintSprites() {
+    $("#sDog").style.transform = S.dog > .001 ? `scale(${(1 + S.dog * .03).toFixed(4)},${(1 + S.dog * .045).toFixed(4)})` : "";
+    const kc = Math.cos(S.keyPh); $("#sKey").style.transform = `scaleX(${(Math.abs(kc) < .1 ? .1 : kc).toFixed(3)})`;
+    $("#sBellL").style.transform = S.bellL ? `rotate(${S.bellL.toFixed(2)}deg)` : ""; $("#sBellR").style.transform = S.bellR ? `rotate(${S.bellR.toFixed(2)}deg)` : "";
+    $("#tbar i").style.width = (S.tension * 100).toFixed(1) + "%";
+  }
+  function paint(dt, t) { if (!I || !cv.win) return; paintWindow(); paintSpring(); paintHammer(); paintPipes(); paintSprites(); }
+
+  function wake() {
+    idle = performance.now();
+    if (prefs.visual === "statique") { if (running) running = false; S.tension = fbk.t; paint(0, performance.now()); return; }
+    if (!running && !document.hidden) { running = true; last = performance.now(); requestAnimationFrame(frame); }
+  }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) wake(); });
+  function frame(t) {
+    if (!running) return;
+    const reduit = prefs.visual === "reduit", minDt = reduit ? 1 / 31 : 0, dt = Math.min(.05, (t - last) / 1000);
+    if (dt < minDt - .002) { requestAnimationFrame(frame); return; }
+    last = t; const t0 = performance.now(), amt = reduit ? .6 : 1;
+    // moteur du jouet : tourne pendant le jeu, plus lentement quand le ressort est détendu
+    const playing = fbk.e > .01 || fbk.k > 0 || S.nudge > 0;
+    const springMul = P.springOn ? .45 + .55 * fbk.t : 1;
+    const target = playing ? (25 + 70 * Math.min(1, fbk.e * 1.4)) * springMul : 0;
+    S.gv += (target - S.gv) * Math.min(1, dt * (target > S.gv ? 4 : 1.6));
+    // échappement : chaque tic fait avancer le train d'un cran (amorti)
+    const stepNow = S.step * Math.min(1, dt * 14); S.step -= stepNow;
+    S.g += S.gv * dt + stepNow; S.cyl += (S.gv * dt + stepNow) * .035;
+    S.nudge = Math.max(0, S.nudge - dt);
+    // ressort et clés
+    const prevT = S.tension; S.tension += (fbk.t - S.tension) * Math.min(1, dt * 10);
+    const dT = S.tension - prevT;
+    S.keyPh += dT * 34 + (S.wind > 0 ? dt * 9 : 0) * amt; S.wind = Math.max(0, S.wind - dt);
+    // marteau (ressort amorti, repos à 7°)
+    S.hv += (-140 * (S.hammer - 7) - 11 * S.hv) * dt; S.hammer += S.hv * dt; if (S.hammer < 0) { S.hammer = 0; S.hv = Math.abs(S.hv) * .25; }
+    // chien batteur et clochettes
+    S.dv += (-260 * S.dog - 14 * S.dv) * dt; S.dog += S.dv * dt;
+    S.bvL += (-90 * S.bellL - 2.2 * S.bvL) * dt; S.bellL += S.bvL * dt; S.bvR += (-90 * S.bellR - 2.2 * S.bvR) * dt; S.bellR += S.bvR * dt;
+    for (let i = 0; i < 17; i++) pipes[i] *= Math.exp(-dt * 3.2);
+    for (let i = 0; i < tines.length; i++) tines[i] *= Math.exp(-dt * 4);
+    paint(dt, t);
+    perf.sample(performance.now() - t0);
+    const quiet = !playing && Math.abs(S.gv) < .05 && Math.abs(S.step) < .01 && Math.abs(S.hv) < .05 && Math.abs(S.hammer - 7) < .05 && Math.abs(S.dog) < .002 && Math.abs(S.dv) < .01
+      && Math.abs(S.bellL) + Math.abs(S.bellR) < .03 && Math.abs(fbk.t - S.tension) < .002 && S.wind <= 0 && pipes.every(v => v < .02) && tines.every(v => v < .02);
+    if ((quiet && t - idle > 1000) || document.hidden) { running = false; perf.idle(); return; }
+    if (!quiet) idle = t;
+    requestAnimationFrame(frame);
+  }
+  const instNow = () => Math.round(P.inst);
+  function note(n, v, local) {
+    if (prefs.visual === "statique") return;
+    const amt = prefs.visual === "reduit" ? .6 : 1;
+    pipes[((n % 17) + 17) % 17] = Math.max(pipes[((n % 17) + 17) % 17], .6 + .4 * v);
+    const T = L.cylindre.tines.length; tines[((n - 36) % T + T) % T] = 1;
+    S.hv -= (60 + 90 * v) * amt;                                       // le marteau frappe
+    if (instNow() === 2) { if (S.bellSide ^= 1) S.bvL += 26 * v * amt; else S.bvR -= 26 * v * amt; }
+    if (instNow() === 4) S.dv += 3.2 * v * amt;
+    S.step += 9 * amt; S.nudge = .25;
+    if (!local) { keyVis(n, true); clearTimeout(keysFlash.get(n)); keysFlash.set(n, setTimeout(() => keyVis(n, false), 140)); }
+    wake();
+  }
+  function tick(k) { if (prefs.visual === "statique") return; S.step += 7; S.dv += (k % 2 ? 1.6 : 2.4) * (prefs.visual === "reduit" ? .6 : 1); wake(); }
+  function windStart() { S.wind = .8; wake(); }
+  function dogHop() { S.dv += 2; S.nudge = .4; wake(); }
+  return {wake, resize, note, tick, windStart, dogHop, nudge() { S.nudge = Math.max(S.nudge, .2); wake(); }, init() { loadImgs(); layoutAreas(); }, S};
+})();
+const perf = (() => { let on = false, n = 0, sum = 0, t0 = performance.now(); const el = $("#perf"), log = [];
+  return {log, toggle() { on = !on; el.style.display = on ? "block" : "none"; },
+    sample(ms) { log.push(ms); if (log.length > 20000) log.shift(); n++; sum += ms; const now = performance.now();
+      if (now - t0 > 1000) { if (on) el.textContent = `${Math.round(n * 1000 / (now - t0))} i/s · rendu ${(sum / n).toFixed(2)} ms\nmode ${prefs.visual}`; n = 0; sum = 0; t0 = now; } },
+    idle() { if (on) el.textContent = "rendu suspendu (au repos)"; } }; })();
+
+// =============================================================================
+// Aperçu sans plugin : synthé WebAudio approximatif (son indicatif seulement)
+// =============================================================================
+const synth = (() => {
+  let ac = null, out, an, buf, hits = 0, ticks = 0, winds = 0, tension = 1, lastT = 0, rev, revG, beat = 0; const vs = new Map();
+  const PART = [[[1,1,1],[1.0021,.38,.9],[3,.16,.25],[5.93,.25,.06]], [[1,1,.8],[3.01,.35,.28],[5.41,.2,.12]], [[1,1,1.7],[2,.5,1.1],[2.76,.42,.8],[4.07,.3,.45]]];
+  function init() { if (ac) return; ac = new (window.AudioContext || window.webkitAudioContext)(); out = ac.createGain(); out.connect(ac.destination);
+    rev = ac.createConvolver(); const len = ac.sampleRate * 2, ir = ac.createBuffer(2, len, ac.sampleRate);
+    for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 4); }
+    rev.buffer = ir; revG = ac.createGain(); revG.connect(rev); rev.connect(out);
+    an = ac.createAnalyser(); an.fftSize = 512; out.connect(an); buf = new Float32Array(512); lastT = ac.currentTime; poll(); }
+  function click(f, amp, t) { const n = ac.createBufferSource(), b = ac.createBuffer(1, 800, ac.sampleRate), d = b.getChannelData(0); for (let i = 0; i < 800; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / 60);
+    n.buffer = b; const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = f; bp.Q.value = 8; const g = ac.createGain(); g.gain.value = amp; n.connect(bp); bp.connect(g); g.connect(out); n.start(t || ac.currentTime); }
+  function noteOn(n, v) { init(); const t = ac.currentTime, m = Math.round(P.inst), droop = P.springOn ? -70 * Math.pow(1 - tension, 1.5) : 0;
+    const f = 440 * Math.pow(2, (n + P.tune - 69 + droop / 100) / 12), g = ac.createGain(), lv = Math.pow(10, P.level / 20) * .18 * (.4 + .6 * v), oscs = [];
+    g.connect(out); const sg = ac.createGain(); sg.gain.value = P.space; g.connect(sg); sg.connect(revG);
+    if (m <= 2) { for (const [r, a, d] of PART[m]) { const o = ac.createOscillator(), og = ac.createGain(); o.frequency.value = f * r; og.gain.setValueAtTime(a * lv, t); og.gain.setTargetAtTime(0, t, P.decay / 1000 * d / 5); o.connect(og); og.connect(g); o.start(t); o.stop(t + P.decay / 1000 * d * 2 + .1); oscs.push(o); } g.gain.value = 1; }
+    else if (m === 3) { const o = ac.createOscillator(); o.type = "square"; o.frequency.value = f; const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1300; bp.Q.value = 2; o.connect(bp); bp.connect(g);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(lv * 1.5, t + Math.max(.005, P.attack / 1000)); g.gain.setTargetAtTime(lv * 1.5 * P.sustain, t + .05, P.decay / 4000); o.start(t); oscs.push(o); }
+    else { click(200 + (n % 12) * 300, lv * 6); }
+    click(3800, .05 * P.meca * v); vs.set(n, {g, oscs, m}); hits++; }
+  function noteOff(n) { const v = vs.get(n); if (!v) return; const t = ac.currentTime; v.g.gain.cancelScheduledValues(t); v.g.gain.setValueAtTime(v.g.gain.value, t); v.g.gain.setTargetAtTime(0, t, P.release / 5000); v.oscs.forEach(o => { try { o.stop(t + P.release / 1000 + .1); } catch (e) {} }); vs.delete(n); }
+  function wind() { init(); winds++; for (let i = 0; i < 12; i++) click(2900, .12, ac.currentTime + i * .055); const st = tension, t0 = performance.now(); const up = () => { tension = Math.min(1, st + (performance.now() - t0) / 700); if (tension < 1) requestAnimationFrame(up); }; up(); }
+  function poll() { an.getFloatTimeDomainData(buf); let pk = 0; for (const x of buf) pk = Math.max(pk, Math.abs(x));
+    const now = ac.currentTime, dt = now - lastT; lastT = now;
+    if (P.springOn && (vs.size > 0 || pk > .01)) tension = Math.max(0, tension - dt / P.springTime);
+    if (P.tickOn && (vs.size > 0 || pk > .01)) { const div = [1, .5, .25, 1 / 3][Math.round(P.tickDiv)], nb = beat + dt * 2 * (P.springOn ? .55 + .45 * tension : 1);
+      if (Math.floor(nb / div) !== Math.floor(beat / div)) { ticks++; click(ticks % 2 ? 2100 : 3150, .25 * P.tickLevel); } beat = nb; }
+    onFb({e: Math.min(1, pk * 1.8), h: hits, k: vs.size, v: vs.size, t: tension, tk: ticks, w: winds, b: beat % 1, vel: .8}); setTimeout(poll, 33); }
+  return {noteOn, noteOff, wind};
+})();
+
+if (!NATIVE) window.SHK_TEST = {feed: onFb, fbk, perf, setPref, prefs, P, loadPreset, setParam, anim, get current() { return current; }};
+
+async function boot() {
+  L = window.WD_LAYOUT || await (await fetch(ASSET("layout.json"))).json();
+  build(); anim.init(); fit();
+  if (NATIVE) {
+    const st = await call("getState"); presets = st.presets || []; if (st.banks) BANKS = st.banks;
+    applyState(st); showPreset();
+    window.__JUCE__.backend.addEventListener("params", o => { for (const k in o) setParam(k, o[k], true); });
+    window.__JUCE__.backend.addEventListener("preset", i => { current = i; showPreset(); });
+    window.__JUCE__.backend.addEventListener("fb", onFb);
+  } else {
+    const f = window.WD_FACTORY || {}; presets = f.presets || []; if (f.banks) BANKS = f.banks;
+    if (presets.length) await loadPreset(0);
+    $("#hint").textContent = "Aperçu · son approximatif · touches A à K (Z / X : octave) · clé : remonter · F2 : mesures";
+  }
+  applyPrefs(); anim.wake("boot");
+}
+boot();
+</script>
+</body>
+</html>

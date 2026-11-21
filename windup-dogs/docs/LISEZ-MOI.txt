@@ -1,0 +1,21 @@
+WINDUP DOGS — Room Labs Audio
+Instruments jouets mécaniques (VST3 / AU / application autonome)
+
+Les musiciens (puits de gauche)
+- Boîte (chien qui court) : boîte à musique, lames d'acier pincées par les picots du cylindre.
+- Piano (chef d'orchestre) : piano jouet, tiges frappées.
+- Cloches : clochettes (aussi en cliquant les cloches en haut de la console).
+- Fanfare (trompettiste) : trompette jouet, nasillarde, avec vibrato.
+- Tambour (batteur) : une percussion jouet par touche (tambour en fer-blanc, bloc de bois, tom, crécelle, cymbale, castagnettes, triangle, cloche, ressort « boing », grosse caisse, hochet, couinement).
+- 8 presets par musicien ; flèches du couvercle pour passer de l'un à l'autre ; cliquer le nom pour la liste.
+
+Le mécanisme
+- Clé (en haut), bouton rouge ou ressort (en bas à gauche) : remonter le jouet (bruit de cliquet).
+- Bouton vert : le ressort se détend pendant le jeu ; le son baisse doucement et tremble quand il est presque détendu.
+- Bouton crème : tic-tac calé sur le tempo de l'hôte (division sur la plaque, swing et volume dans les réglages et la molette TIC-TAC).
+
+Curseurs : TONE (filtre), MÉCA (bruits mécaniques), WOBBLE (pleurage).
+Molettes : ÉCHO (au tempo, croche pointée), ESPACE (réverbération), TIC-TAC (volume), NIVEAU.
+Médaillon en bas à droite : réglages (résonance, attaque, tenue de la fanfare, relâchement, couleur, accordage, swing, durée du ressort, animation, taille).
+
+Jouer sans clavier MIDI : touches A W S E D F T G Y H U J K, Z / X pour l'octave, ou les touches de la console.

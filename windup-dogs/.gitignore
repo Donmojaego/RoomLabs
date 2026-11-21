@@ -1,0 +1,7 @@
+build/
+build-*/
+out/
+installer/windows/output/
+.DS_Store
+*.user
+.vs/
