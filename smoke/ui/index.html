@@ -52,7 +52,7 @@ body.vert #bg,body.vert .tint{filter:hue-rotate(112deg) saturate(.8)}
 
 /* scène : yeux, joint, fumée */
 #eyes{left:290px;top:84px;width:420px;height:200px;will-change:filter}
-#eyes img{position:absolute;left:0;width:420px;top:50%;transform:translateY(-50%)}
+#eyes img{position:absolute;left:0;width:420px;top:50%;transform:translateY(-50%);-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 62%,transparent 100%)}
 #eyesRed{opacity:0}
 #haze{left:250px;top:70px;width:500px;height:240px;border-radius:50%;background:radial-gradient(ellipse,rgba(255,200,190,.22),rgba(255,200,190,0) 70%);opacity:0;pointer-events:none}
 body.bleu #haze{background:radial-gradient(ellipse,rgba(190,220,255,.22),rgba(190,220,255,0) 70%)}
@@ -60,6 +60,7 @@ body.vert #haze{background:radial-gradient(ellipse,rgba(190,255,215,.22),rgba(19
 #joint{pointer-events:none}
 #ember{width:70px;height:70px;margin:-35px 0 0 -35px;border-radius:50%;background:radial-gradient(circle,rgba(255,220,160,1) 0,rgba(255,120,40,.85) 22%,rgba(255,60,20,.35) 48%,rgba(255,40,10,0) 72%);mix-blend-mode:screen;opacity:.3;pointer-events:none;will-change:opacity,transform}
 #fx{left:230px;top:60px;width:540px;height:530px;pointer-events:none}
+#smoke{left:0;top:0;width:1000px;height:640px;pointer-events:none}
 
 /* molettes */
 .knob{cursor:ns-resize;touch-action:none}
@@ -109,8 +110,9 @@ body.vert #haze{background:radial-gradient(ellipse,rgba(190,255,215,.22),rgba(19
   <div id="shade" class="abs"></div>
 
   <div id="haze" class="abs"></div>
-  <div id="eyes" class="abs"><img id="eyesN" data-src="yeux_normaux.webp" alt=""><img id="eyesRed" data-src="yeux_rouges.webp" alt=""></div>
+  <div id="eyes" class="abs"><img id="eyesN" alt=""><img id="eyesRed" alt=""></div>
   <img id="joint" class="abs" alt="">
+  <canvas id="smoke" class="abs"></canvas>
   <canvas id="fx" class="abs"></canvas>
   <div id="ember" class="abs"></div>
 
@@ -175,9 +177,10 @@ const fromN = (k, n) => { const d = PDEF[k]; return d.min + (d.max - d.min) * Ma
 let presets = [], current = 0, bank = 0, BANKS = ["Keys","Rhodes","Risers","Sub"];
 const prefs = Object.assign({theme:"prune", zoom:100, visual:"anime"}, initPrefs);
 const NOTE = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
-const THEME = {prune:{logo:"logo_prune.webp", joint:"joint_papier.webp", smoke:"fumee_prune.webp", tip:[.955,.07], ar:708 / 900},
-               bleu: {logo:"logo_bleu.webp",  joint:"joint_woodback.webp", smoke:"fumee_bleu.webp", tip:[.93,.09], ar:546 / 900},
-               vert: {logo:"logo_vert.webp",  joint:"joint_vert.webp", smoke:"fumee_vert.webp", tip:[.96,.05], ar:835 / 900}};
+const FACE_WIDE = {n:"yeux_normaux.webp", r:"yeux_rouges.webp", box:[290, 84, 420, 200]};
+const THEME = {prune:{logo:"logo_prune.webp", joint:"joint_papier.webp", smoke:"fumee_prune.webp", tip:[.955,.07], ar:708 / 900, face:FACE_WIDE},
+               bleu: {logo:"logo_bleu.webp",  joint:"joint_woodback.webp", smoke:"fumee_bleu.webp", tip:[.93,.09], ar:546 / 900, face:{n:"visage_bleu.webp", r:"visage_bleu_intense.webp", box:[345, 70, 310, 284]}},
+               vert: {logo:"logo_vert.webp",  joint:"joint_vert.webp", smoke:"fumee_vert.webp", tip:[.96,.05], ar:835 / 900, face:{n:"visage_vert.webp", r:"visage_vert_intense.webp", box:[345, 70, 310, 284]}}};
 const TIP = [585, 338];        // position fixe de la braise sur la scène (le joint s'aligne dessus)
 let stageScale = 1;
 const fit = () => { stageScale = Math.min(innerWidth / 1000, innerHeight / 640); $("#stage").style.transform = `scale(${stageScale})`; fx.resize(); };
@@ -205,9 +208,11 @@ function knob(id, x, y, size, img) {
   const ptr = el.querySelector(".ptr"), ring = el.querySelector(".ring"), kv = el.querySelector(".kv");
   ui[id] = v => { const n = toN(id, v), a = -a0 + sweep * n; ptr.setAttribute("transform", `rotate(${a.toFixed(1)} 60 60)`); ring.setAttribute("d", n > .002 ? arc(-a0, a) : ""); kv.textContent = PDEF[id].fmt(v); };
   let sy = 0, sn = 0;
-  el.addEventListener("pointerdown", e => { el.setPointerCapture(e.pointerId); sy = e.clientY; sn = toN(id, P[id]); gesture(id, true); });
+  let moved = 0;
+  el.addEventListener("pointerdown", e => { el.setPointerCapture(e.pointerId); sy = e.clientY; sn = toN(id, P[id]); gesture(id, true); smokeAt(el, .7, 8); });
   el.addEventListener("pointermove", e => { if (!el.hasPointerCapture(e.pointerId)) return;
-    const k = (e.shiftKey ? .0012 : .0055) / stageScale; sn = clamp(sn + (sy - e.clientY) * k, 0, 1); sy = e.clientY; setParam(id, fromN(id, sn)); });
+    const k = (e.shiftKey ? .0012 : .0055) / stageScale; moved += Math.abs(sy - e.clientY); sn = clamp(sn + (sy - e.clientY) * k, 0, 1); sy = e.clientY; setParam(id, fromN(id, sn));
+    if (moved > 18) { moved = 0; smokeAt(el, .35 + .4 * toN(id, P[id]), 8); } });
   const end = e => { if (el.hasPointerCapture(e.pointerId)) { el.releasePointerCapture(e.pointerId); gesture(id, false); } };
   el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
   el.addEventListener("dblclick", () => { gesture(id, true); setParam(id, PDEF[id].def); gesture(id, false); });
@@ -249,10 +254,10 @@ function build() {
   const bimg = ["btn_keys.webp","btn_rhodes.webp","btn_risers.webp","btn_sub.webp"];
   BANKS.forEach((b, i) => { const el = document.createElement("div"); el.className = "abs bank"; el.dataset.i = i; el.style.top = 86 + i * 94 + "px";
     el.innerHTML = `<img class="lo tint" src="${ASSET(bimg[i] === "btn_risers.webp" ? "btn_keys.webp" : bimg[i])}" alt=""><img class="hi tint" src="${ASSET("btn_risers.webp")}" alt=""><b>${b.toUpperCase()}</b>`;
-    el.addEventListener("click", () => selectBank(i, true)); $("#banks").appendChild(el); });
+    el.addEventListener("click", () => { selectBank(i, true); smokeAt(el, .9, 10); }); $("#banks").appendChild(el); });
   // accords
   const g = $("#chords .grid"); CHORDS.forEach((c, i) => { const el = document.createElement("div"); el.className = "chip"; el.dataset.i = i; el.textContent = c;
-    el.addEventListener("click", () => { gesture("chord", true); setParam("chord", i); gesture("chord", false); }); g.appendChild(el); });
+    el.addEventListener("click", () => { gesture("chord", true); setParam("chord", i); gesture("chord", false); smokeAt(el, .5, 4); }); g.appendChild(el); });
   ui.chord = v => $$("#chords .chip").forEach(c => c.classList.toggle("on", +c.dataset.i === Math.round(v)));
   // molettes : MOD en grand, les quatre autres autour
   knob("mod", 868, 178, 168, "knob_tone.webp");
@@ -272,7 +277,7 @@ function build() {
   let held = null;
   const keyAt = e => { const t = document.elementFromPoint(e.clientX, e.clientY); return t && t.dataset && t.dataset.n ? t : null; };
   const vel = (e, el) => { const r = el.getBoundingClientRect(); return clamp(.35 + .65 * (e.clientY - r.top) / r.height, .2, 1); };
-  kb.addEventListener("pointerdown", e => { kb.setPointerCapture(e.pointerId); const k = keyAt(e); if (k) { held = k; noteOn(+k.dataset.n, vel(e, k)); } });
+  kb.addEventListener("pointerdown", e => { kb.setPointerCapture(e.pointerId); const k = keyAt(e); if (k) { held = k; noteOn(+k.dataset.n, vel(e, k)); smokeAt(k, .3 + .5 * vel(e, k), 2); } });
   kb.addEventListener("pointermove", e => { if (!kb.hasPointerCapture(e.pointerId)) return; const k = keyAt(e); if (k && k !== held) { if (held) noteOff(+held.dataset.n); held = k; noteOn(+k.dataset.n, vel(e, k)); } });
   const up = e => { if (kb.hasPointerCapture(e.pointerId)) kb.releasePointerCapture(e.pointerId); if (held) noteOff(+held.dataset.n); held = null; };
   kb.addEventListener("pointerup", up); kb.addEventListener("pointercancel", up);
@@ -324,10 +329,13 @@ function applyPrefs() {
   const th = THEME[prefs.theme] ? prefs.theme : "prune", T = THEME[th];
   document.body.className = th;
   $("#logo").src = ASSET(T.logo);
+  const F = T.face, [fl, ft, fw, fh] = F.box; Object.assign($("#eyes").style, {left: fl + "px", top: ft + "px", width: fw + "px", height: fh + "px"});
+  $("#eyesN").src = ASSET(F.n); $("#eyesRed").src = ASSET(F.r); $$("#eyes img").forEach(i => i.style.width = fw + "px");
+  Object.assign($("#haze").style, {left: fl - 40 + "px", top: ft - 14 + "px", width: fw + 80 + "px", height: fh + 28 + "px"});
   const j = $("#joint"), w = 330, h = w * T.ar; j.src = ASSET(T.joint);
   Object.assign(j.style, {width: w + "px", height: h + "px", left: TIP[0] - T.tip[0] * w + "px", top: TIP[1] - T.tip[1] * h + "px"});
   Object.assign($("#ember").style, {left: TIP[0] + "px", top: TIP[1] + "px"});
-  fx.setSprite(ASSET(T.smoke));
+  fx.setSprite(ASSET(T.smoke), th);
   $$("#pPrefs .seg").forEach(s => s.querySelectorAll(".chip").forEach(c => c.classList.toggle("on", String(prefs[s.dataset.pref]) === c.dataset.val)));
   $("#bPow").classList.toggle("on", prefs.visual !== "statique"); $("#bPow").classList.toggle("off", prefs.visual === "statique");
   anim.wake("prefs");
@@ -360,15 +368,16 @@ function onFb(m) { const ph = fbk.h; Object.assign(fbk, m); fbk.at = performance
 // =============================================================================
 // Fumée : sprites de la maquette sur un canevas basse résolution (lissé par le navigateur)
 // =============================================================================
-const fx = (() => {
+const fxSprite = (() => {
   const cv = $("#fx"), g = cv.getContext("2d"), parts = [], W = 540, H = 530, ox = 230, oy = 60;
   let res = .6, spr = null, sprW = 0, sprH = 0, last = "";
   function resize() { const r = res * stageScale * (window.devicePixelRatio || 1); cv.width = Math.max(1, Math.round(W * r)); cv.height = Math.max(1, Math.round(H * r)); }
   function setSprite(src) { if (src === last) return; last = src; const im = new Image();
     im.onload = () => { const c = document.createElement("canvas"); c.width = 64; c.height = Math.round(64 * im.height / im.width); c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); spr = c; sprW = c.width; sprH = c.height; };
     im.src = src; }
-  function add(size, vy, alpha) {
-    parts.push({x: TIP[0] - ox + (Math.random() - .5) * 4, y: TIP[1] - oy - 6, vx: 6 + Math.random() * 10, vy: -(vy + Math.random() * 14), life: 0, max: 2.6 + Math.random() * 1.6,
+  function add(size, vy, alpha, at) {
+    const o = at || [TIP[0], TIP[1] - 6];
+    parts.push({x: o[0] - ox + (Math.random() - .5) * 4, y: o[1] - oy, vx: 6 + Math.random() * 10, vy: -(vy + Math.random() * 14), life: 0, max: 2.6 + Math.random() * 1.6,
       s: size * (.8 + Math.random() * .4), a: alpha, rot: (Math.random() - .5) * .6, vr: (Math.random() - .5) * .5, ph: Math.random() * 6, flip: Math.random() < .5 ? -1 : 1});
   }
   let acc = 0;
@@ -390,8 +399,162 @@ const fx = (() => {
   }
   const busy = () => parts.length > 0;
   function clear() { parts.length = 0; acc = 0; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); }
-  return {resize, setSprite, step, puff, busy, clear, setRes(v) { res = v; resize(); }, get count() { return parts.length; }};
+  function puffAt(x, y, v) { if (x < ox || x > ox + W) return; for (let i = 0; i < 2; i++) add(22 + 26 * v, 26 + 20 * v, .3 + .3 * v, [x, y]); }
+  return {resize, setSprite, step, puff, puffAt, busy, clear, setRes(v) { res = v; resize(); }, get count() { return parts.length; }};
 })();
+// =============================================================================
+// Fumée réelle : simulation de fluide sur la carte graphique (WebGL 2).
+// Vitesse + densité advectées, flottaison, confinement de tourbillons, projection
+// (pression). La fumée sort de la braise quand on joue, des commandes quand on les
+// touche, puis continue à flotter et se dissipe dans l'air sur tout le plugin.
+// Sans WebGL 2 : volutes en images (fxSprite).
+// =============================================================================
+const smokeGL = (() => {
+  const cv = $("#smoke");
+  const gl = cv.getContext("webgl2", {alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: false});
+  if (!gl || !gl.getExtension("EXT_color_buffer_float")) { cv.style.display = "none"; return null; }
+  gl.getExtension("OES_texture_float_linear");
+  const SW = 1000, SH = 640, ASPECT = SW / SH;
+  const VS = `#version 300 es
+in vec2 aPos; uniform vec2 texel; out vec2 vUv, vL, vR, vT, vB;
+void main() { vUv = aPos * .5 + .5; vL = vUv - vec2(texel.x, 0.); vR = vUv + vec2(texel.x, 0.); vT = vUv + vec2(0., texel.y); vB = vUv - vec2(0., texel.y); gl_Position = vec4(aPos, 0., 1.); }`;
+  const H = `#version 300 es
+precision highp float; precision highp sampler2D; in vec2 vUv, vL, vR, vT, vB; out vec4 o;`;
+  const FS = {
+    splat: `${H} uniform sampler2D uT; uniform float aspect, radius; uniform vec3 color; uniform vec2 point;
+      void main() { vec2 p = vUv - point; p.x *= aspect; vec3 s = exp(-dot(p, p) / radius) * color; o = vec4(texture(uT, vUv).xyz + s, 1.); }`,
+    advect: `${H} uniform sampler2D uV, uS; uniform vec2 simTexel; uniform float dt, dissipation;
+      void main() { vec2 c = vUv - dt * texture(uV, vUv).xy * simTexel; o = texture(uS, c) / (1. + dissipation * dt); }`,
+    buoy: `${H} uniform sampler2D uV, uD; uniform float dt, lift, time;
+      void main() { vec2 v = texture(uV, vUv).xy; float d = texture(uD, vUv).r;
+        // flottaison + léger vent qui ondule (la fumée ne monte pas en ligne droite)
+        float w = sin(vUv.y * 9. + time * .7) * .6 + sin(vUv.y * 23. - time * 1.3) * .4;
+        o = vec4(v + vec2(w * 6. * d, lift * d) * dt, 0., 1.); }`,
+    curl: `${H} uniform sampler2D uV;
+      void main() { o = vec4(.5 * (texture(uV, vR).y - texture(uV, vL).y - texture(uV, vT).x + texture(uV, vB).x), 0., 0., 1.); }`,
+    vort: `${H} uniform sampler2D uV, uC; uniform float curl, dt;
+      void main() { float L = texture(uC, vL).x, R = texture(uC, vR).x, T = texture(uC, vT).x, B = texture(uC, vB).x, C = texture(uC, vUv).x;
+        vec2 f = .5 * vec2(abs(T) - abs(B), abs(R) - abs(L)); f /= length(f) + .0001; f *= curl * C; f.y *= -1.;
+        o = vec4(clamp(texture(uV, vUv).xy + f * dt, -1000., 1000.), 0., 1.); }`,
+    div: `${H} uniform sampler2D uV;
+      void main() { float L = texture(uV, vL).x, R = texture(uV, vR).x, T = texture(uV, vT).y, B = texture(uV, vB).y; vec2 C = texture(uV, vUv).xy;
+        if (vL.x < 0.) L = -C.x; if (vR.x > 1.) R = -C.x; if (vB.y < 0.) B = -C.y;
+        o = vec4(.5 * (R - L + T - B), 0., 0., 1.); }`,
+    scale: `${H} uniform sampler2D uT; uniform float value; void main() { o = value * texture(uT, vUv); }`,
+    press: `${H} uniform sampler2D uP, uDiv;
+      void main() { o = vec4((texture(uP, vL).x + texture(uP, vR).x + texture(uP, vB).x + texture(uP, vT).x - texture(uDiv, vUv).x) * .25, 0., 0., 1.); }`,
+    grad: `${H} uniform sampler2D uP, uV;
+      void main() { vec2 v = texture(uV, vUv).xy - vec2(texture(uP, vR).x - texture(uP, vL).x, texture(uP, vT).x - texture(uP, vB).x); o = vec4(v, 0., 1.); }`,
+    show: `${H} uniform sampler2D uD; uniform vec3 tint, warm; uniform vec2 tip; uniform float fade, aspect;
+      void main() { float d = texture(uD, vUv).r; float a = (1. - exp(-d * 2.2)) * .9 * fade;
+        // près de la braise, la fumée est éclairée en chaud ; plus haut, elle prend la couleur du thème
+        vec2 p = vUv - tip; p.x *= aspect; float glow = exp(-dot(p, p) * 90.);
+        vec3 c = mix(tint, warm, glow * .8) * (.78 + .22 * clamp(d, 0., 1.));
+        o = vec4(c * a, a); }`,
+  };
+  function compile(type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+  const vs = compile(gl.VERTEX_SHADER, VS), progs = {};
+  try {
+    for (const k in FS) { const p = gl.createProgram(); gl.attachShader(p, vs); gl.attachShader(p, compile(gl.FRAGMENT_SHADER, FS[k])); gl.bindAttribLocation(p, 0, "aPos"); gl.linkProgram(p);
+      if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+      const u = {}; const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS); for (let i = 0; i < n; i++) { const nm = gl.getActiveUniform(p, i).name; u[nm] = gl.getUniformLocation(p, nm); }
+      progs[k] = {p, u}; }
+  } catch (err) { console.warn("Fumée WebGL indisponible :", err); cv.style.display = "none"; return null; }
+  const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+  function target(w, h, ifmt, fmt) {
+    const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texImage2D(gl.TEXTURE_2D, 0, ifmt, w, h, 0, fmt, gl.HALF_FLOAT, null);
+    const fb = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, fb); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+    gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+    return {t, fb, w, h, tx: [1 / w, 1 / h]};
+  }
+  const dbl = (w, h, i, f) => { let a = target(w, h, i, f), b = target(w, h, i, f); return {get r() { return a; }, get w() { return b; }, swap() { [a, b] = [b, a]; }, width: w, height: h, tx: a.tx}; };
+  let vel, dye, divT, curlT, pres, simW = 0, dyeW = 0;
+  function alloc(sim, dyeRes) {
+    if (sim === simW && dyeRes === dyeW) return; simW = sim; dyeW = dyeRes;
+    const sh = Math.round(sim / ASPECT), dh = Math.round(dyeRes / ASPECT);
+    vel = dbl(sim, sh, gl.RG16F, gl.RG); pres = dbl(sim, sh, gl.R16F, gl.RED); dye = dbl(dyeRes, dh, gl.R16F, gl.RED);
+    divT = target(sim, sh, gl.R16F, gl.RED); curlT = target(sim, sh, gl.R16F, gl.RED);
+  }
+  function run(pr, out, texel, uniforms) {
+    gl.useProgram(pr.p); gl.uniform2fv(pr.u.texel, texel); let unit = 0;
+    for (const k in uniforms) { const v = uniforms[k], loc = pr.u[k]; if (loc === undefined) continue;
+      if (v && v.t) { gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, v.t); gl.uniform1i(loc, unit++); }
+      else if (Array.isArray(v)) (v.length === 2 ? gl.uniform2fv : gl.uniform3fv).call(gl, loc, v); else gl.uniform1f(loc, v); }
+    if (out) { gl.bindFramebuffer(gl.FRAMEBUFFER, out.fb); gl.viewport(0, 0, out.w, out.h); } else { gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, cv.width, cv.height); }
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+  // ---- émissions en attente (appliquées au début de chaque image)
+  const pending = []; let lastEmit = -1e9, res = 1, tint = [.93, .84, .84], warm = [1, .72, .5];
+  const uv = (x, y) => [x / SW, 1 - y / SH];
+  function splat(x, y, dx, dy, dens, radius) { const k = simW / SW; pending.push([x, y, dx * k, dy * k, dens, radius]); lastEmit = performance.now(); }
+  function applySplats() {
+    for (const [x, y, dx, dy, dens, r] of pending) {
+      const p = uv(x, y), rad = r / 100 * .0022;
+      run(progs.splat, vel.w, vel.tx, {uT: vel.r, aspect: ASPECT, radius: rad, color: [dx, -dy, 0], point: p}); vel.swap();
+      run(progs.splat, dye.w, dye.tx, {uT: dye.r, aspect: ASPECT, radius: rad * .7, color: [dens, 0, 0], point: p}); dye.swap();
+    }
+    pending.length = 0;
+  }
+  // ---- sources : la braise (en continu quand on joue), bouffées sur chaque note et sur les commandes
+  let acc = 0, phase = Math.random() * 100;
+  function emitTip(strength, dt) {
+    acc += dt * 40; phase += dt;
+    while (acc >= 1) { acc -= 1;
+      const ang = -1.25 + Math.sin(phase * 1.7) * .35 + (Math.random() - .5) * .5;     // vers le haut, un peu vers la droite, qui oscille
+      const sp = 70 + 90 * strength;
+      splat(TIP[0] + 3, TIP[1] - 4, Math.cos(ang) * sp + 25, Math.sin(ang) * sp, .2 + .35 * strength, 8 + 7 * strength); }
+  }
+  function puff(v) { for (let i = 0; i < 3; i++) { const ang = -1.35 + (Math.random() - .5) * .9, sp = 140 + 260 * v;
+    splat(TIP[0] + 2, TIP[1] - 5, Math.cos(ang) * sp + 30, Math.sin(ang) * sp, .6 + .9 * v, 14 + 14 * v); } }
+  function puffAt(x, y, s) { for (let i = 0; i < 2; i++) { const ang = -Math.PI / 2 + (Math.random() - .5) * 1.2, sp = 90 + 140 * s;
+    splat(x + (Math.random() - .5) * 14, y, Math.cos(ang) * sp, Math.sin(ang) * sp, .35 + .6 * s, 14 + 12 * s); } }
+  function resize() { const r = res * stageScale * Math.min(2, window.devicePixelRatio || 1); cv.width = Math.max(2, Math.round(SW * r)); cv.height = Math.max(2, Math.round(SH * r)); }
+  function setRes(v) { res = v > .5 ? .75 : .5; alloc(v > .5 ? 160 : 112, v > .5 ? 384 : 256); resize(); }
+  const COL = {prune: [[.95, .85, .86], [1, .7, .5]], bleu: [[.78, .87, 1], [1, .75, .55]], vert: [[.8, 1, .88], [1, .78, .5]]};
+  function setSprite(_src, theme) { const c = COL[theme] || COL.prune; tint = c[0]; warm = c[1]; }
+  const LIFE = 12000;      // durée pendant laquelle la fumée reste visible après la dernière émission
+  function step(dt, _rate, t) {
+    dt = Math.min(dt, 1 / 30);
+    if (fbk.e > .01) emitTip(Math.min(1, fbk.e * 1.2) * (fbk.k > 0 ? 1 : .45), dt);   // la braise fume tant que le son résonne
+    gl.disable(gl.BLEND);
+    applySplats();
+    const tx = vel.tx;
+    run(progs.buoy, vel.w, tx, {uV: vel.r, uD: dye.r, dt, lift: 38, time: t / 1000}); vel.swap();
+    run(progs.curl, curlT, tx, {uV: vel.r});
+    run(progs.vort, vel.w, tx, {uV: vel.r, uC: curlT, curl: 18, dt}); vel.swap();
+    run(progs.div, divT, tx, {uV: vel.r});
+    run(progs.scale, pres.w, tx, {uT: pres.r, value: .8}); pres.swap();
+    for (let i = 0; i < 18; i++) { run(progs.press, pres.w, tx, {uP: pres.r, uDiv: divT}); pres.swap(); }
+    run(progs.grad, vel.w, tx, {uP: pres.r, uV: vel.r}); vel.swap();
+    run(progs.advect, vel.w, tx, {uV: vel.r, uS: vel.r, simTexel: tx, dt, dissipation: .25}); vel.swap();
+    run(progs.advect, dye.w, dye.tx, {uV: vel.r, uS: dye.r, simTexel: tx, dt, dissipation: .2}); dye.swap();
+    const since = performance.now() - lastEmit, fade = since < LIFE - 2500 ? 1 : Math.max(0, (LIFE - since) / 2500);
+    gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, cv.width, cv.height); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    run(progs.show, null, dye.tx, {uD: dye.r, tint, warm, tip: uv(TIP[0], TIP[1]), fade, aspect: ASPECT});
+  }
+  function clear() {
+    pending.length = 0; lastEmit = -1e9;
+    for (const d of [vel, dye, pres]) for (const x of [d.r, d.w]) { gl.bindFramebuffer(gl.FRAMEBUFFER, x.fb); gl.viewport(0, 0, x.width || x.w, x.h); gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT); }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, cv.width, cv.height); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+  }
+  setRes(.6);
+  return {gl: true, resize, setSprite, step, puff, puffAt, clear, setRes, busy: () => performance.now() - lastEmit < LIFE, get count() { return Math.max(0, Math.round((LIFE - (performance.now() - lastEmit)) / 1000)); }};
+})();
+
+const fx = smokeGL || fxSprite;
+if (smokeGL) $("#fx").style.display = "none";
+// une commande touchée fume aussi
+function smokeAt(el, s = .6, dy = 0) {
+  if (prefs.visual === "statique" || !el) return;
+  const r = el.getBoundingClientRect(), st = $("#stage").getBoundingClientRect();
+  fx.puffAt((r.left + r.width / 2 - st.left) / stageScale, (r.top - st.top) / stageScale + dy, s); anim.wake("touch");
+}
 
 // =============================================================================
 // Boucle d'animation unique : braise, fumée, yeux qui rougissent, brume.
@@ -426,7 +589,7 @@ const anim = (() => {
     const bq = reduit ? 0 : Math.round(red * 1.6 * 4) / 4; if (bq !== blurQ) { blurQ = bq; eyes.style.filter = bq > 0 ? `blur(${bq}px)` : ""; }
     const hq = Math.round(Math.min(1, red * .8 + e * .3) * 50) / 50; if (hq !== hazeQ) { hazeQ = hq; haze.style.opacity = hq; }
     // fumée : densité avec le niveau, s'arrête à la relâche (les volutes finissent de monter)
-    const rate = fbk.k > 0 ? (3 + 16 * e) * amt : (e > .03 ? 3 * e * amt : 0);
+    const rate = fbk.k > 0 ? (3 + 16 * e) * amt : (e > .03 ? 3 * e * amt : 0);   // (volutes en images seulement)
     fx.step(dt, rate, t, amt);
     perf.sample(performance.now() - t0, fx.count);
     const quiet = e < .004 && Math.abs(red - ti) < .004 && ti < .004 && !fx.busy() && performance.now() - fbk.at > 200;
