@@ -58,7 +58,7 @@ jobs:
 
       - name: Configuration
         shell: pwsh
-        run: cmake -B build -A x64 -DSMK_BUILD_TESTS=ON -DJUCE_WEBVIEW2_PACKAGE_LOCATION="$env:GITHUB_WORKSPACE/nuget"
+        run: cmake -B build -A x64 -DWD_BUILD_TESTS=ON -DJUCE_WEBVIEW2_PACKAGE_LOCATION="$env:GITHUB_WORKSPACE/nuget"
 
       - name: Compilation Release
         run: cmake --build build --config Release --target WindupDogs_VST3 WindupDogs_Standalone WindupDogsRenderTest WindupDogsEngineTest --parallel
