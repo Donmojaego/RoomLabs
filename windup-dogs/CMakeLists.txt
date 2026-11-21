@@ -18,8 +18,8 @@ endif()
 # ---------------------------------------------------------------------------
 # Test du moteur, sans JUCE (rapide, tourne partout)
 # ---------------------------------------------------------------------------
-add_executable(WindupEngineTest tests/EngineTest.cpp source/engine/WindupEngine.cpp)
-target_include_directories(WindupEngineTest PRIVATE source tests)
+add_executable(WindupDogsEngineTest tests/EngineTest.cpp source/engine/WindupEngine.cpp)
+target_include_directories(WindupDogsEngineTest PRIVATE source tests)
 
 option(WD_ENGINE_TEST_ONLY "Ne construire que le test du moteur (sans JUCE)" OFF)
 if(WD_ENGINE_TEST_ONLY)
@@ -83,7 +83,7 @@ target_include_directories(WindupDogs PRIVATE source)
 
 if(MSVC)
     target_compile_options(WindupDogs PRIVATE /utf-8)
-    target_compile_options(WindupEngineTest PRIVATE /utf-8)
+    target_compile_options(WindupDogsEngineTest PRIVATE /utf-8)
 endif()
 
 target_compile_definitions(WindupDogs PUBLIC
