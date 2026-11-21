@@ -1,0 +1,17 @@
+SMOKE — Room Labs Audio
+Claviers, nappes, risers et basses pour le R&B, le hip-hop et la house (VST3 / AU / application autonome)
+
+Les banques
+- KEYS : pianos feutrés et accords R&B. RHODES : Rhodes chauds, trémolo. RISERS : nappes, textures, montées et longues queues. SUB : subs ronds, basses planantes, basses house.
+- Cliquer une banque charge son premier preset ; les flèches passent d'un preset à l'autre ; cliquer le nom ouvre la liste des 40 presets.
+
+Les molettes
+- MOD : dérive lente de la hauteur + chorus (le son « fume »).
+- TONE : ouverture du filtre. SPACE : réverbération. DREAM : longues queues. CLEAN : moins de saturation douce.
+- Glisser vers le haut ou le bas ; Maj : réglage fin ; double-clic : valeur par défaut ; molette de la souris.
+
+Accord : Off, m9, maj9, m11, 9, maj7 — une touche joue l'accord entier (pas sur les basses mono).
+Icône égaliseur : modèle de son, attaque, decay, tenue, relâchement, couleur, trémolo, montée du riser, glisse des basses, accordage, niveau.
+Roue : thème Prune / Bleu / Vert, taille de la fenêtre, animation Animé / Réduit / Statique. Bouton d'alimentation : animation marche / arrêt.
+
+Jouer sans clavier MIDI : touches A W S E D F T G Y H U J K, Z / X pour l'octave, ou le clavier en bas.

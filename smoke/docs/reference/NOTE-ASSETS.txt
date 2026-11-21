@@ -1,0 +1,7 @@
+SMOKE — éléments graphiques du plugin
+
+Fonds : 1536 × 1024 px. Objets et commandes isolés : 1024 × 1024 px, PNG avec transparence.
+
+Contenu : fond prune fumé, nappe de fumée isolée pour animation, joints papier et Woodback, yeux normaux et rouges, logo SMOKE, lockup Room Labs Audio, icônes égaliseur/réglages/alimentation, atlas de commandes, quatre boutons et cinq molettes individuelles avec les libellés de la référence.
+
+Les boutons et molettes individuels sont des tuiles carrées avec l'objet en haut et son libellé exact sous l'objet, pour faciliter le recadrage ou le placement.

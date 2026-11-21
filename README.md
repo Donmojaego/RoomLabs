@@ -7,3 +7,4 @@ Plugins audio de Room Labs Audio. Un dossier par plugin, une compilation GitHub 
 | Shake It (808 et basses) | `shake-it/` | Releases, étiquette `shake-it-v…` |
 | Candy Shop (hooks, club, fête) | `candy-shop/` | Releases, étiquette `candy-shop-v…` |
 | Ma petite soupe ouselem (instrument + effet au tempo) | `soupe-ouselem/` | Releases, étiquette `soupe-ouselem-v…` |
+| Smoke (R&B, hip-hop, house : claviers, nappes, subs) | `smoke/` | Releases, étiquette `smoke-v…` |
