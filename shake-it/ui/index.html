@@ -42,7 +42,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg0);color:var
 select.btn{appearance:none;-webkit-appearance:none;padding:0 8px}
 /* --- panneau gauche */
 #left{left:12px;top:82px;width:228px;height:546px}
-.label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 #models{position:absolute;left:16px;top:16px;width:196px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
 #models .btn{height:34px;font-weight:700;letter-spacing:.06em}
 #knobs{position:absolute;left:10px;top:112px;width:208px;display:grid;grid-template-columns:1fr 1fr;row-gap:12px}
@@ -73,7 +73,7 @@ select.btn{appearance:none;-webkit-appearance:none;padding:0 8px}
 .it{padding:5px 10px;cursor:pointer;display:flex;justify-content:space-between;gap:6px;white-space:nowrap}
 .it span:first-child{overflow:hidden;text-overflow:ellipsis}
 .it:hover{background:#ffffff0d}.it.on{background:var(--accDim);color:#fff}
-.it small{color:var(--muted)}.it.on small{color:#fff}
+.it small{color:var(--muted);font-size:12px}.it.on small{color:#fff}
 #search{position:absolute;left:14px;top:50px;width:200px;height:0;display:none}
 #adv{position:absolute;left:8px;top:50px;width:212px;height:262px;display:none;grid-template-columns:1fr 1fr 1fr;row-gap:2px;align-content:start}
 #adv .knob svg{width:58px;height:58px}#adv .knob .kl{font-size:9px;letter-spacing:.06em}#adv .knob .kv{font-size:10px}
@@ -84,7 +84,7 @@ select.btn{appearance:none;-webkit-appearance:none;padding:0 8px}
 .stg{flex:1;height:100px;border-radius:8px;background:#0d0b0a;border:1px solid var(--line);display:flex;align-items:flex-end;justify-content:center;overflow:hidden;position:relative}
 .stg img{height:86px;opacity:.45;filter:grayscale(.6)}
 .stg.on{border-color:var(--acc);box-shadow:0 0 12px -3px var(--acc)}.stg.on img{opacity:1;filter:none}
-.stg b{position:absolute;top:3px;left:0;right:0;text-align:center;font-size:8px;letter-spacing:.1em;color:var(--muted)}
+.stg b{position:absolute;top:3px;left:0;right:0;text-align:center;font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--muted)}
 #meter{position:absolute;left:14px;top:496px;width:200px;height:30px}
 #meterBar{position:absolute;left:0;top:16px;width:200px;height:8px;border-radius:4px;background:#0d0b0a;border:1px solid var(--line);overflow:hidden}
 #meterFill{height:100%;width:0;background:linear-gradient(90deg,var(--accDim),var(--acc),#ff4b3a)}
@@ -93,7 +93,7 @@ select.btn{appearance:none;-webkit-appearance:none;padding:0 8px}
 #perf{position:absolute;left:258px;top:88px;font:11px monospace;color:var(--acc2);background:#000a;padding:4px 6px;border-radius:6px;display:none;z-index:5;white-space:pre}
 #toast{position:absolute;left:50%;top:84px;transform:translateX(-50%);background:#000c;border:1px solid var(--accDim);padding:6px 12px;border-radius:8px;
   opacity:0;transition:opacity .25s;pointer-events:none;z-index:9}
-#preview{position:absolute;left:258px;top:82px;width:484px;text-align:center;font-size:10px;color:var(--muted)}
+#preview{position:absolute;left:258px;top:82px;width:484px;text-align:center;font-size:11px;color:var(--muted)}
 </style>
 </head>
 <body>

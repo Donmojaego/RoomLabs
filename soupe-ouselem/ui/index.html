@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ma petite soupe ouselem — Room Labs</title>
+<style>
+/* Maquettes 1536 × 1024 affichées à 960 × 640 (facteur 0,625). Coordonnées : ui/assets/layout.json */
+:root{--acc:#e2532f;--acc2:#f08a3c;--ink:#3a2a22;--green:#3f6b4a;--cream:#f6ead9}
+body.ramen{--acc:#d9512e;--green:#2f5d3b}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#efe2cf;color:var(--ink);
+  font:12px/1.2 "Segoe UI",system-ui,-apple-system,Helvetica,Arial,sans-serif;user-select:none;-webkit-user-select:none}
+#stage{position:absolute;left:0;top:0;width:960px;height:640px;transform-origin:0 0;overflow:hidden}
+.abs{position:absolute}
+#plate{position:absolute;inset:0;width:960px;height:640px}
+#surfWrap{position:absolute;overflow:hidden;border-radius:50%;pointer-events:none}
+#surf{position:absolute;inset:0;width:100%;height:100%;will-change:transform}
+#fx{position:absolute;left:0;top:0;width:960px;height:640px;pointer-events:none}
+/* sachets */
+.sachet{position:absolute;cursor:pointer;transform-origin:50% 100%;will-change:transform}
+.sachet img{position:absolute;inset:0;width:100%;height:100%}
+.sachet .num{position:absolute;left:0;right:0;text-align:center;font-weight:900;font-size:17px;letter-spacing:.02em;color:var(--green);
+  font-family:"Arial Rounded MT Bold","Nunito","Segoe UI",Arial,sans-serif}
+.sachet.sel .num{color:var(--acc)}
+.sachet .glow{position:absolute;inset:-3px;border-radius:5px;border:2px solid #ff6a2b;box-shadow:0 0 16px 5px #ff7a2bdd, inset 0 0 14px #ff8a3caa;opacity:0;transition:opacity .15s}
+.sachet.sel .glow{opacity:1}
+#marker{position:absolute;width:0;height:0;z-index:5;border-left:9px solid transparent;border-right:9px solid transparent;border-top:11px solid #ff6a2b;
+  filter:drop-shadow(0 0 4px #ff7a2b);transition:left .22s cubic-bezier(.3,1.4,.5,1),top .22s}
+/* écran du preset */
+#screen{display:flex;align-items:center;justify-content:center;gap:6px;font-weight:800;color:var(--acc);white-space:nowrap;overflow:hidden}
+#screen .no{font-size:19px}#screen .nm{font-size:15px;color:var(--ink);font-weight:700;overflow:hidden;text-overflow:ellipsis}
+.hit{position:absolute;border-radius:50%;cursor:pointer}
+.hit:active{background:#0001}
+#ramenNav{display:none;align-items:center;gap:4px;background:#f7ecdc;border:1px solid #d9c3a6;border-radius:14px;box-shadow:0 2px 5px #0002;padding:0 6px}
+#ramenNav button{border:1px solid #d3b892;background:linear-gradient(#fffaf2,#efe0ca);border-radius:50%;width:24px;height:24px;cursor:pointer;color:var(--ink);font-size:15px;font-weight:900;box-shadow:0 2px 0 #cfb18a}
+body.ramen #ramenNav{display:flex}
+/* menus */
+.pill{display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-weight:800;font-size:13px;letter-spacing:.04em;color:var(--ink);cursor:pointer;text-transform:uppercase}
+.pill::after{content:"⌄";font-size:15px;margin-top:-6px}
+#menu{position:absolute;display:none;background:#fbf3e7;border:1px solid #d6bfa1;border-radius:10px;box-shadow:0 8px 24px #0004;padding:6px;z-index:30;min-width:190px}
+#menu .it{padding:7px 11px;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px}
+#menu .it:hover{background:#f0dfc8}#menu .it.on{background:var(--acc);color:#fff}
+#menu .divs{display:flex;flex-wrap:wrap;gap:3px;padding:6px 4px 2px;border-top:1px solid #e5d3bb;margin-top:4px}
+#menu .divs span{padding:4px 8px;border:1px solid #d3b892;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;background:linear-gradient(#fffaf2,#efe0ca);box-shadow:0 2px 0 #cfb18a}
+#menu .divs span.on{background:var(--green);color:#fff}
+/* interrupteurs */
+.led{position:absolute;width:12px;height:12px;border-radius:50%;background:#3c4a3a;border:2px solid #d9cdb8;box-shadow:inset 0 1px 2px #0008;pointer-events:none;transition:background .15s, box-shadow .15s}
+.led.on{background:#ff6a2b;box-shadow:0 0 8px 2px #ff7a2b,inset 0 0 2px #fff8}
+.tog{position:absolute;border-radius:18px;cursor:pointer;transition:transform .08s}
+.tog:active{transform:scale(.97)}
+/* potards */
+.knob{position:absolute;cursor:ns-resize;touch-action:none}
+.knob canvas{width:100%;height:100%}
+.kv{position:absolute;left:50%;transform:translateX(-50%);padding:2px 8px;border-radius:9px;background:#fffaf2;border:1px solid #d9c3a6;box-shadow:0 2px 6px #0002;white-space:nowrap;font-size:12px;font-weight:800;color:var(--acc);opacity:0;transition:opacity .2s;pointer-events:none}
+.knob:hover .kv,.knob.drag .kv{opacity:1}
+/* panneau ⚙ */
+#adv{left:110px;top:70px;width:740px;height:500px;background:#fbf3e7;border:1px solid #d6bfa1;border-radius:16px;box-shadow:0 12px 34px #0005;
+  display:none;padding:12px 16px;z-index:25;overflow-y:auto}
+#adv h3{font-size:12px;letter-spacing:.14em;color:var(--acc);margin:10px 0 6px}
+#adv .row{display:flex;flex-wrap:wrap;gap:6px 16px}
+.mk{width:84px;display:flex;flex-direction:column;align-items:center;cursor:ns-resize;touch-action:none}
+.mk canvas{width:50px;height:50px}.mk b{font-size:11px;letter-spacing:.05em;margin-top:2px}.mk i{font-size:12px;font-weight:700;color:var(--acc);font-style:normal}
+.seg{display:flex;gap:6px;align-items:center;margin:5px 0;flex-wrap:wrap}.seg span{width:92px;font-size:12px;font-weight:800}
+.seg button{border:1px solid #d3b892;background:linear-gradient(#fffaf2,#efe0ca);border-radius:10px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--ink);cursor:pointer;box-shadow:0 2px 0 #cfb18a,inset 0 1px 0 #fff;transition:transform .06s}
+.seg button:active{transform:translateY(2px);box-shadow:0 0 0 #cfb18a}
+.seg button.on{background:linear-gradient(#4f8a5d,#36613f);color:#fff;border-color:#2f5638;box-shadow:0 2px 0 #24452b,inset 0 1px 0 #ffffff40}
+#close{position:absolute;right:14px;top:12px;border:0;background:linear-gradient(#f0714a,#cf4422);color:#fff;border-radius:12px;padding:7px 16px;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 3px 0 #9c3014,inset 0 1px 0 #ffffff55}
+#toast{left:50%;top:592px;transform:translateX(-50%);background:#3a2a22ee;color:#fff;font-size:13px;font-weight:700;padding:7px 14px;border-radius:12px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:40}
+#perf{left:6px;top:6px;font:10px monospace;background:#000b;color:#fff;padding:3px 6px;border-radius:5px;display:none;z-index:50;white-space:pre}
+#hint{left:0;top:624px;width:960px;text-align:center;font-size:10px;color:#7d6656}
+</style>
+</head>
+<body>
+<div id="stage">
+  <img id="plate" alt="">
+  <div id="surfWrap"><img id="surf" alt=""></div>
+  <canvas id="fx" width="960" height="640"></canvas>
+  <div id="sachets"></div>
+  <div id="marker"></div>
+  <div id="screen" class="abs"></div>
+  <div id="ramenNav" class="abs"><button id="rPrev">‹</button><div id="rScreen" style="flex:1;display:flex;gap:5px;align-items:center;justify-content:center;font-weight:800;white-space:nowrap;overflow:hidden"></div><button id="rNext">›</button></div>
+  <div id="hits"></div>
+  <div id="pillInst" class="abs pill"></div>
+  <div id="pillFx" class="abs pill"></div>
+  <div id="knobs"></div>
+  <div id="leds"></div>
+  <div id="menu"></div>
+  <div id="adv" class="abs"><button id="close">OK</button><div id="advBody"></div></div>
+  <div id="toast" class="abs"></div>
+  <div id="perf" class="abs"></div>
+  <div id="hint" class="abs"></div>
+</div>
+<script>
+"use strict";
+// =============================================================================
+// Pont avec le plugin (JUCE) ; sans plugin : aperçu WebAudio approximatif
+// =============================================================================
+const NATIVE = !!(window.__JUCE__ && window.__JUCE__.backend);
+const call = NATIVE ? (() => { let n = 0; const pend = new Map();
+  window.__JUCE__.backend.addEventListener("__juce__complete", ({promiseId, result}) => { const f = pend.get(promiseId); if (f) { pend.delete(promiseId); f(result); } });
+  return (name, ...params) => new Promise(res => { const id = n++; pend.set(id, res); window.__JUCE__.backend.emitEvent("__juce__invoke", {name, params, resultId: id}); });
+})() : null;
+const initPrefs = NATIVE ? ((window.__JUCE__.initialisationData.prefs || [])[0] || {}) : {};
+const $ = s => document.querySelector(s);
+const K = 0.625;
+const ASSET = n => (window.SHK_ASSETS && window.SHK_ASSETS[n]) || ("assets/" + n);
+const toast = t => { const e = $("#toast"); e.textContent = t; e.style.opacity = 1; clearTimeout(toast.h); toast.h = setTimeout(() => e.style.opacity = 0, 1500); };
+
+// ---- paramètres (mêmes identifiants et plages que source/Params.h)
+const pct = v => Math.round(v * 100) + " %", ms = v => v < 1000 ? Math.round(v) + " ms" : (v / 1000).toFixed(2) + " s";
+const PDEF = {
+  tone:{min:-1,max:1,def:0,skew:1,fmt:v => (v > 0 ? "+" : "") + Math.round(v * 100),label:"TONE"}, damp:{min:0,max:1,def:.4,skew:1,fmt:pct,label:"DAMP"},
+  space:{min:0,max:1,def:.3,skew:1,fmt:pct,label:"SPACE"}, mix:{min:0,max:1,def:.5,skew:1,fmt:pct,label:"MIX"},
+  feedback:{min:0,max:.92,def:.4,skew:1,fmt:pct,label:"RETOUR"}, stretch:{min:0,max:1,def:.5,skew:1,fmt:pct,label:"ÉTIREMENT"},
+  level:{min:-36,max:12,def:-6,skew:1,fmt:v => v.toFixed(1) + " dB",label:"NIVEAU"}, attack:{min:0,max:5000,def:20,skew:.3,fmt:ms,label:"ATTAQUE"},
+  decay:{min:5,max:5000,def:800,skew:.3,fmt:ms,label:"DECAY"}, sustain:{min:0,max:1,def:.8,skew:1,fmt:pct,label:"TENUE"},
+  release:{min:5,max:8000,def:600,skew:.3,fmt:ms,label:"RELÂCHEMENT"}, brightness:{min:0,max:1,def:.5,skew:1,fmt:pct,label:"COULEUR"},
+  tune:{min:-24,max:24,def:0,skew:1,fmt:v => (v > 0 ? "+" : "") + v.toFixed(1) + " st",label:"TUNE"}};
+let INSTS = ["Violon","Pad","Piano","Cloche","Cordes","Texture","Basse","Tambour"];
+let FXS = ["Aucun","Reverse","Stutter","Répétitions","Découpage","Étirement","Filtre modulé","Grain Delay"];
+let DIVS = ["1/2","1/4","1/8","1/16","1/32","1/4T","1/8T","1/16T"];
+const P = {}; for (const k in PDEF) P[k] = PDEF[k].def;
+Object.assign(P, {inst:0, fx:7, division:2, reverseOn:0, stutterOn:0, arpOn:0, arpMode:0, arpOct:0});
+const toN = (k, v) => { const d = PDEF[k]; return Math.pow((v - d.min) / (d.max - d.min), d.skew); };
+const fromN = (k, n) => { const d = PDEF[k]; return d.min + (d.max - d.min) * Math.pow(Math.min(1, Math.max(0, n)), 1 / d.skew); };
+
+let presets = [], current = 0, sachet = 1, LAY = null;
+const prefs = Object.assign({theme:"soupe", zoom:100, visual:"anime", user:"[]"}, initPrefs);
+const NOTE = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const fit = () => { const s = Math.min(innerWidth / 960, innerHeight / 640); $("#stage").style.transform = `scale(${s})`; fx.resize(s); };
+addEventListener("resize", () => fit());
+const box = (el, r) => { el.style.left = r[0] * K + "px"; el.style.top = r[1] * K + "px"; el.style.width = (r[2] - r[0]) * K + "px"; el.style.height = (r[3] - r[1]) * K + "px"; };
+
+// =============================================================================
+// Coordonnées de chaque mode (soupe / ramen) — layout.json + positions mesurées sur les maquettes
+// =============================================================================
+const EXTRA = {
+  soupe: {prev:[525,170], next:[1010,170], save:[1304,87], gear:[1375,87], title:[470,40,1140,130], playBtn:[318,778], surprise:[1220,778],
+          togPill:[[150,232,300,292],[150,372,300,432]]},
+  ramen: {prev:null, next:null, save:[1273,66], gear:[1378,66], title:[470,25,1060,110], playBtn:[268,780], surprise:[1265,780],
+          togPill:[[140,195,340,268],[140,345,340,415]], nav:[96,436,440,488]}};
+
+function layout() {
+  const t = prefs.theme === "ramen" ? "ramen" : "soupe", L = LAY[t], X = EXTRA[t];
+  document.body.classList.toggle("ramen", t === "ramen");
+  $("#plate").src = ASSET(`plate_${t}.webp`); $("#surf").src = ASSET(`surface_${t}.webp`);
+  box($("#surfWrap"), L.soup_ellipse);
+  // sachets
+  const sc = $("#sachets"); sc.innerHTML = "";
+  L.sachets.forEach((s, i) => {
+    const el = document.createElement("div"); el.className = "sachet"; el.dataset.n = i + 1; box(el, s.box);
+    el.innerHTML = `<img alt="" src="${ASSET(`sachet_${t}_${i + 1}.webp`)}"><div class="glow"></div><div class="num">0${i + 1}</div>`;
+    el.querySelector(".num").style.top = ((L.numbers_band[0] - s.box[1]) * K - 1) + "px";
+    el.onclick = () => selectSachet(i + 1, true);
+    sc.appendChild(el);
+  });
+  // écran du preset
+  if (L.preset_pill) { box($("#screen"), L.preset_pill); $("#screen").style.display = "flex"; } else $("#screen").style.display = "none";
+  if (X.nav) box($("#ramenNav"), X.nav);
+  // zones cliquables
+  const hits = $("#hits"); hits.innerHTML = "";
+  const hit = (c, r, title, fn) => { if (!c) return; const h = document.createElement("div"); h.className = "hit"; h.title = title;
+    h.style.left = (c[0] - r) * K + "px"; h.style.top = (c[1] - r) * K + "px"; h.style.width = h.style.height = 2 * r * K + "px"; h.onclick = fn; hits.appendChild(h); };
+  hit(X.prev, 30, "Recette précédente", () => loadPreset(current - 1));
+  hit(X.next, 30, "Recette suivante", () => loadPreset(current + 1));
+  hit(X.save, 30, "Mémoriser la recette", saveUser);
+  hit(X.gear, 30, "Réglages", () => $("#adv").style.display = "block");
+  hit(X.playBtn, 40, "Goûter : joue la note de référence", () => { const p = presets[current]; if (p) { noteOn(p.root, .85); setTimeout(() => noteOff(p.root), 700); } });
+  hit(X.surprise, 40, "Surprise du chef : effet, division et mix au hasard", surprise);
+  const tt = document.createElement("div"); tt.className = "hit"; tt.style.borderRadius = "20px"; box(tt, X.title); tt.title = "Basculer Ma petite soupe / Mon petit ramen";
+  tt.onclick = () => setPref("theme", prefs.theme === "ramen" ? "soupe" : "ramen"); hits.appendChild(tt);
+  // interrupteurs Reverse / Stutter
+  const leds = $("#leds"); leds.innerHTML = "";
+  ["reverseOn", "stutterOn"].forEach((id, i) => {
+    const tg = document.createElement("div"); tg.className = "tog"; box(tg, X.togPill[i]); tg.title = i ? "Stutter (calé sur le tempo)" : "Reverse (calé sur le tempo)";
+    tg.onclick = () => setParam(id, P[id] > .5 ? 0 : 1); leds.appendChild(tg);
+    const led = document.createElement("div"); led.className = "led"; led.id = "led_" + id;
+    led.style.left = (L.toggles[i][0] * K - 6) + "px"; led.style.top = (L.toggles[i][1] * K - 6) + "px"; leds.appendChild(led);
+  });
+  // menus
+  box($("#pillInst"), L.pill_instrument); box($("#pillFx"), L.pill_fx);
+  // potards
+  buildKnobs(L);
+  refreshAll(); fx.layoutChanged(L); anim.wake("layout");
+}
+
+// =============================================================================
+// Potards (canvas : capuchon crème, aiguille, anneau de points)
+// =============================================================================
+const knobs = {};
+function drawKnob(cv, id, big) {
+  const dpr = Math.max(1, (window.devicePixelRatio || 1) * ($("#stage").getBoundingClientRect().width / 960));
+  const W = cv.clientWidth, H = cv.clientHeight; if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+  const cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2, n = toN(id, P[id]);
+  const A0 = -2.35, A1 = 2.35, dots = big ? 23 : 15;
+  for (let i = 0; i < dots; i++) { const t = i / (dots - 1), a = A0 + (A1 - A0) * t, rr = R * .92;
+    g.beginPath(); g.arc(cx + Math.sin(a) * rr, cy - Math.cos(a) * rr, big ? 2.1 : 1.6, 0, 7);
+    g.fillStyle = t <= n + 1e-6 ? (id === "mix" ? "#f2a33a" : "#e2683a") : "#6d7c5a88"; g.fill(); }
+  const r = R * .66;
+  g.save(); g.shadowColor = "#0005"; g.shadowBlur = big ? 9 : 5; g.shadowOffsetY = big ? 4 : 2;
+  const gr = g.createRadialGradient(cx - r * .35, cy - r * .4, r * .1, cx, cy, r);
+  gr.addColorStop(0, "#fffaf1"); gr.addColorStop(.7, "#f1dfc6"); gr.addColorStop(1, "#d8bf9e");
+  g.fillStyle = gr; g.beginPath(); g.arc(cx, cy, r, 0, 7); g.fill(); g.restore();
+  g.strokeStyle = "#c9ad88"; g.lineWidth = 1; g.beginPath(); g.arc(cx, cy, r, 0, 7); g.stroke();
+  const a = A0 + (A1 - A0) * n; g.strokeStyle = "#2a1d17"; g.lineWidth = big ? 3.2 : 2.4; g.lineCap = "round";
+  g.beginPath(); g.moveTo(cx + Math.sin(a) * r * .25, cy - Math.cos(a) * r * .25); g.lineTo(cx + Math.sin(a) * r * .82, cy - Math.cos(a) * r * .82); g.stroke();
+}
+function bindDrag(el, id, onChange) {
+  let drag = null;
+  el.addEventListener("pointerdown", e => { el.setPointerCapture(e.pointerId); drag = {y: e.clientY, n: toN(id, P[id])}; el.classList.add("drag"); gesture(id, true); });
+  el.addEventListener("pointermove", e => { if (!drag) return; const sc = $("#stage").getBoundingClientRect().width / 960;
+    drag.n = Math.min(1, Math.max(0, drag.n + (drag.y - e.clientY) / sc / (e.shiftKey ? 700 : 160))); drag.y = e.clientY; setParam(id, fromN(id, drag.n)); });
+  const end = () => { if (drag) { drag = null; el.classList.remove("drag"); gesture(id, false); } };
+  el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+  el.addEventListener("dblclick", () => setParam(id, PDEF[id].def));
+  el.addEventListener("wheel", e => { e.preventDefault(); setParam(id, fromN(id, toN(id, P[id]) + (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? .005 : .02))); }, {passive:false});
+}
+function buildKnobs(L) {
+  const k = $("#knobs"); k.innerHTML = "";
+  ["tone","damp","space","mix"].forEach((id, i) => {
+    const [cx, cy] = L.knobs[i], r = L.knob_r;
+    const el = document.createElement("div"); el.className = "knob"; el.title = PDEF[id].label + " — double-clic : défaut, Maj : fin";
+    el.style.left = (cx - r) * K + "px"; el.style.top = (cy - r) * K + "px"; el.style.width = el.style.height = 2 * r * K + "px";
+    el.innerHTML = `<canvas></canvas><div class="kv" style="top:-18px"></div>`; k.appendChild(el);
+    knobs[id] = {draw() { drawKnob(el.querySelector("canvas"), id, true); el.querySelector(".kv").textContent = PDEF[id].fmt(P[id]); }};
+    bindDrag(el, id); knobs[id].draw();
+  });
+}
+
+// =============================================================================
+// Paramètres, menus, sachets
+// =============================================================================
+function gesture(id, on) { if (NATIVE) call("gesture", id, on); }
+function setParam(id, v, fromHost) {
+  P[id] = v;
+  if (knobs[id]) knobs[id].draw();
+  if (advKnobs[id]) advKnobs[id]();
+  if (id === "reverseOn" || id === "stutterOn") { const l = $("#led_" + id); if (l) l.classList.toggle("on", v > .5); }
+  if (id === "inst" || id === "fx" || id === "division") refreshPills();
+  document.querySelectorAll(`#adv [data-p="${id}"]`).forEach(b => b.classList.toggle("on", +b.dataset.v === Math.round(v)));
+  if (!fromHost && NATIVE) call("setParam", id, v);
+  anim.wake("param");
+}
+function refreshPills() {
+  $("#pillInst").textContent = INSTS[Math.round(P.inst)] || "";
+  $("#pillFx").textContent = (FXS[Math.round(P.fx)] || "") + (Math.round(P.fx) ? " · " + DIVS[Math.round(P.division)] : "");
+}
+function refreshAll() { for (const k in P) setParam(k, P[k], true); showPreset(); }
+function openMenu(anchor, items, curIdx, onPick, withDivs) {
+  const m = $("#menu"), r = anchor.getBoundingClientRect(), s = $("#stage").getBoundingClientRect(), sc = s.width / 960;
+  m.innerHTML = items.map((t, i) => `<div class="it${i === curIdx ? " on" : ""}" data-i="${i}">${t}</div>`).join("") +
+    (withDivs ? `<div class="divs">${DIVS.map((d, i) => `<span data-d="${i}" class="${i === Math.round(P.division) ? "on" : ""}">${d}</span>`).join("")}</div>` : "");
+  m.style.display = "block"; m.style.left = (r.left - s.left) / sc + "px";
+  const h = m.offsetHeight; let top = (r.top - s.top) / sc - h - 6; if (top < 4) top = (r.bottom - s.top) / sc + 6; m.style.top = top + "px";
+  m.querySelectorAll(".it").forEach(e => e.onclick = ev => { ev.stopPropagation(); onPick(+e.dataset.i); m.style.display = "none"; });
+  m.querySelectorAll("[data-d]").forEach(e => e.onclick = ev => { ev.stopPropagation(); setParam("division", +e.dataset.d); openMenu(anchor, items, curIdx, onPick, withDivs); });
+}
+addEventListener("pointerdown", e => { if (!e.target.closest("#menu") && !e.target.closest(".pill")) $("#menu").style.display = "none"; });
+$("#pillInst").onclick = e => openMenu(e.currentTarget, INSTS, Math.round(P.inst), i => setParam("inst", i));
+$("#pillFx").onclick = e => openMenu(e.currentTarget, FXS, Math.round(P.fx), i => setParam("fx", i), true);
+
+const lastOf = {};
+function selectSachet(n, load) {
+  sachet = n;
+  document.querySelectorAll(".sachet").forEach(e => e.classList.toggle("sel", +e.dataset.n === n));
+  const t = prefs.theme === "ramen" ? "ramen" : "soupe"; const L = LAY[t];
+  const s = L.sachets[n - 1].box, mk = $("#marker");
+  mk.style.left = (((s[0] + s[2]) / 2) * K - 9) + "px"; mk.style.top = (s[1] * K - 24) + "px";
+  anim.kickSachet(n);
+  if (load) { const list = presets.map((p, i) => [p, i]).filter(([p]) => p.sachet === n); const i = lastOf[n] ?? (list[0] && list[0][1]); if (i !== undefined) loadPreset(i); }
+}
+function showPreset() {
+  const p = presets[current]; if (!p) return;
+  const txt = `<span class="no">0${p.sachet}</span><span class="nm">${p.name}</span>`;
+  $("#screen").innerHTML = txt; $("#rScreen").innerHTML = `<span style="color:var(--acc)">0${p.sachet}</span><span style="font-size:13px">${p.name}</span>`;
+  lastOf[p.sachet] = current;
+  if (p.sachet !== sachet || !document.querySelector(".sachet.sel")) selectSachet(p.sachet, false);
+}
+async function loadPreset(i) {
+  if (!presets.length) return;
+  i = (i + presets.length) % presets.length; current = i;
+  if (NATIVE && !presets[i].user) { const st = await call("loadPreset", i); applyState(st); }
+  else { const v = presets[i].params; for (const k in v) setParam(k, k === "arpOct" ? v[k] - 1 : v[k]); }
+  showPreset(); anim.ripple(1);
+}
+$("#rPrev").onclick = () => loadPreset(current - 1); $("#rNext").onclick = () => loadPreset(current + 1);
+function applyState(st) { if (!st) return; for (const k in st.params) setParam(k, st.params[k], true); if (st.preset !== undefined) current = st.preset; }
+
+// recettes perso (mémorisées dans les préférences, pour tous les projets)
+function userList() { try { return JSON.parse(prefs.user || "[]"); } catch (e) { return []; } }
+function mergeUser() { presets = presets.filter(p => !p.user).concat(userList().map(u => Object.assign({user:true}, u))); }
+function saveUser() {
+  const list = userList(), p = presets[current] || {sachet, root:60, rootName:"C4"};
+  const params = {}; for (const k in P) params[k] = k === "arpOct" ? P[k] + 1 : P[k];
+  list.push({name: "Ma recette " + (list.length + 1), sachet: p.sachet, section: p.section, root: p.root, rootName: p.rootName, params});
+  setPref("user", JSON.stringify(list)); mergeUser(); current = presets.length - 1; showPreset(); toast("Recette mémorisée : " + presets[current].name);
+}
+function surprise() {
+  const r = n => Math.floor(Math.random() * n);
+  setParam("fx", 1 + r(7)); setParam("division", r(8)); setParam("mix", .35 + Math.random() * .45); anim.ripple(1.5); toast("Surprise du chef !");
+}
+
+// =============================================================================
+// Panneau ⚙ : instrument, effet, arpège, affichage
+// =============================================================================
+const advKnobs = {};
+(function buildAdv() {
+  const b = $("#advBody");
+  const seg = (id, title, list) => `<div class="seg"><span>${title}</span>${list.map((c, i) => `<button data-p="${id}" data-v="${i}">${c}</button>`).join("")}</div>`;
+  b.innerHTML = `<h3>INSTRUMENT</h3><div class="row" id="ak1"></div>
+    <h3>EFFET CALÉ SUR LE TEMPO</h3>${seg("division","Division",DIVS)}<div class="row" id="ak2"></div>
+    <h3>ARPÈGE</h3>${seg("arpOn","Arpège",["Off","On"])}${seg("arpMode","Sens",["Montant","Descendant"])}${seg("arpOct","Octaves",["1","2","3"])}
+    <h3>AFFICHAGE</h3><div class="seg"><span>Bol</span><button data-pref="theme" data-val="soupe">Ma petite soupe</button><button data-pref="theme" data-val="ramen">Mon petit ramen</button></div>
+    <div class="seg"><span>Animation</span><button data-pref="visual" data-val="anime">Animé</button><button data-pref="visual" data-val="reduit">Réduit</button><button data-pref="visual" data-val="statique">Statique</button></div>
+    <div class="seg"><span>Taille</span>${[50,75,100,125,150,200].map(z => `<button data-pref="zoom" data-val="${z}">${z} %</button>`).join("")}</div>`;
+  const mk = (parent, id) => { const el = document.createElement("div"); el.className = "mk"; el.innerHTML = `<canvas></canvas><b>${PDEF[id].label}</b><i></i>`; parent.appendChild(el);
+    advKnobs[id] = () => { if ($("#adv").style.display === "block") drawKnob(el.querySelector("canvas"), id, false); el.querySelector("i").textContent = PDEF[id].fmt(P[id]); };
+    bindDrag(el, id); };
+  ["attack","decay","sustain","release","brightness","tune","level"].forEach(id => mk($("#ak1"), id));
+  ["feedback","stretch"].forEach(id => mk($("#ak2"), id));
+  b.querySelectorAll("[data-p]").forEach(x => x.onclick = () => setParam(x.dataset.p, +x.dataset.v));
+  b.querySelectorAll("[data-pref]").forEach(x => x.onclick = () => setPref(x.dataset.pref, x.dataset.pref === "zoom" ? +x.dataset.val : x.dataset.val));
+})();
+$("#close").onclick = () => $("#adv").style.display = "none";
+new MutationObserver(() => { for (const k in advKnobs) advKnobs[k](); }).observe($("#adv"), {attributes:true, attributeFilter:["style"]});
+
+function setPref(k, v) { const old = prefs[k]; prefs[k] = v; if (NATIVE) call("setPref", k, v); applyPrefs(k === "theme" && old !== v); }
+function applyPrefs(relayout) {
+  document.querySelectorAll("#adv [data-pref]").forEach(b => b.classList.toggle("on", String(prefs[b.dataset.pref]) === b.dataset.val));
+  if (relayout && LAY) layout();   // garde la recette, les réglages et les notes en cours
+  anim.wake("prefs");
+}
+
+// =============================================================================
+// Jeu au clavier d'ordinateur (pas de clavier dans la maquette)
+// =============================================================================
+function noteOn(n, v = .85) { if (NATIVE) call("noteOn", n, v, 1); else synth.noteOn(n, v); anim.wake("note"); }
+function noteOff(n) { if (NATIVE) call("noteOff", n, 1); else synth.noteOff(n); }
+(() => { const map = "awsedftgyhujkolp;"; const pc = new Map(); let base = 60;
+  addEventListener("keydown", e => { if (e.repeat) return; const k = e.key.toLowerCase();
+    if (k === "z") { base = Math.max(24, base - 12); toast("Octave " + (base / 12 - 1)); return; }
+    if (k === "x") { base = Math.min(96, base + 12); toast("Octave " + (base / 12 - 1)); return; }
+    if (k === "f2") { perf.toggle(); return; }
+    const i = map.indexOf(k); if (i >= 0 && !pc.has(k)) { pc.set(k, base + i); noteOn(base + i, .85); } });
+  addEventListener("keyup", e => { const k = e.key.toLowerCase(); if (pc.has(k)) { noteOff(pc.get(k)); pc.delete(k); } });
+  addEventListener("blur", () => { pc.forEach(n => noteOff(n)); pc.clear(); });
+})();
+
+// =============================================================================
+// Retour du moteur
+// =============================================================================
+const fbk = {e:0, w:0, h:0, b:0, v:0, l:0, bpm:120, at:0};
+function onFb(m) { const ph = fbk.h; Object.assign(fbk, m); fbk.at = performance.now(); if (m.h !== ph) anim.ripple(.6 + Math.min(1, m.e)); anim.wake("fb"); }
+
+// =============================================================================
+// Animation : vapeur, ronds dans la soupe, tourbillon de la surface, sachets à ressort
+// Calques mis en cache, une seule boucle, arrêt automatique au calme.
+// =============================================================================
+const fx = (() => {
+  const cv = $("#fx"), g = cv.getContext("2d"); let scale = 1, L = null; const parts = [], rings = [];
+  // bouffée de vapeur pré-rendue (sprite)
+  const puff = document.createElement("canvas"); puff.width = puff.height = 64;
+  { const q = puff.getContext("2d"), r = q.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, "rgba(255,255,255,.55)"); r.addColorStop(.5, "rgba(255,255,255,.18)"); r.addColorStop(1, "rgba(255,255,255,0)"); q.fillStyle = r; q.fillRect(0, 0, 64, 64); }
+  function resize(s) { scale = s * (window.devicePixelRatio || 1); cv.width = Math.round(960 * scale); cv.height = Math.round(640 * scale); }
+  function layoutChanged(l) { L = l; parts.length = 0; rings.length = 0; }
+  function spawn(rate, dt) {
+    if (!L) return; const [x0, y0, x1] = L.steam;
+    let n = rate * dt; while (n > 0) { if (Math.random() < n) parts.push({x: (x0 + Math.random() * (x1 - x0)) * K, y: (y0 + 70) * K, vx: (Math.random() - .5) * 6, vy: -(14 + Math.random() * 10), life: 0, max: 2.4 + Math.random() * 1.2, s: 12 + Math.random() * 10, ph: Math.random() * 6}); n -= 1; }
+    if (parts.length > 60) parts.splice(0, parts.length - 60);
+  }
+  function ripple(strength) { if (!L) return; const e = L.soup_ellipse; rings.push({cx: (e[0] + e[2]) / 2 * K + (Math.random() - .5) * 60, cy: (e[1] + e[3]) / 2 * K + (Math.random() - .5) * 14, r: 2, a: .55 * Math.min(1.5, strength), k: (e[3] - e[1]) / (e[2] - e[0])}); if (rings.length > 12) rings.shift(); }
+  function step(dt, steamRate, t) {
+    spawn(steamRate, dt);
+    g.setTransform(scale, 0, 0, scale, 0, 0); g.clearRect(0, 0, 960, 640);
+    if (L) { const e = L.soup_ellipse; g.save(); g.beginPath(); g.ellipse((e[0] + e[2]) / 2 * K, (e[1] + e[3]) / 2 * K, (e[2] - e[0]) / 2 * K - 2, (e[3] - e[1]) / 2 * K - 2, 0, 0, 7); g.clip();
+      for (let i = rings.length - 1; i >= 0; i--) { const r = rings[i]; r.r += dt * 70; r.a -= dt * .45; if (r.a <= 0) { rings.splice(i, 1); continue; }
+        g.strokeStyle = `rgba(255,248,236,${r.a.toFixed(3)})`; g.lineWidth = 1.6; g.beginPath(); g.ellipse(r.cx, r.cy, r.r, r.r * r.k, 0, 0, 7); g.stroke(); }
+      g.restore(); }
+    for (let i = parts.length - 1; i >= 0; i--) { const p = parts[i]; p.life += dt; if (p.life > p.max) { parts.splice(i, 1); continue; }
+      p.x += (p.vx + Math.sin(t * .0016 + p.ph) * 8) * dt; p.y += p.vy * dt; const k = p.life / p.max, sz = p.s * (1 + k * 1.8);
+      g.globalAlpha = Math.sin(Math.PI * k) * .75; g.drawImage(puff, p.x - sz, p.y - sz, sz * 2, sz * 2); }
+    g.globalAlpha = 1;
+  }
+  const busy = () => parts.length > 0 || rings.length > 0;
+  function clear() { parts.length = 0; rings.length = 0; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); }
+  return {resize, layoutChanged, step, ripple, busy, clear};
+})();
+
+const anim = (() => {
+  let running = false, last = 0, idle = 0, rot = 0, rotV = 0, glow = 0;
+  const spr = {}; let kicked = 0;
+  function kickSachet(n) { spr[n] = spr[n] || {y: 0, v: 0}; spr[n].v -= prefs.visual === "reduit" ? 3 : 7; kicked = n; wake("kick"); }
+  function ripple(s) { if (prefs.visual !== "statique") { fx.ripple(s * (prefs.visual === "reduit" ? .6 : 1)); wake("ripple"); } }
+  function wake(why) {
+    idle = performance.now();
+    if (prefs.visual === "statique") { running = false; fx.clear(); $("#surf").style.transform = ""; document.querySelectorAll(".sachet").forEach(e => e.style.transform = ""); return; }
+    if (!running && !document.hidden) { running = true; last = performance.now(); requestAnimationFrame(frame); }
+  }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) wake("vis"); });
+  function frame(t) {
+    if (!running) return;
+    const red = prefs.visual === "reduit", minDt = red ? 1 / 31 : 0, dt = Math.min(.05, (t - last) / 1000);
+    if (dt < minDt - .002) { requestAnimationFrame(frame); return; }
+    last = t; const t0 = performance.now();
+    const amt = red ? .5 : 1;
+    // tourbillon : la soupe tourne plus vite quand l'effet travaille ; pulsation sur la division
+    const target = (fbk.e > .01 || fbk.w > .01 ? (8 + 40 * Math.min(1, fbk.w) + 10 * fbk.e) : 0) * amt;
+    rotV += (target - rotV) * Math.min(1, dt * 1.5); rot = (rot + rotV * dt) % 360;
+    glow += (Math.min(1, fbk.e * 1.5) - glow) * Math.min(1, dt * 8);
+    const L = LAY[prefs.theme === "ramen" ? "ramen" : "soupe"], k = (L.soup_ellipse[3] - L.soup_ellipse[1]) / (L.soup_ellipse[2] - L.soup_ellipse[0]);
+    const pulse = 1 + .006 * amt * Math.max(0, 1 - fbk.b * 3) * Math.min(1, fbk.e * 2);
+    $("#surf").style.transform = `scale(${pulse.toFixed(4)},${(k * pulse).toFixed(4)}) rotate(${rot.toFixed(2)}deg) scale(1,${(1 / k).toFixed(4)})`;
+    // sachets à ressort (le sachet choisi se soulève)
+    document.querySelectorAll(".sachet").forEach(el => { const n = +el.dataset.n, s = spr[n] = spr[n] || {y: 0, v: 0};
+      const rest = n === sachet ? -5 * amt - glow * 2 * amt : 0;
+      s.v += (-170 * (s.y - rest) - 13 * s.v) * dt; s.y += s.v * dt;
+      el.style.transform = `translateY(${s.y.toFixed(2)}px) scale(${(1 + (n === sachet ? .03 * amt : 0)).toFixed(3)})`; });
+    // vapeur : plus dense avec le son et l'effet
+    const steam = (fbk.e > .005 || fbk.w > .005) ? (3 + 14 * Math.min(1, fbk.e + fbk.w)) * amt : 0;
+    fx.step(dt, steam, t);
+    perf.sample(performance.now() - t0);
+    const springsQuiet = Object.values(spr).every(s => Math.abs(s.v) < .02);
+    const quiet = fbk.e < .004 && fbk.w < .004 && rotV < .05 && !fx.busy() && springsQuiet && performance.now() - fbk.at > 200;
+    if ((quiet && t - idle > 1000) || document.hidden) { running = false; perf.idle(); return; }
+    if (!quiet) idle = t;
+    requestAnimationFrame(frame);
+  }
+  return {wake, kickSachet, ripple};
+})();
+const perf = (() => { let on = false, n = 0, sum = 0, t0 = performance.now(); const el = $("#perf"), log = [];
+  return {log, toggle() { on = !on; el.style.display = on ? "block" : "none"; },
+    sample(ms) { log.push(ms); if (log.length > 20000) log.shift(); n++; sum += ms; const now = performance.now();
+      if (now - t0 > 1000) { if (on) el.textContent = `${Math.round(n * 1000 / (now - t0))} i/s · rendu ${(sum / n).toFixed(2)} ms\nmode ${prefs.visual}`; n = 0; sum = 0; t0 = now; } },
+    idle() { if (on) el.textContent = "rendu suspendu (silence)"; } }; })();
+
+// =============================================================================
+// Aperçu sans plugin : synthé WebAudio approximatif
+// =============================================================================
+const synth = (() => {
+  let ac = null, out, an, buf, hits = 0, dl, fbG, rev; const vs = new Map();
+  function init() { if (ac) return; ac = new (window.AudioContext || window.webkitAudioContext)(); out = ac.createGain(); out.connect(ac.destination);
+    dl = ac.createDelay(2); fbG = ac.createGain(); dl.connect(fbG); fbG.connect(dl); const dg = ac.createGain(); dg.gain.value = .6; dl.connect(dg); dg.connect(out);
+    rev = ac.createConvolver(); const len = ac.sampleRate * 2.5, ir = ac.createBuffer(2, len, ac.sampleRate);
+    for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3); }
+    rev.buffer = ir; rev.connect(out); an = ac.createAnalyser(); an.fftSize = 512; out.connect(an); buf = new Float32Array(512); poll(); }
+  function noteOn(n, v) { init(); const t = ac.currentTime, i = Math.round(P.inst), f = 440 * Math.pow(2, (n + P.tune - 69) / 12);
+    const g = ac.createGain(), flt = ac.createBiquadFilter(); flt.type = "lowpass"; flt.frequency.value = 600 + 6000 * P.brightness;
+    const types = ["sawtooth","sawtooth","sine","sine","sawtooth","sawtooth","sine","sine"]; const oscs = [];
+    const count = [2,3,1,1,3,1,1,1][i];
+    for (let u = 0; u < count; u++) { const o = ac.createOscillator(); o.type = types[i]; o.frequency.value = f * (i === 7 ? 1.6 : 1); if (i === 7) o.frequency.setTargetAtTime(f, t, .02); o.detune.value = (u - (count - 1) / 2) * 12; o.connect(flt); o.start(t); oscs.push(o); }
+    const perc = i === 3 || i === 7; const a = perc ? .002 : Math.max(.003, P.attack / 1000), lv = Math.pow(10, P.level / 20) * .25 * (.4 + .6 * v);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(lv, t + a); g.gain.setTargetAtTime(perc ? 0 : lv * P.sustain, t + a, (perc ? .25 : P.decay / 1000) / 5);
+    flt.connect(g); g.connect(out); const fxs = Math.round(P.fx); const send = ac.createGain(); send.gain.value = fxs ? P.mix : 0; g.connect(send); send.connect(dl);
+    dl.delayTime.value = Math.min(2, 60 / 120 * [2,1,.5,.25,.125,2/3,1/3,1/6][Math.round(P.division)]); fbG.gain.value = fxs === 3 || fxs === 7 ? P.feedback : .25;
+    const sg = ac.createGain(); sg.gain.value = P.space * .8; g.connect(sg); sg.connect(rev);
+    vs.set(n, {g, oscs}); hits++; }
+  function noteOff(n) { const v = vs.get(n); if (!v) return; const t = ac.currentTime; v.g.gain.cancelScheduledValues(t); v.g.gain.setValueAtTime(v.g.gain.value, t);
+    v.g.gain.setTargetAtTime(0, t, P.release / 1000 / 5); v.oscs.forEach(o => o.stop(t + P.release / 1000 * 1.4 + .05)); vs.delete(n); }
+  function poll() { an.getFloatTimeDomainData(buf); let pk = 0; for (const x of buf) pk = Math.max(pk, Math.abs(x));
+    const beat = (ac.currentTime * 2 / [2,1,.5,.25,.125,2/3,1/3,1/6][Math.round(P.division)]) % 1;
+    onFb({e: Math.min(1, pk * 1.5), w: Math.round(P.fx) ? Math.min(1, pk * P.mix * 1.5) : 0, h: hits, b: beat, v: vs.size, l: pk, bpm: 120}); setTimeout(poll, 33); }
+  return {noteOn, noteOff};
+})();
+
+if (!NATIVE) window.SHK_TEST = {feed: onFb, fbk, perf, setPref, prefs, P, loadPreset, selectSachet, get current() { return current; }};
+
+async function boot() {
+  LAY = window.SHK_LAYOUT || await (await fetch("assets/layout.json")).json();
+  fit();
+  if (NATIVE) {
+    const st = await call("getState"); presets = st.presets || [];
+    if (st.instruments) INSTS = st.instruments; if (st.fxList) FXS = st.fxList; if (st.divisions) DIVS = st.divisions;
+    applyState(st); mergeUser(); layout();
+    window.__JUCE__.backend.addEventListener("params", o => { for (const k in o) setParam(k, o[k], true); });
+    window.__JUCE__.backend.addEventListener("preset", i => { current = i; showPreset(); });
+    window.__JUCE__.backend.addEventListener("fb", onFb);
+  } else {
+    const f = window.SHK_FACTORY || {}; presets = f.presets || []; mergeUser(); layout();
+    if (presets.length) await loadPreset(0);
+    $("#hint").textContent = "Aperçu en ligne · son approximatif · jouer : touches A à K (Z/X octave) · cliquer sur le titre : Mon petit ramen · F2 : mesures";
+  }
+  applyPrefs(false); refreshPills(); anim.wake("boot");
+}
+boot();
+</script>
+</body>
+</html>

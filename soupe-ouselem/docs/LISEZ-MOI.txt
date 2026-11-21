@@ -1,0 +1,17 @@
+MA PETITE SOUPE OUSELEM — Room Labs
+Instrument + module d'effet calé sur le tempo (VST3 / AU / application autonome)
+
+Les sachets
+- 6 sachets = 6 recettes : Violon renversé, Pad mijoté, Gouttes au sésame, Nouilles longues, Bouillon d'arpèges, Fond de bol.
+- Cliquer un sachet charge sa recette ; les flèches passent d'une recette à l'autre (5 par sachet).
+- INSTRUMENT et FX (SYNC) se changent dans les deux menus. Le menu FX contient aussi la division (1/2 à 1/16T).
+- REVERSE et STUTTER s'ajoutent à l'effet du sachet, calés sur le tempo de l'hôte.
+- TONE, DAMP (amortit les aigus de l'espace et des répétitions), SPACE (réverbération), MIX (part de l'effet).
+
+Boutons
+- Bouton rouge à gauche : goûter (joue la note de référence). Bouton rouge à droite : surprise du chef (effet au hasard).
+- Disquette : mémoriser la recette (« Ma recette 1, 2… », disponibles dans tous les projets).
+- Roue : réglages avancés (attaque, tenue, relâchement, couleur, étirement, retour, arpège) et affichage.
+- Cliquer sur le titre : passer en mode « Mon petit ramen » (même plugin, même son).
+
+Jouer sans clavier MIDI : touches A W S E D F T G Y H U J K, Z/X pour l'octave.
