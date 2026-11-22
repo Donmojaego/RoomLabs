@@ -56,7 +56,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: kaleidoscope-fonds
-          path: kaleidoscope/dist
+          path: kaleidoscope
       - name: Inno Setup
         shell: pwsh
         working-directory: kaleidoscope
@@ -75,7 +75,7 @@ jobs:
           name: Kaleidoscope - Fonds ${{ inputs.version }} (100 instruments CC0)
           prerelease: true
           make_latest: false
-          body_path: kaleidoscope/dist/fabrication.txt
+          body_path: kaleidoscope/fabrication.txt
           files: |
             kaleidoscope/installer/windows/output/*.exe
             kaleidoscope/Kaleidoscope-Fonds-*.zip

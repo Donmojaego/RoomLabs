@@ -94,9 +94,16 @@ def octave_shift(samples):
         midi = 69 + 12 * np.log2(hz / 440.0)
         d = midi - n
         votes.append(int(round(d / 12.0)) * 12)
-    if not votes: return 0
+    if not votes: return 12
     vals, counts = np.unique(votes, return_counts=True)
-    return int(vals[np.argmax(counts)])
+    best, share = int(vals[np.argmax(counts)]), counts.max() / len(votes)
+    # ces bibliothèques nomment surtout les notes avec do3 = 60 (+12) ; une détection isolée ou extrême
+    # (cloches inharmoniques, pizzicati trop courts) retombe sur cette convention
+    return best if best in (0, 12, 24) and share >= 0.6 else 12
+
+
+# instruments dont les noms de fichiers ne suivent pas la convention (vérifié à l'oreille / par la détection)
+OCTAVE_OVERRIDE = {"glock-tubulaire": 48}
 
 
 def bake_loop(x, sr, max_len):
@@ -144,7 +151,7 @@ def build(entry, repos, out):
             x, sr = sf.read(f, dtype="float32", always_2d=True)
             if x.shape[1] > 2: x = x[:, :2]
             loaded.append((n, v, x, sr, f))
-    shift = octave_shift([(n, x, sr) for n, v, x, sr, f in loaded])
+    shift = OCTAVE_OVERRIDE.get(entry["id"], octave_shift([(n, x, sr) for n, v, x, sr, f in loaded]))
     peaks = [float(np.abs(x).max()) for *_, x, sr, f in [(a, b, c, d, e) for a, b, c, d, e in loaded]]
     gain = 0.5 / (float(np.median(peaks)) + 1e-9)
     d = os.path.join(out, "Banques", entry["id"]); os.makedirs(d, exist_ok=True)
