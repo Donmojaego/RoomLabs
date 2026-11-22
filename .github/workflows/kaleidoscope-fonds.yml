@@ -1,0 +1,81 @@
+name: Kaleidoscope - Fonds
+
+# Fabrique les 100 fonds de Kaleidoscope (instruments échantillonnés CC0) et leur installeur Windows.
+# Lancement à la main seulement (Actions > Kaleidoscope - Fonds > Run workflow) : c'est long et lourd.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version des fonds'
+        default: '0.1.0'
+
+permissions:
+  contents: write
+
+jobs:
+  fabrication:
+    name: Fabrication des fonds (VCSL + VSCO 2 CE)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dossiers nécessaires des dépôts sources (clone partiel)
+        run: |
+          mkdir -p src
+          python3 - <<'PY' > dossiers.txt
+          import sys; sys.path.insert(0, "kaleidoscope/tools"); import banks
+          for e in banks.entries(): print(e["repo"] + "\t" + e["folder"])
+          PY
+          for repo in vcsl vsco-2-ce; do
+            url=https://github.com/sgossner/$([ $repo = vcsl ] && echo VCSL || echo VSCO-2-CE)
+            git clone --filter=blob:none --no-checkout --depth 1 "$url" src/$repo
+            git -C src/$repo sparse-checkout init --no-cone
+            grep "^$repo	" dossiers.txt | cut -f2 | sed 's#^#/#; s#$#/*#' > sparse.txt
+            git -C src/$repo sparse-checkout set --no-cone --stdin < sparse.txt
+            git -C src/$repo checkout
+          done
+          du -sh src/*
+      - name: Fabrication
+        run: |
+          pip install numpy soundfile
+          python3 kaleidoscope/tools/build_banks.py src dist | tee fabrication.txt
+          du -sh dist/Banques; ls dist/Banques | wc -l
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kaleidoscope-fonds
+          path: |
+            dist/Banques
+            fabrication.txt
+          compression-level: 0
+
+  installeur:
+    name: Installeur Windows des fonds
+    needs: fabrication
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: kaleidoscope-fonds
+          path: kaleidoscope/dist
+      - name: Inno Setup
+        shell: pwsh
+        working-directory: kaleidoscope
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+          $env:PATH += ";${env:ProgramFiles(x86)}\Inno Setup 6"
+          $n = (Get-ChildItem dist/Banques -Directory).Count
+          if ($n -lt 100) { Write-Output "::error title=Fonds::Seulement $n fonds fabriqués"; exit 1 }
+          cd installer/windows
+          iscc /DBankVersion=${{ inputs.version }} "/DBankDir=..\..\dist\Banques" KaleidoscopeFonds.iss
+          Compress-Archive -Path ..\..\dist\Banques\* -DestinationPath "..\..\Kaleidoscope-Fonds-${{ inputs.version }}.zip" -Force
+      - name: Publication
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: kaleidoscope-fonds-v${{ inputs.version }}
+          name: Kaleidoscope - Fonds ${{ inputs.version }} (100 instruments CC0)
+          prerelease: true
+          make_latest: false
+          body_path: kaleidoscope/dist/fabrication.txt
+          files: |
+            kaleidoscope/installer/windows/output/*.exe
+            kaleidoscope/Kaleidoscope-Fonds-*.zip

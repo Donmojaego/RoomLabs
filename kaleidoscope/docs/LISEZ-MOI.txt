@@ -1,0 +1,4 @@
+KALEIDOSCOPE - Room Labs Audio
+Générateur de mélodies infinies. GÉNÉRER (Espace), DÉCLINAISON (D), J'aime / Garder / À refaire pour Personal,
+Keys ou Drop pour la tonalité, LAYOUT pour l'habillage. Notes en MIDI vers l'hôte, export .mid, glisser-déposer.
+Fonds : installeur séparé « Kaleidoscope-Fonds ». Aide : bouton ? dans le plugin.

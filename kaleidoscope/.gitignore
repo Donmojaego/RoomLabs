@@ -1,0 +1,9 @@
+build/
+build-*/
+out/
+dist/
+installer/windows/output/
+__pycache__/
+.DS_Store
+*.user
+.vs/

@@ -1,0 +1,138 @@
+{
+ "size": [
+  1100,
+  700
+ ],
+ "scale": 2,
+ "order": [
+  "retro",
+  "telescope",
+  "holo",
+  "laiton"
+ ],
+ "default": "retro",
+ "layouts": [
+  {
+   "id": "retro",
+   "name": "Rétro",
+   "description": "Bois, laiton et ambre — l'instrument des années 70 (défaut)"
+  },
+  {
+   "id": "telescope",
+   "name": "Télescope",
+   "description": "Tube optique et vitraux — la vue plonge dans le kaléidoscope"
+  },
+  {
+   "id": "holo",
+   "name": "Holographique",
+   "description": "Tunnel spectral cyan et violet, lumière holographique"
+  },
+  {
+   "id": "laiton",
+   "name": "Laiton & Verre",
+   "description": "Instrument optique en laiton, hublot de verre (provisoire, planche 2)"
+  }
+ ],
+ "assets": [
+  {
+   "key": "fond",
+   "size": "2200×1400",
+   "role": "fond complet, trou transparent à la place de la lentille et des zones de texte",
+   "formats": [
+    "webp",
+    "png"
+   ]
+  },
+  {
+   "key": "logo",
+   "size": "760×150",
+   "role": "logo KALEIDOSCOPE by Room Labs Audio, fond transparent",
+   "formats": [
+    "webp",
+    "png"
+   ]
+  },
+  {
+   "key": "lentille",
+   "size": "2200×1400",
+   "role": "cadre de la lentille / du hublot posé PAR-DESSUS l'animation, centre transparent",
+   "formats": [
+    "webp",
+    "png"
+   ]
+  },
+  {
+   "key": "molette",
+   "size": "160×160",
+   "role": "chapeau de molette vu de dessus, repère vers le haut (tourné par le code)",
+   "formats": [
+    "webp",
+    "png"
+   ]
+  },
+  {
+   "key": "molette_grande",
+   "size": "240×240",
+   "role": "grande molette (Variation, Personal)",
+   "formats": [
+    "webp",
+    "png"
+   ]
+  },
+  {
+   "key": "generer_off",
+   "size": "420×112",
+   "role": "bouton GÉNÉRER au repos (le texte est écrit par le code)",
+   "formats": [
+    "webp",
+    "png"
+   ]
+  },
+  {
+   "key": "generer_on",
+   "size": "420×112",
+   "role": "bouton GÉNÉRER enfoncé / allumé",
+   "formats": [
+    "webp",
+    "png"
+   ]
+  },
+  {
+   "key": "bouton_off",
+   "size": "220×64",
+   "role": "bouton bascule éteint (Solo/Accomp, Keys/Drop…)",
+   "formats": [
+    "webp",
+    "png"
+   ]
+  },
+  {
+   "key": "bouton_on",
+   "size": "220×64",
+   "role": "bouton bascule allumé",
+   "formats": [
+    "webp",
+    "png"
+   ]
+  },
+  {
+   "key": "voyant",
+   "size": "44×44",
+   "role": "voyant lumineux allumé (éteint = même image assombrie par le code)",
+   "formats": [
+    "webp",
+    "png"
+   ]
+  },
+  {
+   "key": "clavier",
+   "size": "2200×180",
+   "role": "habillage du clavier (touches dessinées par le code par-dessus)",
+   "formats": [
+    "webp",
+    "png"
+   ]
+  }
+ ],
+ "naming": "<layout>_<clé>.webp (ou .png), ex. retro_fond.webp ; à déposer dans ui/assets/ (intégré) ou Documents/Room Labs/Kaleidoscope/Assets (essai sans recompiler)"
+}

@@ -1,0 +1,788 @@
+{
+ "families": [
+  "Hip-hop & Trap",
+  "R&B & Soul",
+  "Afro",
+  "Caraïbes",
+  "Latino",
+  "Club & électro",
+  "Pop & Rock",
+  "Jazz, classique & ambiances",
+  "Monde"
+ ],
+ "styles": [
+  {
+   "id": "trap",
+   "name": "Trap",
+   "family": 0,
+   "tempo": [
+    130,
+    160
+   ],
+   "energy": 0.7,
+   "palette": 1
+  },
+  {
+   "id": "rap",
+   "name": "Rap",
+   "family": 0,
+   "tempo": [
+    82,
+    98
+   ],
+   "energy": 0.55,
+   "palette": 2
+  },
+  {
+   "id": "drill",
+   "name": "Drill",
+   "family": 0,
+   "tempo": [
+    138,
+    146
+   ],
+   "energy": 0.8,
+   "palette": 1
+  },
+  {
+   "id": "afrotrap",
+   "name": "Afrotrap",
+   "family": 0,
+   "tempo": [
+    140,
+    150
+   ],
+   "energy": 0.75,
+   "palette": 3
+  },
+  {
+   "id": "detroit",
+   "name": "Detroit",
+   "family": 0,
+   "tempo": [
+    90,
+    104
+   ],
+   "energy": 0.7,
+   "palette": 1
+  },
+  {
+   "id": "clubnl",
+   "name": "Club hollandais",
+   "family": 0,
+   "tempo": [
+    96,
+    108
+   ],
+   "energy": 0.75,
+   "palette": 4
+  },
+  {
+   "id": "luxe",
+   "name": "Luxe",
+   "family": 0,
+   "tempo": [
+    70,
+    86
+   ],
+   "energy": 0.55,
+   "palette": 5
+  },
+  {
+   "id": "intello",
+   "name": "Intello",
+   "family": 0,
+   "tempo": [
+    90,
+    110
+   ],
+   "energy": 0.6,
+   "palette": 6
+  },
+  {
+   "id": "emo",
+   "name": "Emo",
+   "family": 0,
+   "tempo": [
+    130,
+    160
+   ],
+   "energy": 0.6,
+   "palette": 7
+  },
+  {
+   "id": "rnb",
+   "name": "R&B",
+   "family": 1,
+   "tempo": [
+    65,
+    92
+   ],
+   "energy": 0.45,
+   "palette": 8
+  },
+  {
+   "id": "soul",
+   "name": "Soul",
+   "family": 1,
+   "tempo": [
+    70,
+    100
+   ],
+   "energy": 0.5,
+   "palette": 9
+  },
+  {
+   "id": "neosoul",
+   "name": "Neo soul",
+   "family": 1,
+   "tempo": [
+    70,
+    92
+   ],
+   "energy": 0.5,
+   "palette": 8
+  },
+  {
+   "id": "gospel",
+   "name": "Gospel",
+   "family": 1,
+   "tempo": [
+    70,
+    120
+   ],
+   "energy": 0.65,
+   "palette": 9
+  },
+  {
+   "id": "afrolove",
+   "name": "Afro love",
+   "family": 2,
+   "tempo": [
+    95,
+    112
+   ],
+   "energy": 0.55,
+   "palette": 10
+  },
+  {
+   "id": "afrobeat",
+   "name": "Afrobeat",
+   "family": 2,
+   "tempo": [
+    100,
+    120
+   ],
+   "energy": 0.7,
+   "palette": 10
+  },
+  {
+   "id": "amapiano",
+   "name": "Amapiano",
+   "family": 2,
+   "tempo": [
+    110,
+    116
+   ],
+   "energy": 0.6,
+   "palette": 11
+  },
+  {
+   "id": "afrorumba",
+   "name": "Afro rumba",
+   "family": 2,
+   "tempo": [
+    110,
+    130
+   ],
+   "energy": 0.65,
+   "palette": 12
+  },
+  {
+   "id": "rumbacongo",
+   "name": "Rumba congolaise",
+   "family": 2,
+   "tempo": [
+    100,
+    125
+   ],
+   "energy": 0.6,
+   "palette": 12
+  },
+  {
+   "id": "sebene",
+   "name": "Sébène",
+   "family": 2,
+   "tempo": [
+    125,
+    145
+   ],
+   "energy": 0.9,
+   "palette": 12
+  },
+  {
+   "id": "coupedecale",
+   "name": "Coupé-décalé",
+   "family": 2,
+   "tempo": [
+    125,
+    135
+   ],
+   "energy": 0.9,
+   "palette": 13
+  },
+  {
+   "id": "zouk",
+   "name": "Zouk",
+   "family": 3,
+   "tempo": [
+    85,
+    110
+   ],
+   "energy": 0.55,
+   "palette": 14
+  },
+  {
+   "id": "kompa",
+   "name": "Kompa",
+   "family": 3,
+   "tempo": [
+    95,
+    120
+   ],
+   "energy": 0.6,
+   "palette": 14
+  },
+  {
+   "id": "reggae",
+   "name": "Reggae",
+   "family": 3,
+   "tempo": [
+    68,
+    82
+   ],
+   "energy": 0.45,
+   "palette": 15
+  },
+  {
+   "id": "ragga",
+   "name": "Ragga",
+   "family": 3,
+   "tempo": [
+    88,
+    100
+   ],
+   "energy": 0.7,
+   "palette": 15
+  },
+  {
+   "id": "dancehall",
+   "name": "Dancehall",
+   "family": 3,
+   "tempo": [
+    90,
+    105
+   ],
+   "energy": 0.7,
+   "palette": 16
+  },
+  {
+   "id": "shatta",
+   "name": "Shatta",
+   "family": 3,
+   "tempo": [
+    95,
+    108
+   ],
+   "energy": 0.75,
+   "palette": 16
+  },
+  {
+   "id": "bouyon",
+   "name": "Bouyon",
+   "family": 3,
+   "tempo": [
+    150,
+    165
+   ],
+   "energy": 0.95,
+   "palette": 17
+  },
+  {
+   "id": "bombaton",
+   "name": "Bombaton",
+   "family": 3,
+   "tempo": [
+    100,
+    110
+   ],
+   "energy": 0.8,
+   "palette": 16
+  },
+  {
+   "id": "reggaeton",
+   "name": "Reggaeton",
+   "family": 4,
+   "tempo": [
+    88,
+    100
+   ],
+   "energy": 0.7,
+   "palette": 18
+  },
+  {
+   "id": "bailefunk",
+   "name": "Baile funk",
+   "family": 4,
+   "tempo": [
+    125,
+    135
+   ],
+   "energy": 0.9,
+   "palette": 18
+  },
+  {
+   "id": "latino",
+   "name": "Latino",
+   "family": 4,
+   "tempo": [
+    95,
+    125
+   ],
+   "energy": 0.7,
+   "palette": 19
+  },
+  {
+   "id": "bossa",
+   "name": "Bossa nova",
+   "family": 4,
+   "tempo": [
+    120,
+    140
+   ],
+   "energy": 0.45,
+   "palette": 19
+  },
+  {
+   "id": "ukg",
+   "name": "UK garage",
+   "family": 5,
+   "tempo": [
+    130,
+    136
+   ],
+   "energy": 0.75,
+   "palette": 20
+  },
+  {
+   "id": "twostep",
+   "name": "2-step",
+   "family": 5,
+   "tempo": [
+    128,
+    136
+   ],
+   "energy": 0.7,
+   "palette": 20
+  },
+  {
+   "id": "electro",
+   "name": "Electro",
+   "family": 5,
+   "tempo": [
+    120,
+    130
+   ],
+   "energy": 0.8,
+   "palette": 21
+  },
+  {
+   "id": "electrohouse",
+   "name": "Electro house",
+   "family": 5,
+   "tempo": [
+    124,
+    130
+   ],
+   "energy": 0.85,
+   "palette": 21
+  },
+  {
+   "id": "techno",
+   "name": "Techno",
+   "family": 5,
+   "tempo": [
+    128,
+    140
+   ],
+   "energy": 0.85,
+   "palette": 22
+  },
+  {
+   "id": "minimal",
+   "name": "Minimal",
+   "family": 5,
+   "tempo": [
+    120,
+    128
+   ],
+   "energy": 0.5,
+   "palette": 22
+  },
+  {
+   "id": "dubstep",
+   "name": "Dubstep",
+   "family": 5,
+   "tempo": [
+    138,
+    142
+   ],
+   "energy": 0.85,
+   "palette": 23
+  },
+  {
+   "id": "club",
+   "name": "Club",
+   "family": 5,
+   "tempo": [
+    118,
+    128
+   ],
+   "energy": 0.8,
+   "palette": 21
+  },
+  {
+   "id": "clubenergy",
+   "name": "Énergie club",
+   "family": 5,
+   "tempo": [
+    126,
+    132
+   ],
+   "energy": 0.95,
+   "palette": 23
+  },
+  {
+   "id": "pop",
+   "name": "Pop",
+   "family": 6,
+   "tempo": [
+    95,
+    125
+   ],
+   "energy": 0.6,
+   "palette": 24
+  },
+  {
+   "id": "poprock",
+   "name": "Pop rock",
+   "family": 6,
+   "tempo": [
+    110,
+    140
+   ],
+   "energy": 0.7,
+   "palette": 25
+  },
+  {
+   "id": "rock",
+   "name": "Rock",
+   "family": 6,
+   "tempo": [
+    110,
+    150
+   ],
+   "energy": 0.8,
+   "palette": 25
+  },
+  {
+   "id": "alternative",
+   "name": "Alternative",
+   "family": 6,
+   "tempo": [
+    90,
+    140
+   ],
+   "energy": 0.6,
+   "palette": 26
+  },
+  {
+   "id": "variete",
+   "name": "Variété française",
+   "family": 6,
+   "tempo": [
+    85,
+    120
+   ],
+   "energy": 0.5,
+   "palette": 26
+  },
+  {
+   "id": "seventies",
+   "name": "Années 70",
+   "family": 6,
+   "tempo": [
+    95,
+    118
+   ],
+   "energy": 0.65,
+   "palette": 27
+  },
+  {
+   "id": "eighties",
+   "name": "Années 80",
+   "family": 6,
+   "tempo": [
+    110,
+    125
+   ],
+   "energy": 0.7,
+   "palette": 28
+  },
+  {
+   "id": "jazz",
+   "name": "Jazz",
+   "family": 7,
+   "tempo": [
+    90,
+    160
+   ],
+   "energy": 0.55,
+   "palette": 29
+  },
+  {
+   "id": "classique",
+   "name": "Musique classique",
+   "family": 7,
+   "tempo": [
+    60,
+    120
+   ],
+   "energy": 0.5,
+   "palette": 30
+  },
+  {
+   "id": "lofi",
+   "name": "Lofi",
+   "family": 7,
+   "tempo": [
+    70,
+    90
+   ],
+   "energy": 0.35,
+   "palette": 31
+  },
+  {
+   "id": "planante",
+   "name": "Planante",
+   "family": 7,
+   "tempo": [
+    70,
+    100
+   ],
+   "energy": 0.3,
+   "palette": 32
+  },
+  {
+   "id": "triste",
+   "name": "Musique triste",
+   "family": 7,
+   "tempo": [
+    60,
+    85
+   ],
+   "energy": 0.3,
+   "palette": 33
+  },
+  {
+   "id": "joyeuse",
+   "name": "Musique joyeuse",
+   "family": 7,
+   "tempo": [
+    110,
+    135
+   ],
+   "energy": 0.75,
+   "palette": 34
+  },
+  {
+   "id": "oriental",
+   "name": "Musique orientale",
+   "family": 8,
+   "tempo": [
+    90,
+    115
+   ],
+   "energy": 0.6,
+   "palette": 35
+  },
+  {
+   "id": "asiatique",
+   "name": "Musique asiatique",
+   "family": 8,
+   "tempo": [
+    70,
+    110
+   ],
+   "energy": 0.4,
+   "palette": 36
+  },
+  {
+   "id": "hindoue",
+   "name": "Musique hindoue",
+   "family": 8,
+   "tempo": [
+    80,
+    120
+   ],
+   "energy": 0.6,
+   "palette": 37
+  },
+  {
+   "id": "world",
+   "name": "World",
+   "family": 8,
+   "tempo": [
+    90,
+    120
+   ],
+   "energy": 0.6,
+   "palette": 38
+  },
+  {
+   "id": "guerre",
+   "name": "Musique de guerre",
+   "family": 8,
+   "tempo": [
+    80,
+    110
+   ],
+   "energy": 0.9,
+   "palette": 39
+  }
+ ],
+ "moods": [
+  {
+   "id": "triste",
+   "name": "Triste"
+  },
+  {
+   "id": "joyeuse",
+   "name": "Joyeuse"
+  },
+  {
+   "id": "planante",
+   "name": "Planante"
+  },
+  {
+   "id": "sombre",
+   "name": "Sombre"
+  },
+  {
+   "id": "romantique",
+   "name": "Romantique"
+  },
+  {
+   "id": "energique",
+   "name": "Énergique"
+  },
+  {
+   "id": "epique",
+   "name": "Épique"
+  },
+  {
+   "id": "mysterieuse",
+   "name": "Mystérieuse"
+  },
+  {
+   "id": "luxueuse",
+   "name": "Luxueuse"
+  },
+  {
+   "id": "nostalgique",
+   "name": "Nostalgique"
+  }
+ ],
+ "scales": [
+  {
+   "id": "major",
+   "name": "Majeur"
+  },
+  {
+   "id": "minor",
+   "name": "Mineur naturel"
+  },
+  {
+   "id": "harmonic",
+   "name": "Mineur harmonique"
+  },
+  {
+   "id": "melodic",
+   "name": "Mineur mélodique"
+  },
+  {
+   "id": "dorian",
+   "name": "Dorien"
+  },
+  {
+   "id": "phrygian",
+   "name": "Phrygien"
+  },
+  {
+   "id": "lydian",
+   "name": "Lydien"
+  },
+  {
+   "id": "mixolydian",
+   "name": "Mixolydien"
+  },
+  {
+   "id": "locrian",
+   "name": "Locrien"
+  },
+  {
+   "id": "minpenta",
+   "name": "Pentatonique mineure"
+  },
+  {
+   "id": "majpenta",
+   "name": "Pentatonique majeure"
+  },
+  {
+   "id": "blues",
+   "name": "Blues"
+  },
+  {
+   "id": "phrygdom",
+   "name": "Phrygien dominant"
+  },
+  {
+   "id": "double",
+   "name": "Double harmonique"
+  },
+  {
+   "id": "hirajoshi",
+   "name": "Hirajoshi"
+  },
+  {
+   "id": "insen",
+   "name": "In-sen"
+  },
+  {
+   "id": "bhairav",
+   "name": "Raga Bhairav"
+  },
+  {
+   "id": "kafi",
+   "name": "Raga Kafi"
+  },
+  {
+   "id": "wholetone",
+   "name": "Par tons"
+  },
+  {
+   "id": "hungarian",
+   "name": "Mineur hongrois"
+  }
+ ]
+}
