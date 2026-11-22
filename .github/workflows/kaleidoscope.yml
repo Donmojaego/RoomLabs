@@ -131,6 +131,19 @@ jobs:
           Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
           Compress-Archive -Path captures/* -DestinationPath "Kaleidoscope-Captures-Windows-${{ steps.v.outputs.version }}.zip" -Force
 
+      - name: Instruments enregistrés (paquet intégré à l'installeur)
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = (Get-Content instruments.version -Raw).Trim()
+          gh release download $tag -R ${{ github.repository }} -p "Kaleidoscope-Instruments-*.zip" -D dist --clobber
+          Expand-Archive (Get-ChildItem dist/Kaleidoscope-Instruments-*.zip | Select-Object -First 1).FullName -DestinationPath dist/Banques -Force
+          $n = (Get-ChildItem dist/Banques -Directory).Count
+          $mo = [Math]::Round(((Get-ChildItem dist/Banques -Recurse -File | Measure-Object Length -Sum).Sum) / 1MB)
+          if ($n -lt 100) { Write-Output "::error title=Instruments::Seulement $n instruments dans $tag"; exit 1 }
+          Write-Output "::notice title=Instruments::$n instruments ($mo Mo) intégrés depuis $tag"
+
       - name: Installeur (Inno Setup)
         shell: pwsh
         run: |
@@ -140,6 +153,9 @@ jobs:
           }
           cd installer/windows
           iscc /DAppVersion=${{ steps.v.outputs.version }} "/DBuildDir=..\..\build\Kaleidoscope_artefacts\Release" Kaleidoscope.iss
+          $mo = [Math]::Round((Get-Item output/Kaleidoscope-Setup-*.exe).Length / 1MB)
+          if ($mo -gt 500) { Write-Output "::error title=Installeur::$mo Mo, au-dessus de la limite de 500 Mo"; exit 1 }
+          Write-Output "::notice title=Installeur::Kaleidoscope-Setup : $mo Mo (plugin + 155 presets + 125 instruments + gabarits)"
 
       - name: Dossier de livraison Windows (zip)
         shell: pwsh

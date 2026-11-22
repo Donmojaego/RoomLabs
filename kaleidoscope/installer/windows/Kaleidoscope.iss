@@ -23,8 +23,8 @@ DisableProgramGroupPage=yes
 UninstallFilesDir={app}\Uninstall
 OutputDir=output
 OutputBaseFilename=Kaleidoscope-Setup-{#AppVersion}
-Compression=lzma2/max
-SolidCompression=yes
+Compression=lzma2/normal
+SolidCompression=no
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
@@ -41,10 +41,10 @@ Name: "perso"; Description: "Installation personnalisée"; Flags: iscustom
 [Components]
 Name: "vst3"; Description: "Plugin VST3 (FL Studio, Ableton Live…)"; Types: complet perso; Flags: fixed
 Name: "standalone"; Description: "Application autonome (sans DAW)"; Types: complet perso
-Name: "contenu"; Description: "Presets (150 natifs + 100 fiches de fonds), documentation et licences"; Types: complet perso; Flags: fixed
+Name: "contenu"; Description: "Sons : 155 presets + 125 instruments enregistrés, gabarits, documentation"; Types: complet perso; Flags: fixed
 
 [Dirs]
-Name: "{commonappdata}\Room Labs\Kaleidoscope\Banques"; Flags: uninsneveruninstall
+Name: "{commonappdata}\Room Labs\Kaleidoscope\Banques"
 Name: "{app}\Presets"
 
 [Files]
@@ -55,6 +55,10 @@ Source: "..\..\ui\presets\factory.json"; DestDir: "{app}\Presets"; Components: c
 Source: "..\..\docs\LISEZ-MOI.txt"; DestDir: "{app}\Documentation"; Components: contenu; Flags: ignoreversion isreadme
 Source: "..\..\docs\LICENCES.txt"; DestDir: "{app}\Licenses"; Components: contenu; Flags: ignoreversion
 Source: "..\..\docs\gabarits\*.png"; DestDir: "{app}\Documentation\Gabarits"; Components: contenu; Flags: ignoreversion
+; les 125 instruments enregistrés (Ogg Vorbis, CC0), dans la même installation
+Source: "..\..\dist\Banques\*"; DestDir: "{commonappdata}\Room Labs\Kaleidoscope\Banques"; Components: contenu; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\..\licences\FONDS-LICENCES.txt"; DestDir: "{app}\Licenses"; DestName: "INSTRUMENTS-LICENCES.txt"; Components: contenu; Flags: ignoreversion
+Source: "..\..\licences\inventaire.csv"; DestDir: "{app}\Licenses"; Components: contenu; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\Kaleidoscope (autonome)"; Filename: "{app}\Kaleidoscope.exe"; Components: standalone

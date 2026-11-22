@@ -2,18 +2,17 @@
 
 Générateur de mélodies infinies par Room Labs Audio (VST3 + application autonome) : 59 styles, 10 humeurs, 20 gammes,
 Solo ou Accompagnement, Keys ou Drop, Déclinaison, Personal, mode Infini, export MIDI.
-Son : moteur hybride (wavetable + soustractif, granulaire, fonds échantillonnés). 155 presets natifs + 125 fonds = 280.
-Interface : les 4 habillages peints de Room Labs (Rétro par défaut, Labo, Holographique, Télescope), MASTER réglable de -36 à +12 dB.
+Son : moteur hybride (wavetable + soustractif, granulaire, instruments enregistrés). 155 presets de synthèse + 125 instruments enregistrés = 280 sons.
+Interface : les 4 habillages peints de Room Labs (Rétro par défaut, Labo, Holographique, Télescope), MASTER de -36 à +12 dB.
 
 ## Installer
 
-- **Plugin** : lancer `Kaleidoscope-Setup-{{VERSION}}.exe`.
-- **Fonds (125 instruments)** : lancer `Kaleidoscope-Fonds-Setup-0.2.0.exe` (installeur séparé, Releases « kaleidoscope-fonds »).
-  Sans lui, les 155 presets natifs marchent ; les fonds s'affichent « à installer ».
+Un seul fichier : `Kaleidoscope-Setup-{{VERSION}}.exe`. Il installe le plugin, l'application autonome, les 280 sons
+(dont les 125 instruments enregistrés), les gabarits et la documentation. Rien d'autre à télécharger.
 
 Dans FL Studio : Options > Manage plugins > Find installed plugins, puis Ajouter > Kaleidoscope (Generators).
 Pour récupérer les notes dans une piste : le plugin envoie aussi les notes en MIDI (réglage ⚙ « Envoyer les notes en MIDI »),
-ou glissez le mini-rouleau sous le kaléidoscope vers une piste, ou bouton « Export MIDI ».
+ou glissez le mini-rouleau sous le kaléidoscope vers une piste, ou bouton « MIDI ».
 
 ## Emplacements
 
@@ -21,7 +20,8 @@ ou glissez le mini-rouleau sous le kaléidoscope vers une piste, ou bouton « Ex
 |---|---|
 | Plugin | `C:\Program Files\Common Files\VST3\Kaleidoscope.vst3` |
 | Application autonome | `C:\Program Files\Kaleidoscope\Kaleidoscope.exe` |
-| Fonds | `C:\ProgramData\Room Labs\Kaleidoscope\Banques\` (ou `Documents\Room Labs\Kaleidoscope\Banques\`) |
+| Instruments enregistrés | `C:\ProgramData\Room Labs\Kaleidoscope\Banques\` |
+| Gabarits | `C:\Program Files\Kaleidoscope\Documentation\Gabarits\` |
 | Mélodies exportées | `Documents\Room Labs\Kaleidoscope\MIDI\` |
 | Profil Personal | `%APPDATA%\Room Labs\Kaleidoscope\personal.txt` |
 | Essai d'assets de layout | `Documents\Room Labs\Kaleidoscope\Assets\` (ex. `retro_chassis.webp`), sans recompiler |

@@ -1,0 +1,53 @@
+name: Kaleidoscope - Instruments
+
+# Fabrique le paquet des instruments enregistrés de Kaleidoscope (CC0 : VCSL, VSCO 2 CE), en Ogg Vorbis haute qualité.
+# Ce paquet n'est PAS livré à part : la compilation du plugin le télécharge et le met dans l'installeur unique
+# (version utilisée : kaleidoscope/instruments.version). À relancer à la main quand la liste change (tools/banks.py).
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version du paquet (ex. 0.2.1)'
+        default: '0.2.1'
+
+permissions:
+  contents: write
+
+jobs:
+  fabrication:
+    name: Fabrication des instruments
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dossiers nécessaires des dépôts sources (clone partiel)
+        run: |
+          mkdir -p src
+          python3 - <<'PY' > dossiers.txt
+          import sys; sys.path.insert(0, "kaleidoscope/tools"); import banks
+          for e in banks.entries(): print(e["repo"] + "\t" + e["folder"])
+          PY
+          for repo in vcsl vsco-2-ce; do
+            url=https://github.com/sgossner/$([ $repo = vcsl ] && echo VCSL || echo VSCO-2-CE)
+            git clone --filter=blob:none --no-checkout --depth 1 "$url" src/$repo
+            git -C src/$repo sparse-checkout init --no-cone
+            grep "^$repo	" dossiers.txt | cut -f2 | sed 's#^#/#; s#$#/*#' > sparse.txt
+            git -C src/$repo sparse-checkout set --no-cone --stdin < sparse.txt
+            git -C src/$repo checkout
+          done
+      - name: Fabrication (Ogg Vorbis)
+        run: |
+          pip install numpy soundfile
+          python3 kaleidoscope/tools/build_banks.py src dist | tee fabrication.txt
+          n=$(ls dist/Banques | wc -l); echo "$n instruments" | tee -a fabrication.txt
+          du -sh dist/Banques | tee -a fabrication.txt
+          (cd dist/Banques && zip -q -r -0 ../../Kaleidoscope-Instruments-${{ inputs.version }}.zip .)
+          ls -la Kaleidoscope-Instruments-*.zip
+      - name: Publication (paquet interne, utilisé par l'installeur)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: kaleidoscope-instruments-v${{ inputs.version }}
+          name: Kaleidoscope - paquet d'instruments ${{ inputs.version }} (interne)
+          prerelease: true
+          make_latest: false
+          body_path: fabrication.txt
+          files: Kaleidoscope-Instruments-*.zip

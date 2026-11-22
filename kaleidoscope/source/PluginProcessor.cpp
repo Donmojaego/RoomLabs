@@ -86,7 +86,7 @@ juce::File BankLibrary::folderFor (const juce::String& id) const
 std::unique_ptr<kal::SamplePatch> BankLibrary::load (const juce::String& id, juce::String& error) const
 {
     auto dir = folderFor (id);
-    if (! dir.isDirectory()) { error = "Fond non installé : lancez l'installeur des fonds Kaleidoscope."; return nullptr; }
+    if (! dir.isDirectory()) { error = "Instrument introuvable : réinstallez Kaleidoscope."; return nullptr; }
     auto meta = juce::JSON::parse (dir.getChildFile ("instrument.json"));
     auto* regions = meta.getProperty ("regions", {}).getArray();
     if (regions == nullptr || regions->isEmpty()) { error = "instrument.json illisible"; return nullptr; }
@@ -477,7 +477,7 @@ void KaleidoProcessor::requestBank (const juce::String& id)
 const juce::String KaleidoProcessor::getProgramName (int index)
 {
     if (juce::isPositiveAndBelow (index, (int) presets.size()))
-        return (presets[(size_t) index].fond ? "Fond - " : "") + presets[(size_t) index].cat + " - " + presets[(size_t) index].name;
+        return (presets[(size_t) index].fond ? "Instrument - " : "") + presets[(size_t) index].cat + " - " + presets[(size_t) index].name;
     return {};
 }
 

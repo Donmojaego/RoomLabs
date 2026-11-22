@@ -3,7 +3,7 @@
 
 Usage : python tools/build_banks.py <dossier_des_depots> <sortie> [--only id1,id2] [--list]
   <dossier_des_depots> contient vcsl/ et vsco-2-ce/ (clones, même partiels)
-  <sortie>/Banques/<id>/instrument.json + <id>_<note>[_v].flac
+  <sortie>/Banques/<id>/instrument.json + <id>_<note>[_v].ogg
 
 Pour chaque instrument :
   - note lue dans le nom du fichier, octave vérifiée par détection de hauteur (les conventions varient) ;
@@ -11,7 +11,8 @@ Pour chaque instrument :
   - au plus une note par tierce mineure (zones de clavier calculées au milieu des racines) ;
   - instruments tenus : boucle fondue enchaînée cuite dans le fichier (pas de clic), longueur ≤ 4,5 s ;
   - instruments frappés : silence final coupé, fondu de 30 ms, longueur ≤ 4,5 s (pianos 6 s) ;
-  - mono si les deux canaux sont quasi identiques ; volume harmonisé (crête médiane à -6 dBFS).
+  - mono si les deux canaux sont quasi identiques ; volume harmonisé (crête médiane à -6 dBFS) ;
+  - Ogg Vorbis haute qualité (~220 kb/s) : 3 fois plus léger que le FLAC, sans différence audible, longueur exacte (boucles intactes).
 Dépendances : numpy, soundfile.
 """
 import json, os, re, sys
@@ -176,8 +177,8 @@ def build(entry, repos, out):
         hi = 127 if i == len(roots) - 1 else (root + roots[i + 1]) // 2
         vs = sorted(set(vel_of[n]))
         vlo, vhi = (0, 127) if len(vs) == 1 else ((0, 79) if v == vs[0] else (80, 127))
-        name = f"{entry['id']}_{root}" + ("" if len(vs) == 1 else f"_v{1 if v == vs[0] else 2}") + ".flac"
-        sf.write(os.path.join(d, name), x.squeeze() if x.shape[1] == 1 else x, sr, subtype="PCM_16")
+        name = f"{entry['id']}_{root}" + ("" if len(vs) == 1 else f"_v{1 if v == vs[0] else 2}") + ".ogg"
+        sf.write(os.path.join(d, name), x.squeeze() if x.shape[1] == 1 else x, sr, format="OGG", subtype="VORBIS", compression_level=0.3)
         r = dict(file=name, root=root, lo=lo, hi=hi, vlo=vlo, vhi=vhi)
         if loop: r.update(loop=True, loopStart=int(loop[0]), loopEnd=int(loop[1]))
         regions.append(r)

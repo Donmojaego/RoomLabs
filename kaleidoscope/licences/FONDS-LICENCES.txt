@@ -1,7 +1,7 @@
-KALEIDOSCOPE - FONDS (instruments échantillonnés)
-=================================================
+KALEIDOSCOPE - INSTRUMENTS ENREGISTRÉS
+=====================================
 
-Les 100 fonds livrés avec Kaleidoscope 0.1 sont fabriqués à partir de deux bibliothèques
+Les 125 instruments enregistrés livrés avec Kaleidoscope sont fabriqués à partir de deux bibliothèques
 publiées sous licence Creative Commons CC0 1.0 Universal (domaine public) :
 
   - VCSL, Versilian Community Sample Library — Versilian Studios / Sam Gossner
@@ -14,7 +14,7 @@ commercial, la modification et la redistribution sans condition. Merci à Versil
 
 Transformations faites par Room Labs : choix des notes et des couches de vélocité,
 détection de hauteur, boucles fondues, coupe des silences, harmonisation du volume,
-conversion en FLAC 16 bits. Le détail de chaque fond (dépôt, dossier d'origine)
+conversion en Ogg Vorbis haute qualité. Le détail de chaque instrument (dépôt, dossier d'origine)
 est dans inventaire.csv et dans le fichier instrument.json de chaque dossier.
 
 Bibliothèques volontairement exclues : Karoryfer, Philharmonia.

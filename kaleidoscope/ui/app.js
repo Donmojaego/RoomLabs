@@ -267,7 +267,7 @@ const UI = {};
 function build() {
   const S = st.styles;
   UI.preset = makeSel("preset", "Preset", () => { const p = st.presets[st.preset]; return p ? p.name : "—"; }, openBrowser, d => loadPreset(st.preset + d),
-    "Preset : flèches pour défiler, clic pour le navigateur (155 natifs + 125 fonds)");
+    "Preset : flèches pour défiler, clic pour le navigateur (155 presets de synthèse + 125 instruments enregistrés)");
   $("#gPreset").appendChild(UI.preset.el);
   const styleMenu = a => openMenu(a, S.families.map((f, fi) => ({ title: f, cols: 3, items: S.styles.map((x, i) => ({ v: i, label: x.name, f: x.family })).filter(x => x.f === fi) })),
     Math.round(P("style")), v => choose("style", v), { width: 640 });
@@ -330,13 +330,13 @@ function build() {
   // moteurs
   UI.tWt = makeTog("wtOn", "Wavetable", "Moteur wavetable / soustractif");
   UI.tGr = makeTog("granOn", "Grains", "Moteur granulaire (textures)");
-  UI.tFo = makeTog("smpOn", "Fond", "Couche échantillonnée (fond chargé)");
+  UI.tFo = makeTog("smpOn", "Instrument", "Couche d'instrument enregistré (piano, cordes, marimba…)");
   UI.kA = [["posA", "Table"], ["cutoff", "Coupure"], ["reso", "Résonance"], ["granMix", "Grains"]].map(([i, l]) => makeKnob(i, l));
   UI.kB = [["variation", "Variation"], ["density", "Densité"], ["reverb", "Espace"], ["delay", "Écho"]].map(([i, l]) => makeKnob(i, l));
   UI.scope = el("div", "scope", '<canvas id="waveCv"></canvas>'); UI.scope.dataset.tip = "Forme d'onde — clic : choisir la table";
   UI.scope.addEventListener("click", () => openMenu(UI.scope, [{ cols: 2, items: TABLES.map((t, i) => ({ v: i, label: t })) }], Math.round(P("tableA")), v => setParam("tableA", v), { width: 280 }));
   UI.gscope = el("div", "scope", '<canvas id="grainCv"></canvas>');
-  UI.bank = el("div", "bankLine", '<b id="bankName">Aucun fond</b><br><span id="bankSub"></span>'); UI.bank.dataset.tip = "Fonds : instruments échantillonnés — clic pour les parcourir";
+  UI.bank = el("div", "bankLine", '<b id="bankName">Aucun instrument</b><br><span id="bankSub"></span>'); UI.bank.dataset.tip = "Instruments enregistrés (piano, cordes, cuivres, marimba…) — clic pour les parcourir";
   UI.bank.addEventListener("click", () => { bTab = "fond"; openBrowser(); });
   watch("smpOn", refreshBank);
 
@@ -487,7 +487,7 @@ async function loadPreset(i) {
   if (r && r.params) for (const k in r.params) setParam(k, r.params[k], true);
   showPreset();
   const p = st.presets[i];
-  if (p && p.fond && !st.banks.installed.includes(p.bank)) toast("« " + p.name + " » : fond à installer (installeur des fonds Kaleidoscope). En attendant, le moteur joue sans échantillon.", 4200);
+  if (p && p.fond && !st.banks.installed.includes(p.bank)) toast("« " + p.name + " » : instrument introuvable. Réinstallez Kaleidoscope pour le récupérer.", 4200);
 }
 let bTab = "all", bCat = "";
 function openBrowser() {
@@ -520,7 +520,7 @@ function renderBrowser() {
     const d = el("div", "it" + (p.i === st.preset ? " on" : "") + (miss ? " missing" : ""));
     const pl = el("button", "mini", "&#9654;"); pl.title = "Écouter";
     const fv = el("button", "mini fav" + (st.favs.has(p.id) ? " on" : ""), "&#9733;"); fv.title = "Favori";
-    const tx = el("div", "tx", `<b>${p.name}</b><small>${p.fond ? "Fond · " : ""}${p.cat}${p.style >= 0 ? " · " + styleName(p.style) : ""}${miss ? " · à installer" : ""}</small>`);
+    const tx = el("div", "tx", `<b>${p.name}</b><small>${p.fond ? "Instrument · " : ""}${p.cat}${p.style >= 0 ? " · " + styleName(p.style) : ""}${miss ? " · introuvable" : ""}</small>`);
     d.append(pl, tx, fv);
     pl.addEventListener("click", e => { e.stopPropagation(); audition(p.i); $$("#bList .it").forEach(x => x.classList.remove("on")); d.classList.add("on"); });
     fv.addEventListener("click", e => { e.stopPropagation(); st.favs.has(p.id) ? st.favs.delete(p.id) : st.favs.add(p.id); fv.classList.toggle("on"); saveFavs(); });
@@ -529,15 +529,15 @@ function renderBrowser() {
     L.appendChild(d);
   }
   const nat = st.presets.filter(p => !p.fond).length, fon = st.presets.length - nat;
-  $("#bCount").textContent = `${shown.length} affichés · ${nat} presets natifs + ${fon} fonds = ${st.presets.length} · ${st.banks.installed.length} fonds installés sur ${st.banks.total || fon} · ${st.favs.size} favoris`;
+  $("#bCount").textContent = `${shown.length} affichés · ${nat} presets de synthèse + ${fon} instruments = ${st.presets.length} · ${st.favs.size} favoris`;
 }
 function refreshBank() {
   const b = st.banks, n = $("#bankName"), s = $("#bankSub"); if (!n) return;
   const loadedName = b.loaded ? (st.presets.find(x => x.bank === b.loaded) || {}).name : "";
   if (b.loading) { n.textContent = "Chargement…"; s.textContent = (st.presets.find(x => x.bank === b.wanted) || {}).name || ""; }
-  else if (b.error) { n.textContent = "Fond non installé"; s.textContent = "Installeur des fonds"; }
-  else if (loadedName) { n.textContent = loadedName; s.textContent = P("smpOn") > .5 ? "fond actif" : "couche éteinte"; }
-  else { n.textContent = "Aucun fond"; s.textContent = `${b.installed.length} / ${b.total || 100} installés`; }
+  else if (b.error) { n.textContent = "Instrument introuvable"; s.textContent = "réinstallez Kaleidoscope"; }
+  else if (loadedName) { n.textContent = loadedName; s.textContent = P("smpOn") > .5 ? "instrument actif" : "couche éteinte"; }
+  else { n.textContent = "Aucun instrument"; s.textContent = "clic : choisir un instrument"; }
 }
 
 // ---------------------------------------------------------------------------
@@ -580,7 +580,7 @@ function openGear() {
     { title: "Taille de la fenêtre", cols: 3, items: [60, 70, 80, 90, 100, 120].map(v => ({ v: "z" + v, label: v + " %" })) },
     { title: "Animation", items: [["anime", "Animée (fluide)"], ["reduit", "Réduite (ordinateur lent)"], ["statique", "Fixe"]].map(([v, l]) => ({ v: "v" + v, label: l })) },
     { title: "Lecture", items: [{ v: "follow", label: (P("follow") > .5 ? "✓ " : "") + "Suivre le transport de l'hôte" }, { v: "midiOut", label: (P("midiOut") > .5 ? "✓ " : "") + "Envoyer les notes en MIDI" }] },
-    { title: "Dossiers", items: [{ v: "fmidi", label: "Mélodies exportées (.mid)" }, { v: "fbanks", label: "Fonds installés" }] },
+    { title: "Dossiers", items: [{ v: "fmidi", label: "Mélodies exportées (.mid)" }, { v: "fbanks", label: "Instruments enregistrés" }] },
     { title: "Kaleidoscope " + VERSION, items: [{ v: "edit", label: "Éditer tout le son…" }] },
   ], "z" + z, v => {
     if (v[0] === "z") { st.prefs.zoom = +v.slice(1); api("setPref", "zoom", st.prefs.zoom); }
@@ -662,14 +662,14 @@ const GROUPS = [
   ["Oscillateurs", ["wtOn", "tableA", "posA", "tableB", "posB", "mixB", "semiB", "fineB", "unison", "detune", "spread", "sub", "noise", "wtEnv", "wtLfo"]],
   ["Filtre", ["fMode", "f24", "cutoff", "reso", "fEnv", "keytrack", "drive", "fA", "fD", "fS", "fR"]],
   ["Volume & LFO", ["aA", "aD", "aS", "aR", "lfoRate", "lfoVib", "lfoCut", "lfoAmp", "mono", "glideMs", "bendRange"]],
-  ["Grains, fond, effets", ["granOn", "granSize", "granDensity", "granSpray", "granPitch", "granPos", "granMix", "smpOn", "smpLevel", "smpTune", "fxDrive", "chorus", "delay", "delayFb", "delayDiv", "reverb", "revSize", "width", "tilt", "levelDb"]],
+  ["Grains, instrument, effets", ["granOn", "granSize", "granDensity", "granSpray", "granPitch", "granPos", "granMix", "smpOn", "smpLevel", "smpTune", "fxDrive", "chorus", "delay", "delayFb", "delayDiv", "reverb", "revSize", "width", "tilt", "levelDb"]],
 ];
 const NAMES = { wtOn: "Oscillateurs", tableA: "Table A", posA: "Position A", tableB: "Table B", posB: "Position B", mixB: "Mélange B", semiB: "Demi-tons B", fineB: "Finesse B",
   unison: "Unisson", detune: "Désaccord", spread: "Largeur", sub: "Sub", noise: "Bruit", wtEnv: "Env > table", wtLfo: "LFO > table", fMode: "Type", f24: "24 dB",
   cutoff: "Coupure", reso: "Résonance", fEnv: "Enveloppe", keytrack: "Suivi clavier", drive: "Chaleur", fA: "Attaque", fD: "Déclin", fS: "Maintien", fR: "Relâche",
   aA: "Attaque", aD: "Déclin", aS: "Maintien", aR: "Relâche", lfoRate: "Vitesse LFO", lfoVib: "Vibrato", lfoCut: "LFO > filtre", lfoAmp: "Trémolo", mono: "Mono",
   glideMs: "Glissé", bendRange: "Pitch bend", granOn: "Grains", granSize: "Taille", granDensity: "Densité", granSpray: "Dispersion", granPitch: "Hauteur aléa.",
-  granPos: "Position", granMix: "Mélange", smpOn: "Fond", smpLevel: "Niveau fond", smpTune: "Accord fond", fxDrive: "Saturation", chorus: "Chorus", delay: "Écho",
+  granPos: "Position", granMix: "Mélange", smpOn: "Instrument", smpLevel: "Niveau instr.", smpTune: "Accord instr.", fxDrive: "Saturation", chorus: "Chorus", delay: "Écho",
   delayFb: "Répétitions", delayDiv: "Division", reverb: "Espace", revSize: "Taille espace", width: "Largeur", tilt: "Couleur", levelDb: "Volume" };
 const CHOICES = { tableA: TABLES, tableB: TABLES, fMode: ["Passe-bas", "Passe-bande", "Passe-haut"], delayDiv: ["1/16", "1/8", "1/8 p.", "1/4", "1/4 p.", "1/2"] };
 const BOOLS = new Set(["wtOn", "f24", "mono", "granOn", "smpOn"]);

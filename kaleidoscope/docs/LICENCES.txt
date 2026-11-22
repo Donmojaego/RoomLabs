@@ -2,6 +2,6 @@ Kaleidoscope - licences
 
 Plugin : © 2026 Room Labs. Construit avec JUCE 8 (licence commerciale / AGPLv3 selon le compte JUCE de Room Labs).
 Sons natifs : synthèse maison (tables d'ondes calculées), aucun échantillon tiers.
-Fonds : VCSL et VSCO 2 Community Edition, CC0 1.0 (domaine public) — voir FONDS-LICENCES.txt et inventaire.csv
-installés avec les fonds. Karoryfer et Philharmonia ne sont pas utilisés.
+Instruments enregistrés : VCSL et VSCO 2 Community Edition, CC0 1.0 (domaine public) — voir INSTRUMENTS-LICENCES.txt et inventaire.csv
+installés avec le plugin. Karoryfer et Philharmonia ne sont pas utilisés.
 Profils de tonalité (mode Drop) : méthode Krumhansl-Schmuckler (publication scientifique, pas de code tiers).
