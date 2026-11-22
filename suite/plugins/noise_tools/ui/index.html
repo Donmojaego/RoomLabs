@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Noise Tools — Room Labs Audio</title>
+<link rel="stylesheet" href="rl.css">
+<style>
+  .valbox{display:flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:17px;border:1.5px solid var(--line);color:var(--ink);font:800 12px var(--ui);letter-spacing:1.2px;cursor:ns-resize;touch-action:none;transition:border-color .15s,box-shadow .15s}
+  .valbox:hover{border-color:var(--acc);box-shadow:0 0 10px var(--glow)}
+  .valbox b{font:700 13px var(--ui);color:var(--acc);font-variant-numeric:tabular-nums;min-width:62px;text-align:right}
+  [data-theme=pocket] .valbox b{color:var(--ink)}
+  .mod{transition:opacity .25s,filter .25s}
+  .mod.off{opacity:.4;filter:saturate(.35)}
+  .stat{position:absolute;z-index:5;text-align:center;font:600 12px var(--ui);color:var(--ink2);pointer-events:none;font-variant-numeric:tabular-nums}
+  .stat b{display:block;font:800 20px var(--ui);color:var(--ink);letter-spacing:.5px}
+  [data-theme=vert] .stat b{color:#eafff6;text-shadow:0 0 10px var(--glow)}
+  .ky.learn.on{animation:blink 1s infinite}
+  @keyframes blink{50%{filter:brightness(1.35)}}
+</style>
+</head>
+<body>
+<script src="rl.js"></script>
+<script>
+"use strict";
+const F = [[55,119,207,268],[273,119,207,268],[491,119,207,268]];   // cadres de la face (meta.json)
+const pct = v => Math.round(v * 100) + " %";
+const dB = (v, d = 1) => (v > 0 ? "+" : "") + v.toFixed(d) + " dB";
+
+const layout = {
+  product: "vst/noise_tools",
+  title: "NOISE TOOLS",
+  header: { x: 34, y: 20, bx: 548 },
+  help: "Trois réparations indépendantes : DENOISE (souffle + ronflement 50/60 Hz, LEARN apprend le bruit sur un passage sans musique), DE-CLICK (clics et craquements), DE-CLIP (crêtes écrêtées). A/B joue l'original au même niveau. Latence fixe 2560 échantillons, compensée par le DAW.",
+  formats: {
+    dn_amount: v => v.toFixed(1) + " dB", dn_sens: pct, dc_sens: pct, dp_sens: pct,
+    dc_len: v => v.toFixed(2) + " ms", dp_margin: v => dB(v), out: v => dB(v)
+  },
+  build(RL) {
+    // ---------- rangée globale : bypass, A/B, vumètres, sortie
+    RL.key({ id: "bypass", label: "BYPASS", x: 34, y: 70, w: 92, h: 38, tip: "Contourne les trois traitements (fondu sans clic, latence conservée)" });
+    RL.key({ id: "compare", label: "A/B", x: 134, y: 70, w: 76, h: 38, tip: "Écoute l'original au même niveau que le résultat, pour juger honnêtement" });
+    RL.screen({ rect: [222, 72, 300, 34], pad: 0, radius: 8, draw: drawMeters });
+    const vb = document.createElement("div"); vb.className = "el valbox"; vb.innerHTML = "OUT <b></b>";
+    vb.dataset.tip = "Gain de sortie (glisser verticalement, double-clic = 0 dB)";
+    vb.style.left = "534px"; vb.style.top = "72px"; document.getElementById("stage").appendChild(vb);
+    RL.watch("out", v => vb.querySelector("b").textContent = dB(v));
+    dragValue(RL, vb, "out");
+
+    // ---------- trois modules
+    const mods = [
+      { on: "dn_on", name: "DENOISE", tip: "Réduction du souffle (et du ronflement si HUM est réglé)", draw: drawDenoise,
+        knobs: [["dn_amount", "RÉDUCTION", "Réduction maximale du bruit"], ["dn_sens", "SENSIBILITÉ", "Plus haut = bruit estimé plus fort, réduction plus franche"]] },
+      { on: "dc_on", name: "DE-CLICK", tip: "Supprime clics, craquements et pops courts", draw: (c, w, h, f) => drawActivity(c, w, h, f, "cps", "CLICS / S"),
+        knobs: [["dc_sens", "SENSIBILITÉ", "Plus haut = détecte des clics plus discrets"], ["dc_len", "LONGUEUR", "Durée maximale d'un clic réparé"]] },
+      { on: "dp_on", name: "DE-CLIP", tip: "Reconstruit les crêtes écrêtées (plateaux plats)", draw: (c, w, h, f) => drawActivity(c, w, h, f, "clps", "PLATEAUX / S"),
+        knobs: [["dp_sens", "SENSIBILITÉ", "Tolérance sur la planéité d'un plateau écrêté"], ["dp_margin", "MARGE", "Baisse de niveau pour laisser passer les crêtes reconstruites"]] }
+    ];
+    mods.forEach((m, i) => {
+      const [x, y, w, h] = F[i];
+      const parts = [];
+      RL.key({ id: m.on, label: m.name, x: x + 24, y: y + 12, w: w - 48, h: 40, tip: m.tip + " — clic pour activer / couper" });
+      const sc = RL.screen({ rect: [x + 10, y + 58, w - 20, 132], pad: 0, radius: 8, draw: m.draw });
+      parts.push(sc.e);
+      m.knobs.forEach(([id, lbl, tip], k) => { const kn = RL.knob({ id, label: lbl, x: x + (k ? 156 : 51), y: 452, d: 66, size: 2, tip }); parts.push(kn.e); });
+      if (i === 0) {
+        parts.push(RL.key({ id: "hum", choice: true, prefix: "HUM ", label: "HUM", x: x + 12, y: y + 206, w: 96, h: 40, menuTitle: "RONFLEMENT SECTEUR", litWhen: v => v > 0, tip: "Filtre le ronflement électrique : 50 Hz (Europe) ou 60 Hz (Amérique)" }).e);
+        const ln = RL.key({ id: "learn", label: "LEARN", x: x + 114, y: y + 206, w: 82, h: 40, tip: "Maintenir pendant un passage de bruit seul : le profil appris sert ensuite de référence" });
+        ln.e.classList.add("learn"); parts.push(ln.e);
+      } else {
+        const s = document.createElement("div"); s.className = "stat"; s.style.cssText = `left:${x}px;top:${y + 200}px;width:${w}px`;
+        s.innerHTML = `<b>0</b>${i === 1 ? "CLICS RÉPARÉS" : "PLATEAUX RECONSTRUITS"}`;
+        document.getElementById("stage").appendChild(s); parts.push(s);
+        RL.onFb(f => { if (f && f[i === 1 ? "clicks" : "clips"] != null) s.querySelector("b").textContent = Number(f[i === 1 ? "clicks" : "clips"]).toLocaleString("fr-BE"); });
+      }
+      parts.forEach(e => e.classList.add("mod"));
+      RL.watch(m.on, v => parts.forEach(e => e.classList.toggle("off", v < .5)));
+    });
+  },
+
+  // ---------- aperçu hors plugin (navigateur)
+  async mockState() {
+    const r = (a, b, d, sk = 1) => [a, b, d, sk];
+    const ranges = { dn_on: r(0,1,1), dn_amount: r(0,30,12), dn_sens: r(0,1,.5), hum: [0,2,0,1,["Off","50 Hz","60 Hz"]], learn: r(0,1,0),
+      dc_on: r(0,1,1), dc_sens: r(0,1,.5), dc_len: r(.3,5,1.5,.6), dp_on: r(0,1,0), dp_sens: r(0,1,.5), dp_margin: r(-12,0,-3), out: r(-12,12,0), bypass: r(0,1,0), compare: r(0,1,0) };
+    const params = {}; for (const k in ranges) params[k] = ranges[k][2];
+    params.hum = 1; params.dp_on = 1;
+    return { params, ranges };
+  },
+  mock: () => Promise.resolve(null),
+  mockFb() {
+    const t = performance.now() / 1000; this._c = (this._c || 0) + (Math.random() < .05 ? 1 : 0); this._k = (this._k || 0) + (Math.random() < .02 ? 1 : 0);
+    const si = [], so = [], nz = [];
+    for (let b = 0; b < 32; b++) { const n = -62 - b * .5 + Math.random() * 2; const mus = -30 - Math.abs(b - 9 - 3 * Math.sin(t)) * 2.5 + Math.random() * 3;
+      nz.push(n); si.push(Math.max(n, mus)); so.push(mus > n + 6 ? mus : n - 12); }
+    const lv = -14 + 6 * Math.sin(t * 2.3) + Math.random() * 3;
+    return { inL: lv, inR: lv - 1, outL: lv - 1.5, outR: lv - 2.5, red: 9 + 2 * Math.sin(t), cps: 3 + 3 * Math.abs(Math.sin(t * .7)), clps: Math.max(0, 4 * Math.sin(t * .4)), clicks: this._c, clips: this._k, si, so, nz };
+  }
+};
+
+// ---------- valeur glissée (sortie)
+function dragValue(RL, e, id) {
+  const [a, b, d] = RL.st.ranges[id] || [-12, 12, 0];
+  let y0 = 0, v0 = 0;
+  e.addEventListener("pointerdown", ev => { ev.preventDefault(); e.setPointerCapture(ev.pointerId); y0 = ev.clientY; v0 = RL.P(id); RL.api("gesture", id, true);
+    const mv = m => RL.set(id, Math.round(Math.min(b, Math.max(a, v0 + (y0 - m.clientY) * (m.shiftKey ? .02 : .1))) * 10) / 10);
+    const up = () => { e.removeEventListener("pointermove", mv); e.removeEventListener("pointerup", up); RL.api("gesture", id, false); };
+    e.addEventListener("pointermove", mv); e.addEventListener("pointerup", up); });
+  e.addEventListener("dblclick", () => RL.set(id, d));
+  e.addEventListener("wheel", ev => { ev.preventDefault(); RL.set(id, Math.round(Math.min(b, Math.max(a, RL.P(id) - Math.sign(ev.deltaY) * .5)) * 10) / 10); }, { passive: false });
+}
+
+// ---------- dessins
+const C = n => RL.css(n);
+const meterHold = { inL: -90, inR: -90, outL: -90, outR: -90 };
+function drawMeters(c, w, h, f) {
+  c.fillStyle = C("--scr"); roundRect(c, 0, 0, w, h, 8); c.fill();
+  const lbl = ["IN", "OUT"], keys = [["inL", "inR"], ["outL", "outR"]], half = w / 2, bw = half - 50;
+  c.font = "800 10px " + C("--ui"); c.textBaseline = "middle";
+  keys.forEach((pair, i) => {
+    const x0 = 10 + i * half;
+    c.fillStyle = C("--scrInk"); c.globalAlpha = .75; c.fillText(lbl[i], x0, h / 2); c.globalAlpha = 1;
+    pair.forEach((k, j) => {
+      const v = f[k] ?? -90; meterHold[k] = Math.max(v, meterHold[k] - 1.2);
+      const n = Math.max(0, Math.min(1, (meterHold[k] + 60) / 60)), y = 8 + j * 11, x = x0 + 32, L = bw;
+      c.fillStyle = C("--grid"); c.fillRect(x, y, L, 7);
+      c.fillStyle = meterHold[k] > -1 ? "#ff5a4e" : C("--scrInk"); c.fillRect(x, y, L * n, 7);
+    });
+  });
+}
+function roundRect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+function grid(c, w, h) { c.strokeStyle = C("--grid"); c.lineWidth = 1; for (let i = 1; i < 4; i++) { c.beginPath(); c.moveTo(0, i * h / 4 + .5); c.lineTo(w, i * h / 4 + .5); c.stroke(); } }
+const smooth = {};
+function sm(key, arr, k = .35) { const s = smooth[key] = smooth[key] || arr.slice(); for (let i = 0; i < arr.length; i++) s[i] += k * (arr[i] - s[i]); return s; }
+function drawDenoise(c, w, h, f) {
+  c.fillStyle = C("--scr"); roundRect(c, 0, 0, w, h, 8); c.fill(); grid(c, w, h - 26);
+  const H = h - 26, top = -10, bot = -100, Y = v => Math.max(0, Math.min(H, (top - v) / (top - bot) * H));
+  if (f.si) {
+    const si = sm("si", f.si), so = sm("so", f.so), nz = sm("nz", f.nz), X = i => i / 31 * w, ink = C("--scrInk");
+    // sortie : aire remplie
+    c.beginPath(); c.moveTo(0, H); so.forEach((v, i) => c.lineTo(X(i), Y(v))); c.lineTo(w, H); c.closePath();
+    const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, ink); g.addColorStop(1, "transparent"); c.globalAlpha = .35; c.fillStyle = g; c.fill(); c.globalAlpha = 1;
+    c.strokeStyle = ink; c.lineWidth = 1.6; c.beginPath(); so.forEach((v, i) => i ? c.lineTo(X(i), Y(v)) : c.moveTo(0, Y(v))); c.stroke();
+    // entrée : ligne fine
+    c.globalAlpha = .45; c.lineWidth = 1; c.beginPath(); si.forEach((v, i) => i ? c.lineTo(X(i), Y(v)) : c.moveTo(0, Y(v))); c.stroke();
+    // profil de bruit : pointillés
+    c.setLineDash([3, 3]); c.globalAlpha = .8; c.strokeStyle = "#ffb347"; c.beginPath(); nz.forEach((v, i) => i ? c.lineTo(X(i), Y(v)) : c.moveTo(0, Y(v))); c.stroke(); c.setLineDash([]); c.globalAlpha = 1;
+  }
+  c.fillStyle = C("--scrInk"); c.font = "700 11px " + C("--ui"); c.textBaseline = "middle";
+  c.globalAlpha = .7; c.fillText("RÉDUCTION", 10, h - 12); c.globalAlpha = 1;
+  c.textAlign = "right"; c.font = "800 13px " + C("--ui"); c.fillText(((smooth.red = (smooth.red ?? 0) + .2 * ((f.red || 0) - (smooth.red ?? 0)))).toFixed(1) + " dB", w - 10, h - 12); c.textAlign = "left";
+}
+const hist = { cps: new Array(90).fill(0), clps: new Array(90).fill(0) }; let histT = 0;
+function drawActivity(c, w, h, f, key, title) {
+  const now = performance.now(); if (key === "cps" && now - histT > 100) { histT = now; hist.cps.push(f.cps || 0); hist.cps.shift(); hist.clps.push(f.clps || 0); hist.clps.shift(); }
+  c.fillStyle = C("--scr"); roundRect(c, 0, 0, w, h, 8); c.fill();
+  const H = h - 26; grid(c, w, H);
+  const a = hist[key], mx = Math.max(5, ...a), bw = w / a.length, ink = C("--scrInk");
+  c.fillStyle = ink;
+  a.forEach((v, i) => { const bh = v / mx * (H - 8); c.globalAlpha = .25 + .75 * (i / a.length); c.fillRect(i * bw, H - bh, Math.max(1, bw - 1), bh); });
+  c.globalAlpha = 1; c.font = "700 11px " + C("--ui"); c.textBaseline = "middle";
+  c.globalAlpha = .7; c.fillText(title, 10, h - 12); c.globalAlpha = 1;
+  c.textAlign = "right"; c.font = "800 13px " + C("--ui"); c.fillText(String(Math.round(a[a.length - 1])), w - 10, h - 12); c.textAlign = "left";
+}
+
+RL.start(layout);
+</script>
+</body>
+</html>

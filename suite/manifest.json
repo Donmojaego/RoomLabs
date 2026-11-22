@@ -1,0 +1,16 @@
+{
+  "suite": "Room Labs Audio",
+  "publisher": "Room Labs Audio",
+  "url": "https://7throomacademy.fr",
+  "appId": "{6C1E5F7A-3B2D-4E8F-9A1C-5E1A0D10A001}",
+  "plugins": [
+    {
+      "id": "noise_tools",
+      "name": "Noise Tools",
+      "target": "NoiseTools",
+      "description": "Restauration : souffle, ronflement 50/60 Hz, clics, écrêtage",
+      "status": "prototype",
+      "formats": ["vst3"]
+    }
+  ]
+}

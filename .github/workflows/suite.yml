@@ -1,0 +1,148 @@
+name: Room Labs Audio Suite
+
+# Compile la suite (dossier suite/) : tests DSP, plugins VST3, validation pluginval,
+# captures des 3 thèmes, installeur RoomLabsAudio_Plugins_<version>_Win_x64.exe généré depuis manifest.json.
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'suite/**', '.github/workflows/suite.yml' ]
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: suite
+
+concurrency:
+  group: suite-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+env:
+  WEBVIEW2_VERSION: 1.0.3485.44
+
+jobs:
+  windows:
+    name: Windows — plugins VST3 + installeur
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: v
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path CMakeLists.txt -Pattern 'VERSION ([0-9.]+) LANGUAGES').Matches[0].Groups[1].Value
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Cache JUCE
+        uses: actions/cache@v4
+        with:
+          path: suite/build/_deps
+          key: juce-8.0.15-windows-suite
+
+      - name: SDK WebView2
+        shell: pwsh
+        run: |
+          $nuget = (Get-Command nuget -ErrorAction SilentlyContinue).Source
+          if (-not $nuget) { $nuget = "$env:RUNNER_TEMP\nuget.exe"; Invoke-WebRequest https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile $nuget }
+          & $nuget install Microsoft.Web.WebView2 -Version $env:WEBVIEW2_VERSION -OutputDirectory "$env:GITHUB_WORKSPACE\nuget" -NonInteractive
+
+      - name: Configuration
+        shell: pwsh
+        run: cmake -B build -A x64 -DJUCE_WEBVIEW2_PACKAGE_LOCATION="$env:GITHUB_WORKSPACE/nuget"
+
+      - name: Compilation Release
+        run: cmake --build build --config Release --target NoiseTools_VST3 NoiseTools_Standalone NoiseToolsTest --parallel
+
+      - name: Tests audio (corpus synthétique, 44,1/48/96 kHz, blocs 64-1024)
+        id: tests
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          & build/Release/NoiseToolsTest.exe RAPPORT-TESTS.md
+          $code = $LASTEXITCODE
+          $txt = (Get-Content RAPPORT-TESTS.md -Raw -Encoding UTF8) -replace '%','%25' -replace "`r",'' -replace "`n",'%0A'
+          if ($code -ne 0) { Write-Output "::error title=Tests audio::$txt"; exit 1 } else { Write-Output "::notice title=Tests audio::$txt" }
+
+      - name: Validation hôte VST3 (pluginval niveau 5)
+        id: pv
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          Invoke-WebRequest https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_Windows.zip -OutFile pv.zip
+          Expand-Archive pv.zip -DestinationPath pv -Force
+          $exe = Get-ChildItem pv -Recurse -Filter pluginval.exe | Select-Object -First 1
+          $manifest = Get-Content manifest.json -Raw -Encoding UTF8 | ConvertFrom-Json
+          Add-Content RAPPORT-TESTS.md "`n## Hôte VST3 (pluginval, niveau 5)`n"
+          $fail = $false
+          foreach ($p in $manifest.plugins) {
+            $vst = "build\$($p.target)_artefacts\Release\VST3\$($p.name).vst3"
+            $r = Start-Process $exe.FullName -ArgumentList '--strictness-level 5','--timeout-ms 240000',"`"$vst`"" -NoNewWindow -Wait -PassThru -RedirectStandardOutput "pv-$($p.id).txt" -RedirectStandardError "pv-$($p.id)-err.txt"
+            $lines = ((Get-Content "pv-$($p.id).txt" -Raw) + (Get-Content "pv-$($p.id)-err.txt" -Raw)) -split "`r?`n" | Where-Object { $_ -ne '' }
+            if ($r.ExitCode -ne 0) { $fail = $true; Add-Content RAPPORT-TESTS.md "- [ÉCHEC] $($p.name)"; Write-Output "::error title=pluginval $($p.name)::$(($lines | Select-Object -Last 60) -join '%0A')" }
+            else { Add-Content RAPPORT-TESTS.md "- [OK] $($p.name) : chargement, état, traitement à plusieurs fréquences/blocs, interface"; Write-Output "::notice title=pluginval $($p.name)::OK" }
+          }
+          if ($fail) { exit 1 }
+
+      - name: Captures des 3 thèmes (fenêtre autonome)
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          New-Item -ItemType Directory -Force captures | Out-Null
+          $pref = "$env:APPDATA\Room Labs\Suite"
+          New-Item -ItemType Directory -Force $pref | Out-Null
+          foreach ($t in 'vert','studio','pocket') {
+            Set-Content "$pref\Suite.settings" "<?xml version=`"1.0`" encoding=`"UTF-8`"?><PROPERTIES><VALUE name=`"theme`" val=`"$t`"/><VALUE name=`"zoom_vst_noise_tools`" val=`"100`"/></PROPERTIES>"
+            $app = Start-Process "build\NoiseTools_artefacts\Release\Standalone\Noise Tools.exe" -PassThru
+            Start-Sleep -Seconds 6
+            $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+            $g = [System.Drawing.Graphics]::FromImage($bmp)
+            $g.CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+            $bmp.Save("captures\noise_tools_$t.png", [System.Drawing.Imaging.ImageFormat]::Png)
+            $g.Dispose(); $bmp.Dispose()
+            Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 1
+          }
+          Compress-Archive -Path captures/* -DestinationPath "RoomLabsAudio_Captures_${{ steps.v.outputs.version }}.zip" -Force
+
+      - name: Installeur (généré depuis manifest.json)
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+          New-Item -ItemType Directory -Force installer/windows | Out-Null
+          python tools/make_installer.py ${{ steps.v.outputs.version }} build installer/windows/RoomLabsAudio_Plugins.iss
+          Get-ChildItem build -Recurse -Filter *.pdb | Where-Object { $_.FullName -like '*VST3*' } | Remove-Item -Force
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer/windows/RoomLabsAudio_Plugins.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Get-ChildItem installer/windows/output | Format-Table Name, Length
+
+      - name: Téléchargement
+        uses: actions/upload-artifact@v4
+        with:
+          name: RoomLabsAudio-Windows-${{ steps.v.outputs.version }}
+          path: |
+            suite/installer/windows/output/*.exe
+            suite/RoomLabsAudio_Captures_*.zip
+            suite/RAPPORT-TESTS.md
+
+      - name: Publication dans Releases
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: suite-v${{ steps.v.outputs.version }}
+          name: Room Labs Audio ${{ steps.v.outputs.version }} (version de test)
+          prerelease: true
+          make_latest: false
+          target_commitish: ${{ github.sha }}
+          body_path: suite/RAPPORT-TESTS.md
+          files: |
+            suite/installer/windows/output/*.exe
+            suite/RoomLabsAudio_Captures_*.zip
+
+      - name: Échec si un test a échoué
+        if: steps.tests.outcome == 'failure' || steps.pv.outcome == 'failure'
+        run: exit 1

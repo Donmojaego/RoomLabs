@@ -1,0 +1,597 @@
+{
+ "products": {
+  "app/7th_surgical_labs": {
+   "size": [
+    992,
+    633
+   ],
+   "frames": [
+    [
+     15,
+     62,
+     204,
+     556
+    ],
+    [
+     236,
+     139,
+     162,
+     311
+    ],
+    [
+     409,
+     139,
+     162,
+     311
+    ],
+    [
+     582,
+     139,
+     162,
+     311
+    ],
+    [
+     755,
+     139,
+     162,
+     311
+    ]
+   ],
+   "themes": [
+    "pocket",
+    "studio",
+    "vert"
+   ]
+  },
+  "app/accueil": {
+   "size": [
+    992,
+    633
+   ],
+   "frames": [
+    [
+     15,
+     62,
+     204,
+     556
+    ],
+    [
+     236,
+     139,
+     220,
+     150
+    ],
+    [
+     467,
+     139,
+     220,
+     150
+    ],
+    [
+     698,
+     139,
+     220,
+     150
+    ],
+    [
+     236,
+     300,
+     220,
+     150
+    ],
+    [
+     467,
+     300,
+     220,
+     150
+    ],
+    [
+     698,
+     300,
+     220,
+     150
+    ]
+   ],
+   "themes": [
+    "pocket",
+    "studio",
+    "vert"
+   ]
+  },
+  "app/audio_to_midi": {
+   "size": [
+    992,
+    633
+   ],
+   "frames": [
+    [
+     15,
+     62,
+     204,
+     556
+    ],
+    [
+     236,
+     139,
+     684,
+     150
+    ],
+    [
+     236,
+     300,
+     684,
+     150
+    ]
+   ],
+   "themes": [
+    "pocket",
+    "studio",
+    "vert"
+   ],
+   "pads": true
+  },
+  "app/chord_finder": {
+   "size": [
+    992,
+    633
+   ],
+   "frames": [
+    [
+     15,
+     62,
+     204,
+     556
+    ],
+    [
+     236,
+     139,
+     684,
+     150
+    ],
+    [
+     236,
+     300,
+     684,
+     150
+    ]
+   ],
+   "themes": [
+    "pocket",
+    "studio",
+    "vert"
+   ]
+  },
+  "app/loop_synchro": {
+   "size": [
+    992,
+    633
+   ],
+   "frames": [
+    [
+     15,
+     62,
+     204,
+     556
+    ],
+    [
+     236,
+     139,
+     684,
+     311
+    ]
+   ],
+   "themes": [
+    "pocket",
+    "studio",
+    "vert"
+   ]
+  },
+  "app/oneshot": {
+   "size": [
+    992,
+    633
+   ],
+   "frames": [
+    [
+     15,
+     62,
+     204,
+     556
+    ],
+    [
+     236,
+     139,
+     684,
+     150
+    ],
+    [
+     236,
+     300,
+     684,
+     150
+    ]
+   ],
+   "themes": [
+    "pocket",
+    "studio",
+    "vert"
+   ],
+   "pads": true
+  },
+  "app/sample_rate_converter": {
+   "size": [
+    992,
+    633
+   ],
+   "frames": [
+    [
+     15,
+     62,
+     204,
+     556
+    ],
+    [
+     236,
+     139,
+     684,
+     311
+    ]
+   ],
+   "themes": [
+    "pocket",
+    "studio",
+    "vert"
+   ]
+  },
+  "rack/7th_surgical_labs": {
+   "size": [
+    924,
+    156
+   ],
+   "frames": [],
+   "themes": [
+    "vert"
+   ]
+  },
+  "rack/audio_to_midi": {
+   "size": [
+    924,
+    156
+   ],
+   "frames": [],
+   "themes": [
+    "vert"
+   ]
+  },
+  "rack/chassis": {
+   "size": [
+    950,
+    630
+   ],
+   "frames": [
+    [
+     69,
+     138,
+     812,
+     96
+    ],
+    [
+     69,
+     245,
+     812,
+     96
+    ],
+    [
+     69,
+     352,
+     812,
+     96
+    ]
+   ],
+   "themes": [
+    "pocket",
+    "studio",
+    "vert"
+   ]
+  },
+  "rack/loop_creator": {
+   "size": [
+    924,
+    156
+   ],
+   "frames": [],
+   "themes": [
+    "vert"
+   ]
+  },
+  "rack/loop_remix_lab": {
+   "size": [
+    924,
+    156
+   ],
+   "frames": [],
+   "themes": [
+    "vert"
+   ]
+  },
+  "rack/noise": {
+   "size": [
+    924,
+    156
+   ],
+   "frames": [],
+   "themes": [
+    "vert"
+   ]
+  },
+  "rack/noise_tools": {
+   "size": [
+    924,
+    156
+   ],
+   "frames": [],
+   "themes": [
+    "vert"
+   ]
+  },
+  "rack/reverb": {
+   "size": [
+    924,
+    156
+   ],
+   "frames": [],
+   "themes": [
+    "vert"
+   ]
+  },
+  "rack/stem_splitter": {
+   "size": [
+    924,
+    156
+   ],
+   "frames": [],
+   "themes": [
+    "vert"
+   ]
+  },
+  "vst/7th_surgical_labs": {
+   "size": [
+    900,
+    555
+   ],
+   "frames": [
+    [
+     65,
+     122,
+     184,
+     273
+    ],
+    [
+     260,
+     122,
+     184,
+     273
+    ],
+    [
+     455,
+     122,
+     184,
+     273
+    ],
+    [
+     650,
+     122,
+     184,
+     273
+    ]
+   ],
+   "themes": [
+    "pocket",
+    "studio",
+    "vert"
+   ]
+  },
+  "vst/audio_to_midi": {
+   "size": [
+    950,
+    530
+   ],
+   "frames": [
+    [
+     69,
+     116,
+     812,
+     125
+    ],
+    [
+     69,
+     252,
+     812,
+     125
+    ]
+   ],
+   "themes": [
+    "pocket",
+    "studio",
+    "vert"
+   ],
+   "pads": true
+  },
+  "vst/loop_creator": {
+   "size": [
+    940,
+    565
+   ],
+   "frames": [
+    [
+     68,
+     124,
+     804,
+     278
+    ]
+   ],
+   "themes": [
+    "pocket",
+    "studio",
+    "vert"
+   ],
+   "pads": true
+  },
+  "vst/loop_remix_lab": {
+   "size": [
+    880,
+    545
+   ],
+   "frames": [
+    [
+     64,
+     119,
+     752,
+     128
+    ],
+    [
+     64,
+     258,
+     752,
+     128
+    ]
+   ],
+   "themes": [
+    "pocket",
+    "studio",
+    "vert"
+   ],
+   "pads": true
+  },
+  "vst/noise": {
+   "size": [
+    660,
+    515
+   ],
+   "frames": [
+    [
+     48,
+     113,
+     564,
+     253
+    ]
+   ],
+   "themes": [
+    "pocket",
+    "studio",
+    "vert"
+   ]
+  },
+  "vst/noise_tools": {
+   "size": [
+    754,
+    545
+   ],
+   "frames": [
+    [
+     55,
+     119,
+     207,
+     268
+    ],
+    [
+     273,
+     119,
+     207,
+     268
+    ],
+    [
+     491,
+     119,
+     207,
+     268
+    ]
+   ],
+   "themes": [
+    "pocket",
+    "studio",
+    "vert"
+   ]
+  },
+  "vst/reverb": {
+   "size": [
+    740,
+    640
+   ],
+   "frames": [
+    [
+     54,
+     140,
+     632,
+     315
+    ]
+   ],
+   "themes": [
+    "pocket",
+    "studio",
+    "vert"
+   ]
+  },
+  "vst/stem_splitter": {
+   "size": [
+    925,
+    470
+   ],
+   "frames": [
+    [
+     67,
+     103,
+     791,
+     110
+    ],
+    [
+     67,
+     224,
+     791,
+     110
+    ]
+   ],
+   "themes": [
+    "pocket",
+    "studio",
+    "vert"
+   ]
+  }
+ },
+ "controls": {
+  "knobs": [
+   {
+    "r": 80,
+    "margin": 14,
+    "size": 188
+   },
+   {
+    "r": 71,
+    "margin": 14,
+    "size": 170
+   },
+   {
+    "r": 62,
+    "margin": 14,
+    "size": 152
+   },
+   {
+    "r": 53,
+    "margin": 14,
+    "size": 134
+   }
+  ],
+  "key": [
+   175,
+   87
+  ],
+  "led": [
+   33,
+   33
+  ],
+  "pad": [
+   181,
+   161
+  ]
+ }
+}

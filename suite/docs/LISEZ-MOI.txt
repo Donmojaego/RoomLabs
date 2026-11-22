@@ -1,0 +1,20 @@
+ROOM LABS AUDIO — PLUGINS (Windows 64 bits)
+
+Installation
+  Les plugins VST3 sont installés dans :
+  C:\Program Files\Common Files\VST3\Room Labs Audio\
+  Relancez votre DAW (ou faites un nouveau scan des plugins) : ils apparaissent sous « Room Labs Audio ».
+
+Plugins de cette version
+  - Noise Tools : restauration audio en temps réel
+      DENOISE  : réduit le souffle ; HUM supprime le ronflement 50 Hz (Europe) ou 60 Hz (Amérique).
+                 LEARN : maintenir allumé pendant un passage de bruit seul, puis éteindre.
+      DE-CLICK : supprime clics, craquements et pops courts.
+      DE-CLIP  : reconstruit les crêtes écrêtées (plateaux plats).
+      BYPASS   : contourne tout sans clic.  A/B : écoute l'original au même niveau.
+      Latence fixe : 2560 échantillons (53 ms à 48 kHz), compensée automatiquement par le DAW.
+
+Thèmes
+  Bouton en haut à droite : Vert, Studio ou Pocket. Le son et les réglages ne changent pas.
+
+Vos préférences (thème, taille de fenêtre) sont gardées lors d'une mise à jour ou d'une désinstallation.

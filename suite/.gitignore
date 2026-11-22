@@ -1,0 +1,4 @@
+build/
+installer/windows/output/
+installer/windows/*.iss
+RAPPORT-TESTS.md
