@@ -9,7 +9,7 @@ Générateur de mélodies infinies (VST3 / AU / autonome), JUCE 8 + interface We
 | `source/Plugin*` | paramètres, séquenceur calé sur l'hôte, sortie MIDI, fonds, état, pont avec l'interface |
 | `ui/` | interface (4 layouts), `kscope.js` (kaléidoscope WebGL2), `drop.js` (analyse Drop), `layouts.json` (assets attendus) |
 | `tools/styles.py` | 59 styles, 10 humeurs, 20 gammes → `source/gen/*.inc`, `ui/styles.json` |
-| `tools/presets.py` | 150 presets natifs + 100 fiches de fonds → `ui/presets/factory.json` |
+| `tools/presets.py` | 155 presets natifs + 125 fiches de fonds → `ui/presets/factory.json` |
 | `tools/banks.py`, `tools/build_banks.py` | les 100 fonds CC0 (VCSL, VSCO 2 CE) et leur fabrication (workflow « Kaleidoscope - Fonds ») |
 | `tests/` | générateur, moteur (niveaux calibrés), plugin complet |
 | `docs/gabarits/` | gabarits des layouts pour dessiner les assets |

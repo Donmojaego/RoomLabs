@@ -18,7 +18,7 @@ const FieldRef kFields[] = {
     I(fMode), B(f24), F(cutoff), F(reso), F(fEnv), F(keytrack), F(drive), F(aA), F(aD), F(aS), F(aR), F(fA), F(fD), F(fS), F(fR),
     F(lfoRate), F(lfoVib), F(lfoCut), F(lfoAmp), B(granOn), F(granSize), F(granDensity), F(granSpray), F(granPitch), F(granPos), F(granMix),
     B(smpOn), F(smpLevel), F(smpTune), B(mono), F(glideMs), F(bendRange), F(fxDrive), F(chorus), F(delay), F(delayFb), I(delayDiv),
-    F(reverb), F(revSize), F(width), F(tilt), F(levelDb) };
+    F(reverb), F(revSize), F(width), F(tilt), F(levelDb), F(master) };
 #undef F
 #undef I
 #undef B
@@ -299,6 +299,7 @@ void KaleidoProcessor::install (const kal::Pattern& p, bool rememberIt)
 {
     if (hasPattern) { past.push_back (current); while (past.size() > 32) past.pop_front(); }
     current = p; hasPattern = true;
+    if (! hasRef) { reference = p; hasRef = true; }      // la première mélodie de la session est la référence
     if (rememberIt) gen.remember (p);
     auto pl = std::make_unique<Playable>();
     for (auto& nt : p.notes) pl->notes.push_back ({ nt.start / kal::TPB, nt.len / kal::TPB, nt.pitch, nt.vel });
@@ -317,11 +318,18 @@ juce::var KaleidoProcessor::generate()
     return patternInfo();
 }
 
-juce::var KaleidoProcessor::decline()
+juce::var KaleidoProcessor::decline (bool fromCurrent)
 {
     if (! hasPattern) return generate();
     auto r = makeRequest();
-    install (gen.decline (current, r, value ("personal") > 0.01f ? &profile : nullptr), true);
+    const auto& src = (fromCurrent || ! hasRef) ? current : reference;
+    install (gen.decline (src, r, value ("personal") > 0.01f ? &profile : nullptr), true);
+    return patternInfo();
+}
+
+juce::var KaleidoProcessor::lockReference()
+{
+    if (hasPattern) { reference = current; hasRef = true; }
     return patternInfo();
 }
 
@@ -416,6 +424,8 @@ juce::var KaleidoProcessor::patternInfo() const
     o->setProperty ("feat", feat);
     o->setProperty ("novelty", gen.lastNovelty); o->setProperty ("coherence", gen.lastCoherence);
     o->setProperty ("history", (int) past.size());
+    o->setProperty ("isRef", hasRef && reference.seed == current.seed);
+    o->setProperty ("refSeed", hasRef ? juce::String::toHexString ((juce::int64) reference.seed) : juce::String());
     o->setProperty ("liked", profile.nPos); o->setProperty ("disliked", profile.nNeg);
     o->setProperty ("affinity", profile.nPos + profile.nNeg > 0 ? profile.score (current.feat) : 0.0);
     return juce::var (o);
@@ -504,7 +514,7 @@ void KaleidoProcessor::timerCallback()
         if (done - loopsSeen >= ev)
         {
             loopsSeen = done;
-            if (++evolveCounter % 4 == 0) generate(); else decline();
+            if (++evolveCounter % 4 == 0) generate(); else decline (true);
         }
     }
     else loopsSeen = done;
@@ -532,6 +542,7 @@ void KaleidoProcessor::getStateInformation (juce::MemoryBlock& destData)
     tree.setProperty ("ui", juce::JSON::toString (getProjectUi(), true), nullptr);
     tree.setProperty ("bank", loadedBank(), nullptr);
     if (hasPattern) tree.setProperty ("pattern", patternToString (current), nullptr);
+    if (hasRef) tree.setProperty ("reference", patternToString (reference), nullptr);
     if (auto xml = tree.createXml()) copyXmlToBinary (*xml, destData);
 }
 
@@ -547,10 +558,13 @@ void KaleidoProcessor::setStateInformation (const void* data, int sizeInBytes)
     const auto bank = tree.getProperty ("bank", "").toString();
     kal::Pattern p;
     const bool okPat = patternFromString (tree.getProperty ("pattern", "").toString(), p);
-    for (auto* k : { "preset", "version", "ui", "bank", "pattern" }) tree.removeProperty (k, nullptr);
+    kal::Pattern ref;
+    const bool okRef = patternFromString (tree.getProperty ("reference", "").toString(), ref);
+    for (auto* k : { "preset", "version", "ui", "bank", "pattern", "reference" }) tree.removeProperty (k, nullptr);
     state.replaceState (tree);
     if (bank.isNotEmpty()) requestBank (bank);
-    if (okPat) { hasPattern = false; install (p, true); }     // la mélodie du projet revient telle quelle
+    if (okPat) { hasPattern = false; hasRef = false; install (p, true); }     // la mélodie du projet revient telle quelle
+    if (okRef) { reference = ref; hasRef = true; }
 }
 
 bool KaleidoProcessor::hasEditor() const

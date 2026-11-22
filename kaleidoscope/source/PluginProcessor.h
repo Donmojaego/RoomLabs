@@ -72,7 +72,8 @@ public:
     const std::vector<FactoryPreset>& factory() const { return presets; }
     void loadPreset (int index);
     juce::var generate();                       // Générer : nouvelle proposition
-    juce::var decline();                        // Déclinaison de la proposition courante
+    juce::var decline (bool fromCurrent = false); // Déclinaison de la référence (1re mélodie, ou verrouillée)
+    juce::var lockReference();                  // la proposition courante devient la référence
     juce::var previous();                       // revenir à la proposition précédente
     juce::var feedback (const juce::String& kind);   // like | keep | redo
     void resetPersonal();
@@ -107,6 +108,7 @@ private:
     kal::Generator gen;
     kal::Profile profile;
     kal::Pattern current; bool hasPattern = false;
+    kal::Pattern reference; bool hasRef = false;
     std::deque<kal::Pattern> past;              // propositions précédentes (bouton Précédent)
     juce::File profileFile() const;
 

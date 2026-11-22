@@ -50,7 +50,7 @@ void main(){
     float aa = mod(a + t * 0.05 * (1. + spin), sa); aa = abs(aa - sa * .5);
     vec2 q = vec2(cos(aa), sin(aa)) * r / pulse;
     if (mode > 2.5) q = rot(0.4) * q * 1.3 + vec2(0., .1 * sin(t * .2));
-    col = shards(q * 2.2, r * .35);
+    col = shards(q * 3.1, r * .35);
     col *= smoothstep(1.08, .25, r) * 1.35;
     col += pal(r * 1.5 - t * .05) * .25 * smoothstep(.12, 0., r) * (0.6 + energy);
   } else {                                      // tunnels : profondeur = 1/r
@@ -58,14 +58,14 @@ void main(){
     float aa = mod(a + t * .04 * (1. + spin), sa); aa = abs(aa - sa * .5);
     vec2 q = vec2(aa / sa * 2.2, z);
     col = shards(q, z * .02);
-    float fog = smoothstep(0., .55, r);
+    float fog = smoothstep(0., .3, r);
     if (mode > 1.5) {                           // holographique : lignes spectrales, cyan/violet
       float ring = abs(fract(z * .5) - .5);
       col += hue(z * .05 + a * .08 + t * .02) * smoothstep(.04, 0., ring) * (.35 + .8 * energy);
       col *= vec3(.75, .9, 1.15);
     }
-    col = col * fog + pal(t * .03) * (1. - fog) * (.9 + 2. * energy) * .9;   // lumière au fond du tube
-    col += vec3(1., .95, .9) * smoothstep(.09, 0., r) * (.5 + 1.5 * energy);
+    col = col * fog + pal(t * .03) * (1. - fog) * (.6 + 1.2 * energy) * .8;   // lumière au fond du tube
+    col += vec3(1., .95, .9) * smoothstep(.05, 0., r) * (.25 + .9 * energy);
   }
   // ondes : une par note jouée, colorée par la hauteur
   for (int i = 0; i < 6; i++){
@@ -175,7 +175,7 @@ void main(){
   return {
     init, resize,
     setRunning(v) { running = v; },
-    setMode(layout) { S.modeT = { retro: 0, telescope: 1, holo: 2, laiton: 3 }[layout] ?? 0; S.depth = layout === "holo" ? 1.3 : 1; S.warm = layout === "retro" ? .35 : layout === "laiton" ? .25 : 0; },
+    setMode(layout) { S.modeT = { retro: 0, telescope: 1, holo: 2, labo: 3 }[layout] ?? 0; S.depth = layout === "holo" ? 1.3 : 1; S.warm = layout === "retro" ? .35 : layout === "telescope" ? .15 : 0; },
     // palette : style (0..n), humeur, tonique — couleurs différentes à chaque univers musical
     setPalette(paletteIdx, mood, root) {
       const base = [[.04, .09, .58, .14], [.62, .78, .92, .52], [.0, .08, .16, .55], [.12, .5, .58, .9], [.8, .9, .02, .45], [.55, .72, .85, .95],

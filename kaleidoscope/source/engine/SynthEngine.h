@@ -45,6 +45,7 @@ struct SynthParams
     bool mono = false; float glideMs = 0; float bendRange = 2;
     // effets
     float fxDrive = 0.f, chorus = 0.f, delay = 0.f, delayFb = 0.35f; int delayDiv = 2; float reverb = 0.2f, revSize = 0.6f, width = 0.8f, tilt = 0.f, levelDb = -6.f;
+    float master = -4.f;     // MASTER (dB), indépendant des presets ; le limiteur garde la crête sous -1 dBFS
 };
 
 struct Feedback

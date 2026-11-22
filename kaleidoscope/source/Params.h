@@ -103,6 +103,7 @@ inline const std::vector<Def>& generator()
         { "tempo", "Tempo libre", K::Float, 50, 200, 110, 1, "BPM" },
         { "evolve", "Infini", K::Choice, 0, 4, 0, 1, "", { "Arrêt", "Chaque boucle", "Toutes les 2", "Toutes les 4", "Toutes les 8" } },
         { "midiOut", "Sortie MIDI", K::Bool, 0, 1, 1, 1, "" },
+        { "master", "Master", K::Float, -36, 12, -4, 1, "dB" },
     };
     return d;
 }

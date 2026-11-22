@@ -152,6 +152,9 @@ jobs:
           Copy-Item "$rel/Standalone/Kaleidoscope.exe" $d
           (Get-Content docs/LIVRAISON-WINDOWS.md -Raw -Encoding UTF8).Replace('{{VERSION}}', $v) | Set-Content "$d/README.md" -Encoding UTF8
           Copy-Item docs/A-FAIRE.md $d
+          New-Item -ItemType Directory -Force "$d/Gabarits" | Out-Null
+          Copy-Item docs/gabarits/*.png "$d/Gabarits"
+          Compress-Archive -Path docs/gabarits/* -DestinationPath "Kaleidoscope-Gabarits-$v.zip" -Force
           if (Test-Path RAPPORT-TESTS.md) { Copy-Item RAPPORT-TESTS.md $d } else { Set-Content "$d/RAPPORT-TESTS.md" "Tests non exécutés" }
           # contrôle : aucun fichier manquant
           $need = @("$d/Kaleidoscope.vst3/Contents/x86_64-win/Kaleidoscope.vst3", "$d/Kaleidoscope.exe", "$d/README.md", "$d/RAPPORT-TESTS.md", "$d/A-FAIRE.md")
@@ -188,6 +191,7 @@ jobs:
             kaleidoscope/Kaleidoscope-VST3-Windows-*.zip
             kaleidoscope/Kaleidoscope-Symboles-Windows-*.zip
             kaleidoscope/Kaleidoscope-Captures-Windows-*.zip
+            kaleidoscope/Kaleidoscope-Gabarits-*.zip
 
       - name: Échec si un test a échoué
         if: steps.tests.outcome == 'failure' || steps.pv.outcome == 'failure'

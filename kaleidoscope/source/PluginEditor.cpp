@@ -15,8 +15,9 @@ UiPrefs::UiPrefs()
 juce::var UiPrefs::toVar() const
 {
     auto* o = new juce::DynamicObject();
-    o->setProperty ("layout", props->getValue ("layout", "retro"));      // retro | telescope | holo | laiton
-    o->setProperty ("zoom", props->getIntValue ("zoom", 100));
+    o->setProperty ("layout", props->getValue ("layout", "retro"));      // retro | labo | holo | telescope
+    o->setProperty ("zoom", props->getIntValue ("zoom", 80));
+    o->setProperty ("favs", props->getValue ("favs", ""));
     o->setProperty ("visual", props->getValue ("visual", "anime"));      // anime | reduit | statique
     return juce::var (o);
 }
@@ -107,6 +108,7 @@ KaleidoEditor::KaleidoEditor (KaleidoProcessor& p)
         { proc.loadPreset ((int) a[0]); lastPreset = proc.currentPreset.load(); done (stateForUi (false)); })
         .withNativeFunction ("generate", [this] (Args, Done done) { auto v = proc.generate(); lastPattern = proc.patternSerial.load(); done (v); })
         .withNativeFunction ("decline", [this] (Args, Done done) { auto v = proc.decline(); lastPattern = proc.patternSerial.load(); done (v); })
+        .withNativeFunction ("lockRef", [this] (Args, Done done) { done (proc.lockReference()); })
         .withNativeFunction ("previous", [this] (Args, Done done) { auto v = proc.previous(); lastPattern = proc.patternSerial.load(); done (v); })
         .withNativeFunction ("feedback", [this] (Args a, Done done) { auto v = proc.feedback (a[0].toString()); lastPattern = proc.patternSerial.load(); done (v); })
         .withNativeFunction ("resetPersonal", [this] (Args, Done done) { proc.resetPersonal(); done (proc.patternInfo()); })
@@ -150,7 +152,7 @@ KaleidoEditor::KaleidoEditor (KaleidoProcessor& p)
     setResizable (true, true);
     if (auto* c = getConstrainer()) c->setFixedAspectRatio ((double) baseW / baseH);
     setResizeLimits (baseW / 2, baseH / 2, baseW * 2, baseH * 2);
-    applyZoom ((int) mergedPrefs().getProperty ("zoom", 100));
+    applyZoom ((int) mergedPrefs().getProperty ("zoom", 80));
     web->goToURL (WBC::getResourceProviderRoot());
     lastPattern = proc.patternSerial.load();
     startTimerHz (60);
@@ -171,7 +173,7 @@ void KaleidoEditor::visibilityChanged()
 
 void KaleidoEditor::applyZoom (int percent)
 {
-    percent = juce::jlimit (50, 200, percent);
+    percent = juce::jlimit (50, 160, percent);
     setSize (baseW * percent / 100, baseH * percent / 100);
 }
 

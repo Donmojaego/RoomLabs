@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(Kaleidoscope VERSION 0.1.0 LANGUAGES C CXX)
+project(Kaleidoscope VERSION 0.2.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -78,7 +78,8 @@ file(GLOB KAL_UI_FILES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/layouts.json
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/assets/*.webp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/assets/*.png
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/assets/*.svg)
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/assets/*.svg
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/assets/meta.json)
 list(FILTER KAL_UI_FILES EXCLUDE REGEX "icon-1024")
 juce_add_binary_data(KaleidoscopeData SOURCES ${KAL_UI_FILES} ${CMAKE_CURRENT_SOURCE_DIR}/ui/presets/factory.json)
 

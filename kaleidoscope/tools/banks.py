@@ -152,24 +152,30 @@ RESERVE = [
  ("saxello-droit", "Saxello Droit", "Anches", VC, "Aerophones/Reed Aerophones/Saxello/Non-Vibrato", True, 1, "jazz", "planante"),
  ("flute-a-bec-basse-vib", "Flûte à Bec Basse Vibrato", "Flûtes", VC, "Aerophones/Edge-blown Aerophones/Baroque Bass Recorder/SusVib", True, 1, "lofi", "triste"),
  ("flute-a-bec-alto-vib", "Flûte à Bec Alto Vibrato", "Flûtes", VC, "Aerophones/Edge-blown Aerophones/Baroque Alto Recorder/SusVib", True, 1, "world", "romantique"),
+ ("ocarina-petit-stac", "Petit Ocarina Piqué", "Flûtes", VC, "Aerophones/Edge-blown Aerophones/Ocarina, Small/Staccato", False, 1, "afrotrap", "joyeuse"),
 ]
 
-UPDATES = {}   # "0.2.0": [ids pris dans RESERVE]
+# 25 fonds par mise à jour, pris dans RESERVE
+UPDATES = {"0.2.0": [r[0] for r in RESERVE[:25]]}
 
 
 def entries(include_reserve=False):
-    rows = list(B) + (list(RESERVE) if include_reserve else [])
+    """fonds livrés (v0.1 + mises à jour) ; avec include_reserve, aussi ceux qui attendent une prochaine version"""
+    ver = {i: v for v, ids in UPDATES.items() for i in ids}
+    rows = [(r, "0.1.0") for r in B] + [(r, ver[r[0]]) for r in RESERVE if r[0] in ver]
+    if include_reserve: rows += [(r, "réserve") for r in RESERVE if r[0] not in ver]
     out = []
-    for (bid, name, cat, repo, folder, sus, layers, style, mood) in rows:
+    for (bid, name, cat, repo, folder, sus, layers, style, mood), v in rows:
         out.append(dict(id=bid, name=name, cat=cat, source="VCSL" if repo == VC else "VSCO 2 CE", repo=repo, folder=folder,
-                        sustain=sus, layers=layers, style=style, mood=mood, license="CC0 1.0", version="0.1.0"))
+                        sustain=sus, layers=layers, style=style, mood=mood, license="CC0 1.0", version=v))
     return out
 
 
 def main():
     rows = entries()
-    assert len(rows) == 100, len(rows)
-    assert len({r["id"] for r in rows}) == 100 and len({r["name"] for r in rows}) == 100
+    n = len(B) + sum(len(v) for v in UPDATES.values())
+    assert len(rows) == n, (len(rows), n)
+    assert len({r["id"] for r in rows}) == n and len({r["name"] for r in rows}) == n
     json.dump(dict(version=1, folder="Banques", banks=[{k: r[k] for k in ("id", "name", "cat", "source", "sustain", "style", "mood", "license", "version")} for r in rows]),
               open(os.path.join(ROOT, "ui", "banks.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=0)
     os.makedirs(os.path.join(ROOT, "licences"), exist_ok=True)
@@ -178,7 +184,7 @@ def main():
         w.writerow(["id", "nom", "catégorie", "source", "dépôt", "dossier", "licence", "preuve", "statut"])
         for r in entries(True):
             w.writerow([r["id"], r["name"], r["cat"], r["source"], REPOS[r["repo"]], r["folder"], "CC0 1.0",
-                        "LICENSE du dépôt (CC0 1.0 Universal)", "v0.1" if r in rows else "réserve"])
+                        "LICENSE du dépôt (CC0 1.0 Universal)", r["version"]])
     cats = {}
     for r in rows: cats[r["cat"]] = cats.get(r["cat"], 0) + 1
     print(len(rows), "fonds :", cats)

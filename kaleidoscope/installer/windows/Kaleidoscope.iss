@@ -54,6 +54,7 @@ Source: "{#BuildDir}\Standalone\Kaleidoscope.exe"; DestDir: "{app}"; Components:
 Source: "..\..\ui\presets\factory.json"; DestDir: "{app}\Presets"; Components: contenu; Flags: ignoreversion
 Source: "..\..\docs\LISEZ-MOI.txt"; DestDir: "{app}\Documentation"; Components: contenu; Flags: ignoreversion isreadme
 Source: "..\..\docs\LICENCES.txt"; DestDir: "{app}\Licenses"; Components: contenu; Flags: ignoreversion
+Source: "..\..\docs\gabarits\*.png"; DestDir: "{app}\Documentation\Gabarits"; Components: contenu; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\Kaleidoscope (autonome)"; Filename: "{app}\Kaleidoscope.exe"; Components: standalone

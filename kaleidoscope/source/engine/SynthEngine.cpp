@@ -349,7 +349,7 @@ void SynthEngine::render (float* L, float* R, int n)
         uniNorm = 1.f / std::sqrt ((float) uni);
         for (int u = 0; u < 4; ++u) { const float pan = uni == 1 ? 0.f : (float) (u / (double) (uni - 1) - 0.5) * prm.spread; panL[u] = (0.5f - pan * 0.5f) * 1.4f; panR[u] = (0.5f + pan * 0.5f) * 1.4f; }
     }
-    const float levelT = std::pow (10.f, prm.levelDb / 20.f);
+    const float levelT = std::pow (10.f, (prm.levelDb + prm.master) / 20.f);
     const double divBeats[6] = { 0.25, 0.5, 0.75, 1.0, 1.5, 2.0 };
     const double dlTarget = std::clamp (divBeats[std::clamp (prm.delayDiv, 0, 5)] * 60.0 / tempo * sr, 64.0, (double) dlL.size() - 8);
     const int chSz = (int) chL.size(), dlSz = (int) dlL.size();

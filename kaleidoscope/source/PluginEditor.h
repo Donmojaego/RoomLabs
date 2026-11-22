@@ -23,7 +23,7 @@ public:
     void resized() override;
     void paint (juce::Graphics& g) override { g.fillAll (juce::Colour (0xff07060c)); }
     void visibilityChanged() override;
-    static constexpr int baseW = 1100, baseH = 700;
+    static constexpr int baseW = 1000, baseH = 1083;
 
 private:
     void timerCallback() override;

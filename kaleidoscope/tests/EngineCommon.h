@@ -14,7 +14,7 @@ static constexpr int kNumPresets = (int) (sizeof (kPresets) / sizeof (kPresets[0
 struct Measure { double rmsDb, peak; bool finite; };
 inline Measure renderPhrase (const PresetDef& d, float levelDb, double sr = 48000)
 {
-    kal::SynthEngine e; e.prepare (sr, 256); kal::SynthParams p; d.apply (p); p.levelDb = levelDb; e.setParams (p); e.setTempo (110);
+    kal::SynthEngine e; e.prepare (sr, 256); kal::SynthParams p; d.apply (p); p.levelDb = levelDb; p.master = 0; e.setParams (p); e.setTempo (110);
     const std::string id = d.id; const int base = id.rfind ("bass", 0) == 0 ? 36 : (id.rfind ("lead", 0) == 0 ? 67 : 60);
     const bool mono = p.mono;
     std::vector<float> L (256), R (256); double sum = 0, pk = 0; long n = 0; bool ok = true;

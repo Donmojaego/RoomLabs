@@ -92,7 +92,13 @@ CATS = [
 ]
 
 # Mises à jour : 5 presets de plus à chaque version (jusqu'à 300 natifs au total avec les banques).
-UPDATES = []   # ex. ("0.2.0", "Keys", "Nouveau nom", {"posA": 0.2})
+UPDATES = [
+    ("0.2.0", "Keys", "Labo Blanc", {"tableB": T["Verre"], "posA": 0.08, "mixB": 0.45, "cutoff": 0.62, "aD": 1900, "chorus": 0.3}),
+    ("0.2.0", "Pads", "Lentille Ambrée", {"tableA": T["Formants"], "posA": 0.65, "posB": 0.3, "cutoff": 0.46, "aA": 1500, "reverb": 0.62}),
+    ("0.2.0", "Leads", "Hublot Néon", {"tableB": T["Numérique"], "posA": 0.85, "reso": 0.42, "glideMs": 70, "lfoVib": 0.28, "delay": 0.3}),
+    ("0.2.0", "Plucks", "Éclat de Laiton", {"tableA": T["Impulsion"], "posA": 0.55, "fD": 180, "aD": 520, "delay": 0.32, "delayDiv": 2}),
+    ("0.2.0", "Bells", "Prisme de Verre", {"posA": 0.85, "posB": 0.6, "semiB": 19, "aD": 3200, "reverb": 0.52}),
+]
 
 
 def load_levels():

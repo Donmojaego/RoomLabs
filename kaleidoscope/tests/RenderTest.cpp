@@ -55,7 +55,7 @@ int main (int argc, char** argv)
                 for (int k = 0; k < (int) (sr * 1.0) / block; ++k) proc.processBlock (buf, none);
             }
             line (bad == 0 && midiNotes > 0, juce::String (sr / 1000.0, 1) + U (" kHz, blocs de ") + juce::String (block)
-                  + U (" : les 150 presets jouent la mélodie sans NaN ni écrêtage, ") + juce::String (midiNotes) + U (" notes envoyées en MIDI")
+                  + U (" : les ") + juce::String (natives) + U (" presets natifs jouent la mélodie sans NaN ni écrêtage, ") + juce::String (midiNotes) + U (" notes envoyées en MIDI")
                   + (bad ? " (" + juce::String (bad) + U (" en échec)") : juce::String()));
         }
 
@@ -72,6 +72,32 @@ int main (int argc, char** argv)
         line (differ && prevOk && fbOk && notes > 0, U ("Générer donne une idée neuve, Déclinaison une variante (") + juce::String (notes)
               + U (" notes), Précédent revient en arrière, J'aime / À refaire nourrissent Personal"));
         proc.resetPersonal();
+    }
+
+    // 2b. référence des déclinaisons : la 1re mélodie, ou celle qu'on verrouille
+    {
+        auto a = proc.generate(); auto locked = proc.lockReference();
+        proc.generate(); auto d = proc.decline();
+        const bool ok = d.getProperty ("refSeed", "").toString() == a.getProperty ("seed", "").toString()
+                     && (bool) locked.getProperty ("isRef", false);
+        line (ok, U ("Déclinaison : repart de la mélodie de référence (la 1re de la session, ou celle verrouillée)"));
+    }
+
+    // 2c. MASTER : large plage, sans écrêtage
+    {
+        proc.setRateAndBufferSizeDetails (48000, 512); proc.prepareToPlay (48000, 512);
+        auto measure = [&] (float masterDb) {
+            setP (proc, "master", masterDb); setP (proc, "play", 1); setP (proc, "follow", 0);
+            juce::AudioBuffer<float> buf (2, 512); double e = 0, pk = 0;
+            for (int k = 0; k < 48000 * 3 / 512; ++k) { juce::MidiBuffer m; proc.processBlock (buf, m);
+                for (int sm = 0; sm < 512; ++sm) { const float v = buf.getSample (0, sm); e += v * v; pk = juce::jmax (pk, (double) std::abs (v)); } }
+            setP (proc, "play", 0); return std::make_pair (10 * std::log10 (e / (48000.0 * 3) + 1e-12), pk); };
+        proc.loadPreset (94);   // basse
+        auto lo = measure (-24), mid = measure (-4), hi = measure (12);
+        line (hi.first - lo.first > 20 && hi.second < 1.0 && mid.second < 0.9,
+              U ("MASTER : -24 dB → ") + juce::String (lo.first, 1) + U (" dB, -4 dB (défaut) → ") + juce::String (mid.first, 1) + U (" dB, +12 dB → ")
+              + juce::String (hi.first, 1) + U (" dB, crête ") + juce::String (hi.second, 2) + U (" (pas d'écrêtage)"));
+        setP (proc, "master", -4);
     }
 
     // 3. styles × rôles : chaque style produit une mélodie et un accompagnement
