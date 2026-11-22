@@ -146,3 +146,60 @@ jobs:
       - name: Échec si un test a échoué
         if: steps.tests.outcome == 'failure' || steps.pv.outcome == 'failure'
         run: exit 1
+
+  macos:
+    name: macOS — AU + VST3 + DMG (Apple Silicon et Intel)
+    needs: windows
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: v
+        run: echo "version=$(grep -Eo 'VERSION [0-9.]+ LANGUAGES' CMakeLists.txt | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache JUCE
+        uses: actions/cache@v4
+        with:
+          path: suite/build/_deps
+          key: juce-8.0.15-macos-suite
+
+      - name: Configuration
+        run: cmake -B build -G Xcode -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+
+      - name: Compilation
+        run: cmake --build build --config Release --target NoiseTools_VST3 NoiseTools_AU --parallel -- -quiet
+
+      - name: Vérification (architectures + auval)
+        run: |
+          R="build/NoiseTools_artefacts/Release"
+          lipo -info "$R/AU/Noise Tools.component/Contents/MacOS/Noise Tools"
+          mkdir -p ~/Library/Audio/Plug-Ins/Components
+          cp -R "$R/AU/Noise Tools.component" ~/Library/Audio/Plug-Ins/Components/
+          codesign --force --deep --sign - "$HOME/Library/Audio/Plug-Ins/Components/Noise Tools.component"
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+          sleep 3
+          if auval -v aufx NsTl Rmlb > auval.txt 2>&1; then
+            echo "::notice title=auval::$(tail -n 3 auval.txt | tr '\n' ' ')"
+          else
+            echo "::error title=auval::$(tail -n 40 auval.txt | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
+            exit 1
+          fi
+
+      - name: Installeur DMG (depuis manifest.json)
+        run: python3 installer/macos/build_dmg.py "${{ steps.v.outputs.version }}" build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RoomLabsAudio-macOS-${{ steps.v.outputs.version }}
+          path: suite/RoomLabsAudio_Plugins_*_macOS.dmg
+
+      - name: Publication dans Releases
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: suite-v${{ steps.v.outputs.version }}
+          prerelease: true
+          make_latest: false
+          target_commitish: ${{ github.sha }}
+          files: suite/RoomLabsAudio_Plugins_*_macOS.dmg

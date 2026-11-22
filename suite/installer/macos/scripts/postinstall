@@ -1,0 +1,8 @@
+#!/bin/bash
+# Après installation : retire la quarantaine et rafraîchit le cache Audio Unit
+xattr -dr com.apple.quarantine "/Library/Audio/Plug-Ins/VST3/Room Labs Audio" 2>/dev/null
+for c in /Library/Audio/Plug-Ins/Components/*.component; do
+  grep -q "com.roomlabs" "$c/Contents/Info.plist" 2>/dev/null && xattr -dr com.apple.quarantine "$c" 2>/dev/null
+done
+killall -9 AudioComponentRegistrar 2>/dev/null || true
+exit 0
