@@ -26,7 +26,7 @@ const RL = (() => {
   const R = id => st.ranges[id] || [0, 1, 0, 1];
   const toN = (id, v) => { const [a, b, , sk] = R(id); const x = Math.min(1, Math.max(0, (v - a) / (b - a))); return sk && sk !== 1 ? Math.pow(x, sk) : x; };
   const fromN = (id, n) => { const [a, b, , sk] = R(id); n = Math.min(1, Math.max(0, n)); return a + (b - a) * (sk && sk !== 1 ? Math.pow(n, 1 / sk) : n); };
-  const A = name => `${name}`;
+  const A = name => (window.RL_ASSETS && window.RL_ASSETS[name]) || name;   // aperçu autonome : images intégrées
   let scale = 1;
 
   function fit() {
@@ -146,10 +146,10 @@ const RL = (() => {
 
   async function start(layout) {
     st.layout = layout; st.parts = []; st.screens = [];
-    const meta = await fetch("meta.json").then(r => r.json());
+    const meta = window.RL_META || await fetch("meta.json").then(r => r.json());
     st.meta = meta.products[layout.product]; st.ctl = meta.controls;
     layout.w = st.meta.size[0]; layout.h = st.meta.size[1];
-    document.body.innerHTML = `<div id="stage" data-theme="vert" style="width:${layout.w}px;height:${layout.h}px"><img id="face" class="face"><img id="cadres" class="cadres"><div id="veil"></div><div id="menu" class="pop"></div><div id="toast"></div><div id="tip"></div></div>`;
+    document.body.innerHTML = `<div id="stage" data-theme="vert" style="width:${layout.w}px;height:${layout.h}px"><img id="face" class="face"><div id="light"></div><img id="cadres" class="cadres"><div id="veil"></div><div id="menu" class="pop"></div><div id="toast"></div><div id="tip"></div></div>`;
     $("#veil").onclick = closeMenu;
     const s = NATIVE ? await call("getState") : await layout.mockState();
     st.ranges = s.ranges || {}; Object.assign(st.params, s.params || {});

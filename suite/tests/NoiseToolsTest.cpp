@@ -1,4 +1,5 @@
 // Noise Tools — corpus synthétique reproductible (graine fixe) et mesures. Sortie : rapport Markdown.
+#define _USE_MATH_DEFINES
 #include "../plugins/noise_tools/NoiseToolsDSP.h"
 #include <algorithm>
 #include <cmath>
@@ -7,6 +8,9 @@
 #include <random>
 #include <string>
 #include <vector>
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 using namespace rl::nt;
 static int fails = 0; static std::string rep;
 static void line (bool ok, const std::string& s) { if (! ok) ++fails; rep += (ok ? "- [OK] " : "- [ÉCHEC] ") + s + "\n"; std::printf ("%s %s\n", ok ? "OK " : "ÉCHEC", s.c_str()); }

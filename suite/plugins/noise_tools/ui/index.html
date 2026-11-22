@@ -114,16 +114,21 @@ const C = n => RL.css(n);
 const meterHold = { inL: -90, inR: -90, outL: -90, outR: -90 };
 function drawMeters(c, w, h, f) {
   c.fillStyle = C("--scr"); roundRect(c, 0, 0, w, h, 8); c.fill();
-  const lbl = ["IN", "OUT"], keys = [["inL", "inR"], ["outL", "outR"]], half = w / 2, bw = half - 50;
+  const lbl = ["IN", "OUT"], keys = [["inL", "inR"], ["outL", "outR"]], half = w / 2, ink = C("--scrInk");
   c.font = "800 10px " + C("--ui"); c.textBaseline = "middle";
   keys.forEach((pair, i) => {
-    const x0 = 10 + i * half;
-    c.fillStyle = C("--scrInk"); c.globalAlpha = .75; c.fillText(lbl[i], x0, h / 2); c.globalAlpha = 1;
+    const x0 = 10 + i * half, x = x0 + 32, L = half - 50, seg = 4, n = Math.floor(L / seg);
+    c.fillStyle = ink; c.globalAlpha = .8; c.fillText(lbl[i], x0, h / 2); c.globalAlpha = 1;
     pair.forEach((k, j) => {
       const v = f[k] ?? -90; meterHold[k] = Math.max(v, meterHold[k] - 1.2);
-      const n = Math.max(0, Math.min(1, (meterHold[k] + 60) / 60)), y = 8 + j * 11, x = x0 + 32, L = bw;
-      c.fillStyle = C("--grid"); c.fillRect(x, y, L, 7);
-      c.fillStyle = meterHold[k] > -1 ? "#ff5a4e" : C("--scrInk"); c.fillRect(x, y, L * n, 7);
+      const lit = Math.round(Math.max(0, Math.min(1, (meterHold[k] + 60) / 60)) * n), y = 7 + j * 11;
+      for (let s = 0; s < n; s++) {
+        const db = -60 + 60 * (s + 1) / n, col = db > -3 ? "#ff5a4e" : db > -12 ? "#ffd166" : ink;
+        c.fillStyle = col;
+        if (s < lit) { c.globalAlpha = 1; c.shadowColor = col; c.shadowBlur = 6; } else { c.globalAlpha = .12; c.shadowBlur = 0; }
+        c.fillRect(x + s * seg, y, seg - 1, 8);
+      }
+      c.shadowBlur = 0; c.globalAlpha = 1;
     });
   });
 }
@@ -139,7 +144,8 @@ function drawDenoise(c, w, h, f) {
     // sortie : aire remplie
     c.beginPath(); c.moveTo(0, H); so.forEach((v, i) => c.lineTo(X(i), Y(v))); c.lineTo(w, H); c.closePath();
     const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, ink); g.addColorStop(1, "transparent"); c.globalAlpha = .35; c.fillStyle = g; c.fill(); c.globalAlpha = 1;
-    c.strokeStyle = ink; c.lineWidth = 1.6; c.beginPath(); so.forEach((v, i) => i ? c.lineTo(X(i), Y(v)) : c.moveTo(0, Y(v))); c.stroke();
+    c.strokeStyle = ink; c.lineWidth = 1.8; c.shadowColor = ink; c.shadowBlur = 8; c.beginPath(); so.forEach((v, i) => i ? c.lineTo(X(i), Y(v)) : c.moveTo(0, Y(v))); c.stroke();
+    c.shadowBlur = 0;
     // entrée : ligne fine
     c.globalAlpha = .45; c.lineWidth = 1; c.beginPath(); si.forEach((v, i) => i ? c.lineTo(X(i), Y(v)) : c.moveTo(0, Y(v))); c.stroke();
     // profil de bruit : pointillés
@@ -155,8 +161,16 @@ function drawActivity(c, w, h, f, key, title) {
   c.fillStyle = C("--scr"); roundRect(c, 0, 0, w, h, 8); c.fill();
   const H = h - 26; grid(c, w, H);
   const a = hist[key], mx = Math.max(5, ...a), bw = w / a.length, ink = C("--scrInk");
-  c.fillStyle = ink;
-  a.forEach((v, i) => { const bh = v / mx * (H - 8); c.globalAlpha = .25 + .75 * (i / a.length); c.fillRect(i * bw, H - bh, Math.max(1, bw - 1), bh); });
+  const cols = 30, cw = w / cols, rows = 16, rh = (H - 8) / rows;
+  for (let ci = 0; ci < cols; ci++) {
+    const v = Math.max(...a.slice(ci * 3, ci * 3 + 3)), on = Math.round(v / mx * rows);
+    for (let r = 0; r < rows; r++) {
+      const lit = r < on; c.fillStyle = ink;
+      c.globalAlpha = lit ? .35 + .65 * (ci / cols) : .07; c.shadowColor = ink; c.shadowBlur = lit && ci > cols - 4 ? 6 : 0;
+      c.fillRect(ci * cw + 1, H - (r + 1) * rh, cw - 2, rh - 1.2);
+    }
+  }
+  c.shadowBlur = 0;
   c.globalAlpha = 1; c.font = "700 11px " + C("--ui"); c.textBaseline = "middle";
   c.globalAlpha = .7; c.fillText(title, 10, h - 12); c.globalAlpha = 1;
   c.textAlign = "right"; c.font = "800 13px " + C("--ui"); c.fillText(String(Math.round(a[a.length - 1])), w - 10, h - 12); c.textAlign = "left";
