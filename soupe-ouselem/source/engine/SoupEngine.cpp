@@ -18,7 +18,7 @@ inline double polyBlep (double t, double dt)
 }
 inline double saw (double p, double dt) { return 2.0 * p - 1.0 - polyBlep (p, dt); }
 inline float hann (double x) { return (float) (0.5 - 0.5 * std::cos (twoPi * std::clamp (x, 0.0, 1.0))); }
-inline bool percussive (Inst i) { return i == Inst::Bell || i == Inst::Drum; }
+inline bool percussive (Inst i) { return i == Inst::Bell || i == Inst::Drum || i == Inst::Koto || i == Inst::Shamisen || i == Inst::Gamelan || i == Inst::Oud || i == Inst::Taiko; }
 } // namespace
 
 void SoupEngine::prepare (double sampleRate, int)
@@ -200,6 +200,81 @@ float SoupEngine::renderVoice (Voice& v)
             s = (float) std::sin (v.ph[0] * twoPi) * 0.8f + 0.25f * (float) (1.0 - 4.0 * std::abs (v.ph[0] - 0.5));
             cutoff = 250.f + 1100.f * br; reso = 0.2f; break;
         }
+        case Inst::Koto: case Inst::Shamisen: case Inst::Oud:
+        {
+            // corde pincée additive : 8 harmoniques, aigus qui s'éteignent vite ;
+            // koto : glissé vers la note (pression sur la corde) ; shamisen : sawari (grésillement) ; oud : deux cordes (chœur)
+            const bool sham = prm.inst == Inst::Shamisen, oud = prm.inst == Inst::Oud;
+            double f0 = hz;
+            if (prm.inst == Inst::Koto) f0 *= std::pow (2.0, -0.35 * std::exp (-v.t / 0.03) / 12.0);
+            const double dec = (sham ? 0.6 : oud ? 1.4 : 1.8) * (0.6 + 0.8 * br) * std::pow (261.6 / std::max (60.0, hz), 0.4);
+            if (v.t <= invSr * 1.5) for (int k = 0; k < 8; ++k) v.he[k] = (float) (1.0 / std::pow (k + 1.0, (sham ? 0.8 : oud ? 1.4 : 1.1) - 0.3 * br));
+            for (int k = 0; k < 8; ++k)
+            {
+                const double f = f0 * (k + 1) * (1 + 0.0004 * k * k);
+                if (f >= sr * 0.45) break;
+                v.hp[k] += f * invSr; if (v.hp[k] >= 1) v.hp[k] -= 1;
+                v.he[k] *= (float) std::exp (std::log (0.001) / (dec / (1 + 0.6 * k) * sr));
+                s += v.he[k] * (float) std::sin (v.hp[k] * twoPi);
+                if (oud) s += 0.6f * v.he[k] * (float) std::sin ((v.hp[k] + 0.0021 * v.t * f) * twoPi);
+            }
+            if (sham) { v.buzz += 0.02f * (std::abs (s) - v.buzz); s += 0.5f * noise() * v.buzz * v.buzz; }
+            if (v.t < 0.003) s += 0.4f * noise() * (float) std::exp (-v.t / 0.0008);   // attaque du plectre / de l'onglet
+            s *= oud ? 0.35f : 0.45f; cutoff = (sham ? 5000.f : 3500.f) + 7000.f * br; reso = 0.1f; break;
+        }
+        case Inst::Erhu:
+        {
+            // vièle à deux cordes : arrivée glissée sur la note, vibrato large, timbre nasal
+            hz *= std::pow (2.0, -1.0 * std::exp (-v.t / 0.07) / 12.0) * vib (28, 0.18);
+            const double dt = hz * invSr;
+            v.ph[0] += dt; if (v.ph[0] >= 1) v.ph[0] -= 1;
+            s = (float) saw (v.ph[0], dt) * 0.7f + 0.03f * noise();
+            // formants nasaux (≈ 1 kHz et 2,6 kHz)
+            auto bp = [&] (int i, double fc, double q, float x) {          // filtre d'état (Chamberlin) : sortie passe-bande
+                const float f = (float) (2.0 * std::sin (pi * fc * invSr)), qq = (float) (1.0 / q);
+                float& low = v.bp[i][0]; float& band = v.bp[i][1];
+                low += f * band; const float high = x - low - qq * band; band += f * high; return band; };
+            s = 0.18f * s + 0.75f * bp (0, 1000, 3, s) + 0.45f * bp (1, 2600, 4, s);
+            cutoff = 2500.f + 5000.f * br; reso = 0.15f; break;
+        }
+        case Inst::Shakuhachi:
+        {
+            // flûte de bambou : souffle très présent, attaque par en dessous, vibrato lent
+            hz *= std::pow (2.0, -0.6 * std::exp (-v.t / 0.09) / 12.0) * vib (22, 0.35);
+            v.ph[0] += hz * invSr; if (v.ph[0] >= 1) v.ph[0] -= 1;
+            const float breath = noise() * (0.22f + 0.45f * (float) std::exp (-v.t / 0.12));
+            s = (float) std::sin (v.ph[0] * twoPi) * 0.75f + 0.08f * (float) std::sin (2 * v.ph[0] * twoPi) + breath;
+            cutoff = (float) std::min (hz * 6.0 + 1500.0 * br, 9000.0); reso = 0.3f; break;
+        }
+        case Inst::Gamelan:
+        {
+            // bonang / gong : partiels inharmoniques, deux instruments accordés en battement (ombak)
+            static const double ratio[6] = { 1.0, 1.52, 2.0, 2.83, 3.95, 5.4 };
+            static const float amp[6] = { 1.f, .45f, .35f, .25f, .15f, .08f };
+            if (v.t <= invSr * 1.5) for (int k = 0; k < 6; ++k) v.he[k] = amp[k];
+            const double dec = 1.2 + 2.5 * br;
+            for (int k = 0; k < 6; ++k)
+            {
+                const double f = hz * ratio[k]; if (f >= sr * 0.45) break;
+                v.hp[k] += f * invSr; if (v.hp[k] >= 1) v.hp[k] -= 1;
+                v.he[k] *= (float) std::exp (std::log (0.001) / (dec / (1 + 0.7 * k) * sr));
+                s += v.he[k] * ((float) std::sin (v.hp[k] * twoPi) + 0.8f * (float) std::sin ((v.hp[k] + 5.0 * v.t) * twoPi));
+            }
+            if (v.t < 0.004) s += 0.3f * noise() * (float) std::exp (-v.t / 0.001);
+            s *= 0.32f; cutoff = 12000.f; break;
+        }
+        case Inst::Taiko:
+        {
+            // grand tambour : peau grave qui descend, frappe large
+            const double f = hz * 0.5 * (1.0 + 0.5 * std::exp (-v.t / 0.04));
+            v.ph[0] += f * invSr; if (v.ph[0] >= 1) v.ph[0] -= 1;
+            v.ph[1] += f * 1.59 * invSr; if (v.ph[1] >= 1) v.ph[1] -= 1;
+            v.partEnv[0] *= (float) std::exp (std::log (0.001) / ((0.5 + 0.6 * br) * sr));
+            v.partEnv[1] *= (float) std::exp (std::log (0.001) / ((0.25 + 0.3 * br) * sr));
+            s = (float) std::sin (v.ph[0] * twoPi) * v.partEnv[0] + 0.4f * (float) std::sin (v.ph[1] * twoPi) * v.partEnv[1]
+              + 0.35f * noise() * (float) std::exp (-v.t / 0.012);
+            s *= 0.9f; cutoff = 3000.f + 4000.f * br; break;
+        }
         case Inst::Drum:
         default:
         {
@@ -233,27 +308,33 @@ float SoupEngine::reverseStage (float x, int which)
     const double dBeats = divBeats[prm.division];
     const double pos = (beatPos / dBeats - std::floor (beatPos / dBeats)) * L;
     int idx = w - (int) (2.0 * pos) - 1; while (idx < 0) idx += sz;
-    const double fade = 0.006 * sr;
-    const float g = (float) std::min ({ 1.0, pos / fade, (L - pos) / fade });
+    const double fade = std::min (0.015 * sr, L * 0.2);
+    const float g = (float) std::clamp (std::min (pos / fade, (L - pos) / fade), 0.0, 1.0);
     w = (w + 1) % sz;
-    return b[(size_t) idx] * std::max (0.f, g);
+    return b[(size_t) idx] * g + x * (1.f - g) * 0.5f;          // jonctions adoucies (fondu vers le son direct)
 }
 
-// Stutter : répète la première tranche de chaque temps
+// Stutter (adouci, v0.1.1) : sur un cycle de 4 tranches, les 2 premières passent telles quelles,
+// les 2 dernières répètent la 2e tranche. Aux jonctions, fondu enchaîné (12 ms) avec le son direct :
+// plus de « trou » de silence entre les répétitions.
 float SoupEngine::stutterStage (float x, int which)
 {
     auto& b = stuBuf[which]; int& w = stuW[which]; const int sz = (int) b.size();
     b[(size_t) w] = x;
     const double dBeats = divBeats[prm.division];
-    const double cycleBeats = std::max (1.0, dBeats * 4.0);
-    const double L = std::min (divisionSamples(), sz / 3.0);
-    const double p = (beatPos / cycleBeats - std::floor (beatPos / cycleBeats)) * cycleBeats * 60.0 / bpm * sr;
-    const double inSlice = std::fmod (p, L);
-    int idx = w - (int) p + (int) inSlice; while (idx < 0) idx += sz; idx %= sz;
-    const double fade = 0.003 * sr;
-    const float g = (float) std::min ({ 1.0, inSlice / fade, (L - inSlice) / fade });
+    const double L = std::min (divisionSamples(), sz / 5.0);
+    const double cycleBeats = dBeats * 4.0;
+    const double p = (beatPos / cycleBeats - std::floor (beatPos / cycleBeats)) * 4.0 * L;   // position dans le cycle (échantillons)
+    const int slice = std::min (3, (int) (p / L));
     w = (w + 1) % sz;
-    return b[(size_t) idx] * std::max (0.f, g);
+    if (slice < 2) return x;                                  // moitié du cycle : son direct
+    const double inSlice = p - slice * L;
+    // la 2e tranche (enregistrée il y a (slice-1)·L + inSlice échantillons… on relit son début)
+    int idx = (w - 1) - (int) (p - (L + inSlice)); while (idx < 0) idx += sz; idx %= sz;
+    const float rep = b[(size_t) idx];
+    const double fade = std::min (0.012 * sr, L * 0.25);
+    const float g = (float) std::clamp (std::min (inSlice / fade, (L - inSlice) / fade), 0.0, 1.0);
+    return rep * g + x * (1.f - g);                            // jonctions : fondu avec le son direct
 }
 
 float SoupEngine::processFx (Fx type, float x, float& wetR, int)

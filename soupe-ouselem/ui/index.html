@@ -28,7 +28,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:#efe2cf;color:var(--
 #marker{position:absolute;width:0;height:0;z-index:5;border-left:9px solid transparent;border-right:9px solid transparent;border-top:11px solid #ff6a2b;
   filter:drop-shadow(0 0 4px #ff7a2b);transition:left .22s cubic-bezier(.3,1.4,.5,1),top .22s}
 /* écran du preset */
-#screen{display:flex;align-items:center;justify-content:center;gap:6px;font-weight:800;color:var(--acc);white-space:nowrap;overflow:hidden}
+#screen{display:flex;align-items:center;justify-content:center;gap:6px;font-weight:800;color:var(--acc);white-space:nowrap;overflow:hidden;cursor:pointer}
+#screen::after,#rScreen::after{content:"";flex:none;width:7px;height:7px;margin-left:4px;border-right:2.5px solid var(--acc);border-bottom:2.5px solid var(--acc);transform:rotate(45deg) translateY(-3px)}
+#rScreen{cursor:pointer}
+#menu.recipes{width:300px;max-height:420px;overflow:auto;padding:6px 0}
+#menu .hd{padding:9px 14px 5px;font-size:12px;font-weight:900;letter-spacing:.06em;color:var(--green);text-transform:uppercase;border-top:1px solid #e3d2b8}
+#menu .hd:first-child{border-top:0}
+#menu .hd b{color:var(--acc)}
+#menu.recipes .it{padding:7px 22px;font-size:14px}
 #screen .no{font-size:19px}#screen .nm{font-size:15px;color:var(--ink);font-weight:700;overflow:hidden;text-overflow:ellipsis}
 .hit{position:absolute;border-radius:50%;cursor:pointer}
 .hit:active{background:#0001}
@@ -91,6 +98,7 @@ body.ramen #ramenNav{display:flex}
   <div id="perf" class="abs"></div>
   <div id="hint" class="abs"></div>
 </div>
+<script src="rl_license_ui.js"></script>
 <script>
 "use strict";
 // =============================================================================
@@ -113,11 +121,13 @@ const PDEF = {
   tone:{min:-1,max:1,def:0,skew:1,fmt:v => (v > 0 ? "+" : "") + Math.round(v * 100),label:"TONE"}, damp:{min:0,max:1,def:.4,skew:1,fmt:pct,label:"DAMP"},
   space:{min:0,max:1,def:.3,skew:1,fmt:pct,label:"SPACE"}, mix:{min:0,max:1,def:.5,skew:1,fmt:pct,label:"MIX"},
   feedback:{min:0,max:.92,def:.4,skew:1,fmt:pct,label:"RETOUR"}, stretch:{min:0,max:1,def:.5,skew:1,fmt:pct,label:"ÉTIREMENT"},
-  level:{min:-36,max:12,def:-6,skew:1,fmt:v => v.toFixed(1) + " dB",label:"NIVEAU"}, attack:{min:0,max:5000,def:20,skew:.3,fmt:ms,label:"ATTAQUE"},
+  level:{min:-36,max:12,def:-6,skew:1,fmt:v => v.toFixed(1) + " dB",label:"NIVEAU RECETTE"},
+  master:{min:-24,max:6,def:0,skew:1,fmt:v => (v > 0 ? "+" : "") + v.toFixed(1) + " dB",label:"MASTER"}, attack:{min:0,max:5000,def:20,skew:.3,fmt:ms,label:"ATTAQUE"},
   decay:{min:5,max:5000,def:800,skew:.3,fmt:ms,label:"DECAY"}, sustain:{min:0,max:1,def:.8,skew:1,fmt:pct,label:"TENUE"},
   release:{min:5,max:8000,def:600,skew:.3,fmt:ms,label:"RELÂCHEMENT"}, brightness:{min:0,max:1,def:.5,skew:1,fmt:pct,label:"COULEUR"},
   tune:{min:-24,max:24,def:0,skew:1,fmt:v => (v > 0 ? "+" : "") + v.toFixed(1) + " st",label:"TUNE"}};
-let INSTS = ["Violon","Pad","Piano","Cloche","Cordes","Texture","Basse","Tambour"];
+let INSTS = ["Violon","Pad","Piano","Cloche","Cordes","Texture","Basse","Tambour","Koto","Shamisen","Erhu","Shakuhachi","Gamelan","Oud","Taiko"];
+let SACH = { soupe: [], ramen: [] };   // noms des sachets par mode
 let FXS = ["Aucun","Reverse","Stutter","Répétitions","Découpage","Étirement","Filtre modulé","Grain Delay"];
 let DIVS = ["1/2","1/4","1/8","1/16","1/32","1/4T","1/8T","1/16T"];
 const P = {}; for (const k in PDEF) P[k] = PDEF[k].def;
@@ -162,8 +172,8 @@ function layout() {
   const hits = $("#hits"); hits.innerHTML = "";
   const hit = (c, r, title, fn) => { if (!c) return; const h = document.createElement("div"); h.className = "hit"; h.title = title;
     h.style.left = (c[0] - r) * K + "px"; h.style.top = (c[1] - r) * K + "px"; h.style.width = h.style.height = 2 * r * K + "px"; h.onclick = fn; hits.appendChild(h); };
-  hit(X.prev, 30, "Recette précédente", () => loadPreset(current - 1));
-  hit(X.next, 30, "Recette suivante", () => loadPreset(current + 1));
+  hit(X.prev, 30, "Recette précédente", () => step(-1));
+  hit(X.next, 30, "Recette suivante", () => step(1));
   hit(X.save, 30, "Mémoriser la recette", saveUser);
   hit(X.gear, 30, "Réglages", () => $("#adv").style.display = "block");
   hit(X.playBtn, 40, "Goûter : joue la note de référence", () => { const p = presets[current]; if (p) { noteOn(p.root, .85); setTimeout(() => noteOff(p.root), 700); } });
@@ -249,6 +259,7 @@ function refreshPills() {
 }
 function refreshAll() { for (const k in P) setParam(k, P[k], true); showPreset(); }
 function openMenu(anchor, items, curIdx, onPick, withDivs) {
+  $("#menu").classList.remove("recipes");
   const m = $("#menu"), r = anchor.getBoundingClientRect(), s = $("#stage").getBoundingClientRect(), sc = s.width / 960;
   m.innerHTML = items.map((t, i) => `<div class="it${i === curIdx ? " on" : ""}" data-i="${i}">${t}</div>`).join("") +
     (withDivs ? `<div class="divs">${DIVS.map((d, i) => `<span data-d="${i}" class="${i === Math.round(P.division) ? "on" : ""}">${d}</span>`).join("")}</div>` : "");
@@ -257,11 +268,34 @@ function openMenu(anchor, items, curIdx, onPick, withDivs) {
   m.querySelectorAll(".it").forEach(e => e.onclick = ev => { ev.stopPropagation(); onPick(+e.dataset.i); m.style.display = "none"; });
   m.querySelectorAll("[data-d]").forEach(e => e.onclick = ev => { ev.stopPropagation(); setParam("division", +e.dataset.d); openMenu(anchor, items, curIdx, onPick, withDivs); });
 }
-addEventListener("pointerdown", e => { if (!e.target.closest("#menu") && !e.target.closest(".pill")) $("#menu").style.display = "none"; });
+addEventListener("pointerdown", e => { if (!e.target.closest("#menu") && !e.target.closest(".pill") && !e.target.closest("#screen,#rScreen")) $("#menu").style.display = "none"; });
+// menu déroulant des sachets : tous les sachets du bol affiché et leurs recettes, accès direct
+function openRecipes(anchor) {
+  const m = $("#menu"), r = anchor.getBoundingClientRect(), st = $("#stage").getBoundingClientRect(), sc = st.width / 960;
+  const names = SACH[curMode()] || [];
+  let html = "";
+  for (let n = 1; n <= 6; n++) {
+    const list = presets.map((p, i) => [p, i]).filter(([p]) => p.sachet === n && inMode(p)); if (!list.length) continue;
+    const nm = (names[n - 1] && names[n - 1].name) || (list[0][0].section || "");
+    html += `<div class="hd"><b>0${n}</b> ${nm}</div>` + list.map(([p, i]) => `<div class="it${i === current ? " on" : ""}" data-i="${i}">${p.name}${p.user ? " ★" : ""}</div>`).join("");
+  }
+  m.innerHTML = `<div class="rec">${html}</div>`; m.classList.add("recipes"); m.style.display = "block";
+  const w = 300; let left = (r.left + r.width / 2 - st.left) / sc - w / 2; left = Math.max(8, Math.min(960 - w - 8, left));
+  m.style.left = left + "px"; m.style.top = ((r.bottom - st.top) / sc + 6) + "px";
+  m.querySelectorAll(".it").forEach(e => e.onclick = ev => { ev.stopPropagation(); loadPreset(+e.dataset.i); m.style.display = "none"; m.classList.remove("recipes"); });
+  const cur = m.querySelector(".it.on"); if (cur) cur.scrollIntoView({block: "center"});
+}
+$("#screen").onclick = e => { e.stopPropagation(); openRecipes(e.currentTarget); };
+$("#rScreen").onclick = e => { e.stopPropagation(); openRecipes(e.currentTarget); };
 $("#pillInst").onclick = e => openMenu(e.currentTarget, INSTS, Math.round(P.inst), i => setParam("inst", i));
 $("#pillFx").onclick = e => openMenu(e.currentTarget, FXS, Math.round(P.fx), i => setParam("fx", i), true);
 
 const lastOf = {};
+const curMode = () => prefs.theme === "ramen" ? "ramen" : "soupe";
+const inMode = p => p.user ? (p.mode || "soupe") === curMode() : (p.mode || "soupe") === curMode();
+// recettes du mode affiché (Ma petite soupe / Mon petit ramen : la banque change avec le bol)
+const modeIdx = () => presets.map((p, i) => [p, i]).filter(([p]) => inMode(p)).map(([, i]) => i);
+function step(d) { const L = modeIdx(); if (!L.length) return; const k = L.indexOf(current); loadPreset(L[((k < 0 ? 0 : k + d) % L.length + L.length) % L.length]); }
 function selectSachet(n, load) {
   sachet = n;
   document.querySelectorAll(".sachet").forEach(e => e.classList.toggle("sel", +e.dataset.n === n));
@@ -269,13 +303,13 @@ function selectSachet(n, load) {
   const s = L.sachets[n - 1].box, mk = $("#marker");
   mk.style.left = (((s[0] + s[2]) / 2) * K - 9) + "px"; mk.style.top = (s[1] * K - 24) + "px";
   anim.kickSachet(n);
-  if (load) { const list = presets.map((p, i) => [p, i]).filter(([p]) => p.sachet === n); const i = lastOf[n] ?? (list[0] && list[0][1]); if (i !== undefined) loadPreset(i); }
+  if (load) { const list = presets.map((p, i) => [p, i]).filter(([p]) => p.sachet === n && inMode(p)); const lo = lastOf[curMode() + n]; const i = lo ?? (list[0] && list[0][1]); if (i !== undefined) loadPreset(i); }
 }
 function showPreset() {
   const p = presets[current]; if (!p) return;
   const txt = `<span class="no">0${p.sachet}</span><span class="nm">${p.name}</span>`;
   $("#screen").innerHTML = txt; $("#rScreen").innerHTML = `<span style="color:var(--acc)">0${p.sachet}</span><span style="font-size:13px">${p.name}</span>`;
-  lastOf[p.sachet] = current;
+  lastOf[(p.mode || "soupe") + p.sachet] = current;
   if (p.sachet !== sachet || !document.querySelector(".sachet.sel")) selectSachet(p.sachet, false);
 }
 async function loadPreset(i) {
@@ -285,7 +319,7 @@ async function loadPreset(i) {
   else { const v = presets[i].params; for (const k in v) setParam(k, k === "arpOct" ? v[k] - 1 : v[k]); }
   showPreset(); anim.ripple(1);
 }
-$("#rPrev").onclick = () => loadPreset(current - 1); $("#rNext").onclick = () => loadPreset(current + 1);
+$("#rPrev").onclick = () => step(-1); $("#rNext").onclick = () => step(1);
 function applyState(st) { if (!st) return; for (const k in st.params) setParam(k, st.params[k], true); if (st.preset !== undefined) current = st.preset; }
 
 // recettes perso (mémorisées dans les préférences, pour tous les projets)
@@ -294,7 +328,7 @@ function mergeUser() { presets = presets.filter(p => !p.user).concat(userList().
 function saveUser() {
   const list = userList(), p = presets[current] || {sachet, root:60, rootName:"C4"};
   const params = {}; for (const k in P) params[k] = k === "arpOct" ? P[k] + 1 : P[k];
-  list.push({name: "Ma recette " + (list.length + 1), sachet: p.sachet, section: p.section, root: p.root, rootName: p.rootName, params});
+  list.push({name: "Ma recette " + (list.length + 1), mode: curMode(), sachet: p.sachet, section: p.section, root: p.root, rootName: p.rootName, params});
   setPref("user", JSON.stringify(list)); mergeUser(); current = presets.length - 1; showPreset(); toast("Recette mémorisée : " + presets[current].name);
 }
 function surprise() {
@@ -318,7 +352,7 @@ const advKnobs = {};
   const mk = (parent, id) => { const el = document.createElement("div"); el.className = "mk"; el.innerHTML = `<canvas></canvas><b>${PDEF[id].label}</b><i></i>`; parent.appendChild(el);
     advKnobs[id] = () => { if ($("#adv").style.display === "block") drawKnob(el.querySelector("canvas"), id, false); el.querySelector("i").textContent = PDEF[id].fmt(P[id]); };
     bindDrag(el, id); };
-  ["attack","decay","sustain","release","brightness","tune","level"].forEach(id => mk($("#ak1"), id));
+  ["master","attack","decay","sustain","release","brightness","tune","level"].forEach(id => mk($("#ak1"), id));
   ["feedback","stretch"].forEach(id => mk($("#ak2"), id));
   b.querySelectorAll("[data-p]").forEach(x => x.onclick = () => setParam(x.dataset.p, +x.dataset.v));
   b.querySelectorAll("[data-pref]").forEach(x => x.onclick = () => setPref(x.dataset.pref, x.dataset.pref === "zoom" ? +x.dataset.val : x.dataset.val));
@@ -329,7 +363,7 @@ new MutationObserver(() => { for (const k in advKnobs) advKnobs[k](); }).observe
 function setPref(k, v) { const old = prefs[k]; prefs[k] = v; if (NATIVE) call("setPref", k, v); applyPrefs(k === "theme" && old !== v); }
 function applyPrefs(relayout) {
   document.querySelectorAll("#adv [data-pref]").forEach(b => b.classList.toggle("on", String(prefs[b.dataset.pref]) === b.dataset.val));
-  if (relayout && LAY) layout();   // garde la recette, les réglages et les notes en cours
+  if (relayout && LAY) { layout(); const p = presets[current]; if (p && !inMode(p)) selectSachet(sachet, true); toast(curMode() === "ramen" ? "Mon petit ramen : sons d'Asie et d'Orient" : "Ma petite soupe"); }
   anim.wake("prefs");
 }
 
@@ -470,20 +504,24 @@ async function boot() {
   LAY = window.SHK_LAYOUT || await (await fetch("assets/layout.json")).json();
   fit();
   if (NATIVE) {
-    const st = await call("getState"); presets = st.presets || [];
+    const st = await call("getState"); presets = st.presets || []; SACH.soupe = st.sachets || []; SACH.ramen = st.ramenSachets || [];
     if (st.instruments) INSTS = st.instruments; if (st.fxList) FXS = st.fxList; if (st.divisions) DIVS = st.divisions;
     applyState(st); mergeUser(); layout();
     window.__JUCE__.backend.addEventListener("params", o => { for (const k in o) setParam(k, o[k], true); });
     window.__JUCE__.backend.addEventListener("preset", i => { current = i; showPreset(); });
     window.__JUCE__.backend.addEventListener("fb", onFb);
   } else {
-    const f = window.SHK_FACTORY || {}; presets = f.presets || []; mergeUser(); layout();
+    const f = window.SHK_FACTORY || {}; presets = f.presets || []; SACH.soupe = f.sachets || []; SACH.ramen = f.ramenSachets || []; mergeUser(); layout();
     if (presets.length) await loadPreset(0);
     $("#hint").textContent = "Aperçu en ligne · son approximatif · jouer : touches A à K (Z/X octave) · cliquer sur le titre : Mon petit ramen · F2 : mesures";
   }
   applyPrefs(false); refreshPills(); anim.wake("boot");
 }
 boot();
+
+// licence Room Labs (Moonbase) + liens + © ℗ — bloc commun à tous les plugins
+if (window.RLLicenseUI) RLLicenseUI.mount($("#advBody"), { call: (...a) => (call ? call(...a) : Promise.resolve(null)), native: NATIVE, product: "Ma petite soupe ouselem",
+  version: NATIVE ? ((window.__JUCE__.initialisationData.version || [])[0] || "") : "" });
 </script>
 </body>
 </html>

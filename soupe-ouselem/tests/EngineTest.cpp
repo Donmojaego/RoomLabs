@@ -110,9 +110,14 @@ int main (int argc, char** argv)
         auto x = play (q, 60, 2.0, 2.0);
         const int L = (int) (0.125 * SR), s0 = (int) (1.0 * SR);
         double num = 0, a = 0, b = 0;
-        for (int i = (int) (0.01 * SR); i < L - (int) (0.01 * SR); ++i) { num += x[(size_t) (s0 + i)] * x[(size_t) (s0 + 2 * L + i)]; a += x[(size_t) (s0 + i)] * x[(size_t) (s0 + i)]; b += x[(size_t) (s0 + 2 * L + i)] * x[(size_t) (s0 + 2 * L + i)]; }
-        const double corr = num / std::sqrt (a * b + 1e-20);
-        std::snprintf (buf, sizeof buf, "Stutter 1/16 : la 3e tranche du temps répète la 1re (corrélation %.3f)", corr);
+        // v0.1.1 : les 2 premières tranches passent, la 3e et la 4e répètent la 2e (fondus de 12 ms aux jonctions)
+        for (int i = (int) (0.015 * SR); i < L - (int) (0.015 * SR); ++i) { num += x[(size_t) (s0 + L + i)] * x[(size_t) (s0 + 2 * L + i)]; a += x[(size_t) (s0 + L + i)] * x[(size_t) (s0 + L + i)]; b += x[(size_t) (s0 + 2 * L + i)] * x[(size_t) (s0 + 2 * L + i)]; }
+        double corr = num / std::sqrt (a * b + 1e-20);
+        // pas de trou : niveau minimal sur le cycle (fenêtres de 2 ms)
+        double minR = 1e9; for (int k = 0; k < 4 * L; k += (int) (0.002 * SR)) { double e = 0; for (int i = 0; i < (int) (0.002 * SR); ++i) e += x[(size_t) (s0 + k + i)] * x[(size_t) (s0 + k + i)]; minR = std::min (minR, e); }
+        double avg = 0; for (int i = 0; i < 4 * L; ++i) avg += x[(size_t) (s0 + i)] * x[(size_t) (s0 + i)]; avg *= (0.002 * SR) / (4 * L);
+        std::snprintf (buf, sizeof buf, "Stutter 1/16 adouci : la 3e tranche répète la 2e (corrélation %.3f), aucun trou de silence (creux %.1f dB sous la moyenne)", corr, 10 * std::log10 (minR / avg + 1e-12));
+        corr = corr > 0.95 && minR > avg * 0.05 ? corr : 0;
         line (corr > 0.95, buf);
     }
     // Répétitions : échos à la croche

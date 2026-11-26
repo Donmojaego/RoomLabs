@@ -14,7 +14,8 @@
 
 namespace soup
 {
-enum class Inst : int { Violin = 0, Pad, Keys, Bell, Strings, Texture, Bass, Drum, Count };
+// 8 à 14 : instruments d'inspiration asiatique et orientale (banque « Mon petit ramen », v0.1.1)
+enum class Inst : int { Violin = 0, Pad, Keys, Bell, Strings, Texture, Bass, Drum, Koto, Shamisen, Erhu, Shakuhachi, Gamelan, Oud, Taiko, Count };
 enum class Fx : int { None = 0, Reverse, Stutter, Repeat, Slicer, Stretch, FilterMod, GrainDelay, Count };
 
 struct Params
@@ -72,6 +73,7 @@ private:
         float env = 0.f; int stage = 0; float partEnv[3] { 1, 1, 1 }, modEnv = 1.f;
         float ic1 = 0, ic2 = 0, a1 = 1, a2 = 0, a3 = 0; unsigned tick = 0;
         float bp[3][2] {};   // résonances de caisse (violon)
+        double hp[8] {}; float he[8] {}; float buzz = 0;   // cordes pincées / gongs (instruments asiatiques et orientaux)
         uint64_t age = 0;
     };
     void startVoice (int note, int key, float vel);

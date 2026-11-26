@@ -5,7 +5,7 @@ Règle maison : chaque nouvelle version ajoute au moins 20 presets."""
 import json
 import pathlib
 
-INST = ["Violon", "Pad", "Piano", "Cloche", "Cordes", "Texture", "Basse", "Tambour"]
+INST = ["Violon", "Pad", "Piano", "Cloche", "Cordes", "Texture", "Basse", "Tambour", "Koto", "Shamisen", "Erhu", "Shakuhachi", "Gamelan", "Oud", "Taiko"]
 FX = ["Aucun", "Reverse", "Stutter", "Répétitions", "Découpage", "Étirement", "Filtre modulé", "Grain Delay"]
 DIV = ["1/2", "1/4", "1/8", "1/16", "1/32", "1/4T", "1/8T", "1/16T"]
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
@@ -16,14 +16,21 @@ SACHETS = [
 presets = []
 
 
+RAMEN_SACHETS = [
+    (1, "Erhu renversé", "violon"), (2, "Koto mijoté", "clavier"), (3, "Gouttes de gamelan", "cloche"),
+    (4, "Nouilles de bambou", "violon"), (5, "Bouillon de koto", "onde"), (6, "Fond de taiko", "tambour"),
+]
+MODE = "soupe"
+
+
 def add(sachet, name, root, inst, fx, div, **kw):
     q = {"inst": INST.index(inst), "fx": FX.index(fx), "division": DIV.index(div), "reverseOn": 0, "stutterOn": 0,
          "mix": 0.5, "feedback": 0.4, "stretch": 0.5, "tone": 0.0, "damp": 0.4, "space": 0.3, "level": -6.0,
          "attack": 20.0, "decay": 800.0, "sustain": 0.8, "release": 600.0, "brightness": 0.5, "tune": 0.0,
          "arpOn": 0, "arpMode": 0, "arpOct": 1}
     q.update({k: (float(v) if isinstance(v, float) else v) for k, v in kw.items()})
-    s = SACHETS[sachet - 1]
-    presets.append({"name": name, "sachet": sachet, "section": s[1], "icon": s[2], "root": root,
+    s = (RAMEN_SACHETS if MODE == "ramen" else SACHETS)[sachet - 1]
+    presets.append({"name": name, "mode": MODE, "sachet": sachet, "section": s[1], "icon": s[2], "root": root,
                     "rootName": f"{NOTE_NAMES[root % 12]}{root // 12 - 1}", "params": q})
 
 
@@ -35,10 +42,10 @@ add(1, "Grain d'Archet", 67, "Violon", "Grain Delay", "1/8", mix=0.55, feedback=
 add(1, "Violon Brumeux", 62, "Violon", "Reverse", "1/4T", mix=0.75, space=0.6, damp=0.7, attack=200.0, release=1500.0, reverseOn=0, tone=-0.3)
 
 # 02 Pad mijoté : pad + stutter à divisions musicales
-add(2, "Pad Mijoté", 60, "Pad", "Stutter", "1/16", mix=0.6, attack=400.0, release=1500.0, space=0.4)
-add(2, "Frémissement", 60, "Pad", "Stutter", "1/32", mix=0.5, attack=300.0, release=1200.0, space=0.35, brightness=0.6)
-add(2, "Bouillon Lent", 57, "Pad", "Stutter", "1/8T", mix=0.55, attack=600.0, release=2000.0, space=0.5, tone=-0.2)
-add(2, "Piano Mijoté", 60, "Piano", "Stutter", "1/16", mix=0.5, attack=2.0, decay=1500.0, sustain=0.3, release=500.0, space=0.3)
+add(2, "Pad Mijoté", 60, "Pad", "Stutter", "1/16", mix=0.4, attack=400.0, release=1500.0, space=0.4)
+add(2, "Frémissement", 60, "Pad", "Stutter", "1/32", mix=0.35, attack=300.0, release=1200.0, space=0.35, brightness=0.6)
+add(2, "Bouillon Lent", 57, "Pad", "Stutter", "1/8T", mix=0.4, attack=600.0, release=2000.0, space=0.5, tone=-0.2)
+add(2, "Piano Mijoté", 60, "Piano", "Stutter", "1/16", mix=0.35, attack=2.0, decay=1500.0, sustain=0.3, release=500.0, space=0.3)
 add(2, "Pad Granité", 64, "Pad", "Grain Delay", "1/4", mix=0.5, feedback=0.75, attack=500.0, release=1800.0, space=0.5)
 
 # 03 Gouttes au sésame : percussions « cloc » et « touc » + répétitions
@@ -69,8 +76,36 @@ add(6, "Sous la Cuillère", 38, "Basse", "Filtre modulé", "1/8", mix=0.5, attac
 add(6, "Touc Profond", 36, "Tambour", "Filtre modulé", "1/4T", mix=0.45, attack=1.0, release=200.0, space=0.15, brightness=0.6)
 add(6, "Basse Feutrée", 40, "Basse", "Aucun", "1/4", mix=0.0, attack=20.0, release=350.0, space=0.1, brightness=0.25, tone=-0.3)
 
-assert len(presets) == 30
-assert len({p["name"] for p in presets}) == 30
+# ---------------------------------------------------------------------------
+# Mon petit ramen (v0.1.1) : sonorités d'inspiration asiatique et orientale — 6 sachets × 4 recettes
+MODE = "ramen"
+add(1, "Erhu Renversé", 67, "Erhu", "Reverse", "1/4", mix=0.6, space=0.35, attack=60.0, release=800.0)
+add(1, "Erhu du Soir", 64, "Erhu", "Grain Delay", "1/8", mix=0.4, feedback=0.55, space=0.45, attack=90.0, release=1200.0, brightness=0.4)
+add(1, "Vièle Miroir", 69, "Erhu", "Reverse", "1/2", mix=0.7, space=0.5, attack=120.0, release=1500.0, damp=0.6)
+add(1, "Oud Renversé", 57, "Oud", "Reverse", "1/4", mix=0.55, space=0.3, attack=2.0, decay=1500.0, sustain=0.0, release=600.0)
+add(2, "Koto Mijoté", 62, "Koto", "Stutter", "1/16", mix=0.35, attack=2.0, decay=1800.0, sustain=0.0, release=700.0, space=0.35)
+add(2, "Pétales de Koto", 67, "Koto", "Grain Delay", "1/8", mix=0.45, feedback=0.6, attack=2.0, release=900.0, space=0.45, brightness=0.6)
+add(2, "Gamelan Frémissant", 64, "Gamelan", "Stutter", "1/8T", mix=0.3, attack=1.0, release=1500.0, space=0.4)
+add(2, "Shamisen Haché", 60, "Shamisen", "Stutter", "1/16", mix=0.3, attack=1.0, release=500.0, space=0.25, brightness=0.6)
+add(3, "Gouttes de Gamelan", 72, "Gamelan", "Répétitions", "1/8", mix=0.45, feedback=0.55, space=0.35, brightness=0.5)
+add(3, "Bonang du Matin", 67, "Gamelan", "Répétitions", "1/8T", mix=0.4, feedback=0.5, space=0.4, brightness=0.3)
+add(3, "Koto Goutte à Goutte", 76, "Koto", "Répétitions", "1/16", mix=0.45, feedback=0.6, space=0.35, brightness=0.7)
+add(3, "Cloches du Temple", 60, "Gamelan", "Répétitions", "1/4", mix=0.5, feedback=0.65, space=0.6, damp=0.7, brightness=0.8)
+add(4, "Nouilles de Bambou", 62, "Shakuhachi", "Étirement", "1/4", mix=0.5, stretch=0.6, attack=150.0, release=2500.0, space=0.5)
+add(4, "Souffle Long", 67, "Shakuhachi", "Étirement", "1/2", mix=0.6, stretch=0.8, attack=200.0, release=3500.0, space=0.6, damp=0.6)
+add(4, "Erhu Étiré", 64, "Erhu", "Étirement", "1/4", mix=0.55, stretch=0.7, attack=120.0, release=3000.0, space=0.5)
+add(4, "Flûte de Brume", 69, "Shakuhachi", "Grain Delay", "1/8", mix=0.4, feedback=0.65, attack=180.0, release=2500.0, space=0.55)
+add(5, "Bouillon de Koto", 62, "Koto", "Découpage", "1/16", arpOn=1, mix=0.45, attack=2.0, decay=900.0, sustain=0.0, release=300.0, space=0.3)
+add(5, "Shamisen en Arpège", 64, "Shamisen", "Découpage", "1/16T", arpOn=1, arpOct=2, mix=0.4, attack=1.0, release=250.0, space=0.25)
+add(5, "Oud du Souk", 57, "Oud", "Grain Delay", "1/8", arpOn=1, arpMode=1, mix=0.35, feedback=0.5, attack=2.0, release=400.0, space=0.3)
+add(5, "Gamelan qui Tourne", 67, "Gamelan", "Découpage", "1/8T", arpOn=1, mix=0.4, attack=1.0, release=500.0, space=0.35)
+add(6, "Fond de Taiko", 45, "Taiko", "Filtre modulé", "1/4", mix=0.45, attack=1.0, release=500.0, space=0.25, brightness=0.5)
+add(6, "Grand Tambour", 40, "Taiko", "Répétitions", "1/4T", mix=0.35, feedback=0.4, attack=1.0, release=600.0, space=0.35, brightness=0.4)
+add(6, "Oud Profond", 45, "Oud", "Filtre modulé", "1/2", mix=0.5, attack=2.0, release=700.0, space=0.2, brightness=0.35)
+add(6, "Taiko et Bambou", 48, "Taiko", "Aucun", "1/4", mix=0.0, attack=1.0, release=500.0, space=0.3, brightness=0.6)
+
+assert len(presets) == 54
+assert len({p["name"] for p in presets}) == 54
 
 root = pathlib.Path(__file__).resolve().parent.parent
 lv = root / "presets" / "levels.json"
@@ -80,7 +115,8 @@ if lv.exists():
         if p["name"] in levels: p["params"]["level"] = levels[p["name"]]
 (root / "presets").mkdir(exist_ok=True)
 (root / "presets" / "factory.json").write_text(json.dumps(
-    {"version": 1, "sachets": [{"n": n, "name": s, "icon": i} for n, s, i in SACHETS], "instruments": INST, "fx": FX,
+    {"version": 2, "sachets": [{"n": n, "name": s, "icon": i} for n, s, i in SACHETS],
+     "ramenSachets": [{"n": n, "name": s, "icon": i} for n, s, i in RAMEN_SACHETS], "instruments": INST, "fx": FX,
      "divisions": DIV, "presets": presets}, ensure_ascii=False, indent=1), encoding="utf-8")
 ORDER = ["inst", "fx", "division", "reverseOn", "stutterOn", "mix", "feedback", "stretch", "tone", "damp", "space", "level",
          "attack", "decay", "sustain", "release", "brightness", "tune", "arpOn", "arpMode", "arpOct"]

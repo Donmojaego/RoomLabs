@@ -6,7 +6,7 @@ name: Smoke
 on:
   push:
     branches: [ main ]
-    paths: [ 'smoke/**', '.github/workflows/smoke.yml' ]
+    paths: [ 'smoke/**', 'common/licensing/**', '.github/workflows/smoke.yml' ]
     tags: [ 'smoke-v*' ]
   workflow_dispatch:
     inputs:

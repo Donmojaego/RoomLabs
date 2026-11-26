@@ -6,7 +6,7 @@ name: Shake It
 on:
   push:
     branches: [ main ]
-    paths: [ 'shake-it/**', '.github/workflows/shake-it.yml' ]
+    paths: [ 'shake-it/**', 'common/licensing/**', '.github/workflows/shake-it.yml' ]
     tags: [ 'shake-it-v*' ]
   workflow_dispatch:
     inputs:

@@ -13,6 +13,7 @@ struct ChoiceDef { const char* id; const char* name; std::vector<const char*> ch
 inline const std::vector<FloatDef>& floats()
 {
     static const std::vector<FloatDef> f {
+        { "master",  "Master",    -24.f,    6.f,    0.f,  1.f,   "dB" },   // volume général (hors presets), 0 dB par défaut
         { "tone",       "Tone",       -1.f,    1.f,    0.f, 1.f,   "" },
         { "damp",       "Damp",        0.f,    1.f,   0.4f, 1.f,   "" },
         { "space",      "Space",       0.f,    1.f,   0.3f, 1.f,   "" },
@@ -33,7 +34,7 @@ inline const std::vector<FloatDef>& floats()
 inline const std::vector<ChoiceDef>& choices()
 {
     static const std::vector<ChoiceDef> c {
-        { "inst",      "Instrument", { "Violin", "Pad", "Keys", "Bell", "Strings", "Texture", "Bass", "Drum" }, 0 },
+        { "inst",      "Instrument", { "Violin", "Pad", "Keys", "Bell", "Strings", "Texture", "Bass", "Drum", "Koto", "Shamisen", "Erhu", "Shakuhachi", "Gamelan", "Oud", "Taiko" }, 0 },
         { "fx",        "FX",         { "None", "Reverse", "Stutter", "Repeat", "Slicer", "Stretch", "Filter Mod", "Grain Delay" }, 7 },
         { "division",  "Division",   { "1/2", "1/4", "1/8", "1/16", "1/32", "1/4T", "1/8T", "1/16T" }, 2 },
         { "reverseOn", "Reverse",    { "Off", "On" }, 0 },

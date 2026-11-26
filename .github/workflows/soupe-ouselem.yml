@@ -6,7 +6,7 @@ name: Ma petite soupe ouselem
 on:
   push:
     branches: [ main ]
-    paths: [ 'soupe-ouselem/**', '.github/workflows/soupe-ouselem.yml' ]
+    paths: [ 'soupe-ouselem/**', 'common/licensing/**', '.github/workflows/soupe-ouselem.yml' ]
     tags: [ 'soupe-ouselem-v*' ]
   workflow_dispatch:
     inputs:

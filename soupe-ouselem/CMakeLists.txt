@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(SoupeOuselem VERSION 0.1.0 LANGUAGES C CXX)
+project(SoupeOuselem VERSION 0.1.1 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -45,8 +45,8 @@ endif()
 # ---------------------------------------------------------------------------
 juce_add_plugin(SoupeOuselem
     COMPANY_NAME "Room Labs"
-    COMPANY_WEBSITE "https://7throomacademy.fr"
-    COMPANY_COPYRIGHT "Copyright 2026 Room Labs"
+    COMPANY_WEBSITE "https://roomlabsaudio.com/plugins"
+    COMPANY_COPYRIGHT "(C) 2026 Room Labs Audio - (P) 2026 Room Labs Audio"
     BUNDLE_ID com.roomlabs.soupeouselem
     PLUGIN_NAME "Ma petite soupe ouselem"
     PRODUCT_NAME "SoupeOuselem"
@@ -71,9 +71,14 @@ juce_add_plugin(SoupeOuselem
 file(GLOB SOUP_UI_FILES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/index.html
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/assets/*.webp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/licensing/rl_license_ui.js
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/assets/*.svg
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/assets/layout.json)
 juce_add_binary_data(SoupeOuselemData SOURCES ${SOUP_UI_FILES} ${CMAKE_CURRENT_SOURCE_DIR}/presets/factory.json)
+
+# licence Moonbase (réglages propres au plugin : licensing.json)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../common/licensing/RoomLabsLicensing.cmake)
+rl_add_licensing(SoupeOuselem ${CMAKE_CURRENT_SOURCE_DIR}/licensing.json)
 
 target_sources(SoupeOuselem PRIVATE
     source/PluginProcessor.cpp
@@ -87,7 +92,7 @@ if(MSVC)
 endif()
 
 target_compile_definitions(SoupeOuselem PUBLIC
-    JUCE_USE_CURL=0
+    JUCE_USE_CURL=${RL_USE_CURL}
     JUCE_USE_WIN_WEBVIEW2_WITH_STATIC_LINKING=1
     JUCE_VST3_CAN_REPLACE_VST2=0
     JUCE_DISPLAY_SPLASH_SCREEN=0
@@ -115,7 +120,8 @@ if(SOUP_BUILD_TESTS)
         source/PluginProcessor.cpp
         source/engine/SoupEngine.cpp)
     target_include_directories(SoupeOuselemRenderTest PRIVATE source)
-    target_compile_definitions(SoupeOuselemRenderTest PRIVATE JUCE_USE_CURL=0 JUCE_WEB_BROWSER=0 SOUP_HEADLESS=1
+    rl_add_licensing(SoupeOuselemRenderTest ${CMAKE_CURRENT_SOURCE_DIR}/licensing.json)
+    target_compile_definitions(SoupeOuselemRenderTest PRIVATE JUCE_USE_CURL=${RL_USE_CURL} JUCE_WEB_BROWSER=0 SOUP_HEADLESS=1
         SOUP_VERSION_STRING="${PROJECT_VERSION}" JucePlugin_Name="Ma petite soupe ouselem")
     if(MSVC)
         target_compile_options(SoupeOuselemRenderTest PRIVATE /utf-8)

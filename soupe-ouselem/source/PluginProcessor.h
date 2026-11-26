@@ -1,5 +1,6 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
+#include "RLLicense.h"
 #include <juce_audio_utils/juce_audio_utils.h>
 #include "engine/SoupEngine.h"
 #include <array>
@@ -8,7 +9,7 @@
 
 struct FactoryPreset
 {
-    juce::String name, section, icon, rootName;
+    juce::String name, section, icon, rootName, mode { "soupe" };   // mode : soupe | ramen (banque asiatique / orientale)
     int sachet = 1;
     int root = 60;
     juce::NamedValueSet values;      // identifiant de paramètre -> valeur réelle
@@ -17,6 +18,9 @@ struct FactoryPreset
 class SoupProcessor : public juce::AudioProcessor
 {
 public:
+    rl::License license;                        // Moonbase (réglages : licensing.json)
+    bool wasLicensed = true;
+    std::atomic<float>* masterDb = nullptr; float lastMaster = 1.f;   // volume général
     SoupProcessor();
     ~SoupProcessor() override = default;
 

@@ -20,11 +20,14 @@ SoupProcessor::SoupProcessor()
             p.section = v.getProperty ("section", "").toString();
             p.root = (int) v.getProperty ("root", 60);
             p.rootName = v.getProperty ("rootName", "").toString();
+            p.mode = v.getProperty ("mode", "soupe").toString();
             if (auto* o = v.getProperty ("params", {}).getDynamicObject()) p.values = o->getProperties();
             presets.push_back (std::move (p));
         }
     for (size_t i = 0; i < kIds.size(); ++i) rp[i] = state.getRawParameterValue (kIds[i]);
     if (! presets.empty()) loadPreset (0);
+    masterDb = state.getRawParameterValue ("master");
+    license.start();
 }
 
 bool SoupProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -83,6 +86,11 @@ void SoupProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBu
     }
     if (at0 < n) engine.render (l + at0, r ? r + at0 : nullptr, n - at0);
     midi.clear();
+    // volume général (0 dB par défaut ; les presets sont calibrés au même niveau)
+    if (masterDb) { const float mg = juce::Decibels::decibelsToGain (masterDb->load()); buffer.applyGainRamp (0, buffer.getNumSamples(), lastMaster, mg); lastMaster = mg; }
+    // licence : sans licence valide (une fois Moonbase configuré), silence avec un fondu court
+    if (! license.allowed()) { if (wasLicensed) buffer.applyGainRamp (0, buffer.getNumSamples(), 1.f, 0.f); else buffer.clear(); wasLicensed = false; }
+    else wasLicensed = true;
 }
 
 // ---------------------------------------------------------------------------
