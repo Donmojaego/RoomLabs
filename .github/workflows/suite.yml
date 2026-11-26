@@ -138,8 +138,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           t=suite-v${{ steps.v.outputs.version }}
-          gh release view "$t" >/dev/null 2>&1 || gh release create "$t" --prerelease --latest=false --target ${{ github.sha }} --title "Room Labs Audio ${{ steps.v.outputs.version }} (version de test)" --notes-file suite/RAPPORT-TESTS.md
-          gh release upload "$t" suite/installer/windows/output/*.exe suite/RoomLabsAudio_Captures_*.zip --clobber
+          gh release view "$t" >/dev/null 2>&1 || gh release create "$t" --prerelease --latest=false --target ${{ github.sha }} --title "Room Labs Audio ${{ steps.v.outputs.version }} (version de test)" --notes-file RAPPORT-TESTS.md
+          gh release upload "$t" installer/windows/output/*.exe RoomLabsAudio_Captures_*.zip --clobber
 
   macos:
     name: macOS — AU + VST3 + DMG (Apple Silicon et Intel)
