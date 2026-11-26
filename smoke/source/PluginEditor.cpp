@@ -105,6 +105,21 @@ SmokeEditor::SmokeEditor (SmokeProcessor& p)
             lastPreset = proc.currentPreset.load();
             done (stateForUi (false));
         })
+        .withNativeFunction ("license", [this] (const juce::Array<juce::var>&, WBC::NativeFunctionCompletion done)
+        {
+            done (proc.license.status());
+        })
+        .withNativeFunction ("licensePanel", [this] (const juce::Array<juce::var>&, WBC::NativeFunctionCompletion done)
+        {
+            proc.license.showPanel (*this);     // activation en ligne / hors ligne, détails, désactivation de l'ordinateur
+            done ({});
+        })
+        .withNativeFunction ("openUrl", [this] (const juce::Array<juce::var>& a, WBC::NativeFunctionCompletion done)
+        {
+            const auto u = a[0].toString();
+            if (u.startsWith ("https://") || u.startsWith ("http://")) juce::URL (u).launchInDefaultBrowser();
+            done ({});
+        })
         .withNativeFunction ("setPref", [this] (const juce::Array<juce::var>& a, WBC::NativeFunctionCompletion done)
         {
             const auto key = a[0].toString();
@@ -118,6 +133,7 @@ SmokeEditor::SmokeEditor (SmokeProcessor& p)
 
     web = std::make_unique<WBC> (opts);
     addAndMakeVisible (*web);
+    proc.license.onChanged = [this] { if (web) web->emitEventIfBrowserIsVisible ("license", proc.license.status()); };
 
     setResizable (true, true);
     if (auto* c = getConstrainer()) c->setFixedAspectRatio ((double) baseW / baseH);
@@ -131,6 +147,8 @@ SmokeEditor::SmokeEditor (SmokeProcessor& p)
 SmokeEditor::~SmokeEditor()
 {
     stopTimer();
+    proc.license.onChanged = nullptr;
+    proc.license.closePanel();
     for (auto& id : inGesture)
         if (auto* prm = proc.state.getParameter (id)) prm->endChangeGesture();
 }

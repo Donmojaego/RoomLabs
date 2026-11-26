@@ -70,7 +70,7 @@ int main (int argc, char** argv)
         double pk = 0; bool finite = true;
         for (float x : L) { pk = std::max (pk, (double) std::abs (x)); finite &= std::isfinite (x); }
         const double pkDb = 20 * std::log10 (pk + 1e-12), tail = 20 * std::log10 (rms (L, 13.0, 14.0) + 1e-12);
-        const bool ok = finite && pkDb > -12 && pkDb < -1 && tail < -50;
+        const bool ok = finite && pkDb > -15 && pkDb < -3 && tail < -50;   // v0.1.2 : calibrés 3 dB plus bas (crête vers -9 dBFS)
         if (! ok) ++failures;
         std::snprintf (buf, sizeof buf, "| %s | %d | %.1f | %.0f dB | %s |\n", presets[i].name, presets[i].root, pkDb, tail, ok ? "OK" : "ÉCHEC");
         rep += buf;

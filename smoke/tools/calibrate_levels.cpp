@@ -1,4 +1,4 @@
-// Niveau de chaque preset pour une crête vers -6 dBFS -> presets/levels.json
+// Niveau de chaque preset pour une crête vers -9 dBFS (v0.1.2 : 3 dB plus bas, master à 0 dB) -> presets/levels.json
 #include "engine/SmokeEngine.h"
 #include <algorithm>
 #include <cmath>
@@ -21,7 +21,7 @@ int main (int argc, char** argv)
         std::vector<float> L (48000 * 2), R (48000 * 2);
         e.noteOn (presets[i].root, 0.9f); e.render (L.data(), R.data(), 48000); e.noteOff (presets[i].root); e.render (L.data() + 48000, R.data() + 48000, 48000);
         double pk = 1e-9; for (size_t k = 0; k < L.size(); ++k) pk = std::max ({ pk, (double) std::abs (L[k]), (double) std::abs (R[k]) });
-        std::fprintf (f, "  \"%s\": %.1f%s\n", presets[i].name, std::clamp (-6.0 - 20 * std::log10 (pk), -30.0, 12.0), i + 1 < count ? "," : "");
+        std::fprintf (f, "  \"%s\": %.1f%s\n", presets[i].name, std::clamp (-9.0 - 20 * std::log10 (pk), -30.0, 12.0), i + 1 < count ? "," : "");
     }
     std::fputs ("}\n", f); std::fclose (f);
 }

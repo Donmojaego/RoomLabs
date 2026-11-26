@@ -31,7 +31,11 @@ body.vert #bg,body.vert .tint{filter:hue-rotate(112deg) saturate(.8)}
 .ico img{max-width:28px;max-height:28px}
 .ico.on{box-shadow:0 0 0 2px var(--acc),0 0 18px color-mix(in srgb,var(--acc) 60%,transparent)}
 .ico.off img{opacity:.45}
-#bEq{left:812px}#bGear{left:870px}#bPow{left:928px}
+#bEq{left:766px}#bGear{left:842px}#bPow{left:918px}
+.ico .cap{position:absolute;top:52px;left:-16px;right:-16px;text-align:center;font-size:12px;font-weight:700;letter-spacing:.3px;color:var(--ink);text-shadow:0 1px 3px #000;pointer-events:none;white-space:nowrap}
+#bPow .cap b{color:var(--acc2)}
+.puff{position:absolute;width:110px;height:110px;margin:-55px 0 0 -55px;filter:blur(1.5px);pointer-events:none;background-size:contain;background-repeat:no-repeat;background-position:center;mix-blend-mode:screen;will-change:transform,opacity;animation:puff 2.4s cubic-bezier(.2,.6,.3,1) forwards}
+@keyframes puff{0%{opacity:0;transform:translate(0,0) scale(.2) rotate(0)}15%{opacity:var(--op,.45)}100%{opacity:0;transform:translate(var(--dx),-150px) scale(1.35) rotate(var(--rot))}}
 
 /* banques */
 .bank{left:22px;width:204px;height:84px;cursor:pointer}
@@ -64,6 +68,9 @@ body.vert #haze{background:radial-gradient(ellipse,rgba(190,255,215,.22),rgba(19
 
 /* molettes */
 .knob{cursor:ns-resize;touch-action:none}
+.knob::before{content:"";position:absolute;inset:-24px -30px -52px -30px;border-radius:40px}   /* zone de prise agrandie (molette + nom + valeur) */
+.knob img,.ico img{-webkit-user-drag:none;user-drag:none;pointer-events:none}
+.knob:hover .ring{filter:drop-shadow(0 0 7px var(--acc))}
 .knob .face{position:absolute;left:0;top:0;width:100%;height:100%}
 .knob svg{position:absolute;left:-8%;top:-8%;width:116%;height:116%;overflow:visible;pointer-events:none}
 .knob .ring{fill:none;stroke:var(--acc);stroke-linecap:round;filter:drop-shadow(0 0 4px var(--acc))}
@@ -79,7 +86,7 @@ body.vert #haze{background:radial-gradient(ellipse,rgba(190,255,215,.22),rgba(19
 .bk.dn{background:linear-gradient(180deg,var(--acc),color-mix(in srgb,var(--acc) 45%,#000))}
 
 /* panneaux */
-.panel{left:236px;top:82px;width:528px;height:496px;border-radius:22px;background:var(--panel);border:1px solid var(--line);box-shadow:0 18px 50px rgba(0,0,0,.6);padding:20px 26px;display:none;z-index:20;backdrop-filter:blur(6px)}
+.panel{overflow-y:auto;left:236px;top:82px;width:528px;height:496px;border-radius:22px;background:var(--panel);border:1px solid var(--line);box-shadow:0 18px 50px rgba(0,0,0,.6);padding:20px 26px;display:none;z-index:20;backdrop-filter:blur(6px)}
 .panel.open{display:block;animation:pop .18s ease-out}
 @keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
 .panel h2{margin:0 0 14px;font-size:18px;letter-spacing:4px;font-weight:700;text-transform:uppercase;color:var(--acc2)}
@@ -118,9 +125,9 @@ body.vert #haze{background:radial-gradient(ellipse,rgba(190,255,215,.22),rgba(19
 
   <img id="logo" class="abs" alt="Smoke">
   <div id="nav" class="abs"><button id="prev" title="Preset précédent">◀</button><div id="pname" title="Liste des presets"><b>—</b><span>—</span></div><button id="next" title="Preset suivant">▶</button></div>
-  <div id="bEq" class="abs ico" title="Réglages du son"><img class="tint" data-src="icon_eq.webp" alt=""></div>
-  <div id="bGear" class="abs ico" title="Préférences"><img class="tint" data-src="icon_gear.webp" alt=""></div>
-  <div id="bPow" class="abs ico tint on" title="Animation"><img class="tint" data-src="icon_power.webp" alt=""></div>
+  <div id="bEq" class="abs ico" title="Réglages du son"><img class="tint" data-src="icon_eq.webp" alt=""><span class="cap">SON</span></div>
+  <div id="bGear" class="abs ico" title="Préférences et licence"><img class="tint" data-src="icon_gear.webp" alt=""><span class="cap">RÉGLAGES</span></div>
+  <div id="bPow" class="abs ico tint on" title="Animation de la fumée : marche / arrêt"><img class="tint" data-src="icon_power.webp" alt=""><span class="cap">ANIM. <b id="powState">ON</b></span></div>
 
   <div id="banks"></div>
   <div id="chords" class="abs"><div class="lab">Accord</div><div class="grid"></div></div>
@@ -133,6 +140,7 @@ body.vert #haze{background:radial-gradient(ellipse,rgba(190,255,215,.22),rgba(19
     <div class="row"><div class="lab">Animation</div><div class="seg" data-pref="visual"><div class="chip" data-val="anime">Animé</div><div class="chip" data-val="reduit">Réduit</div><div class="chip" data-val="statique">Statique</div></div></div>
     <div class="row"><div class="lab">Taille</div><div class="seg" data-pref="zoom"><div class="chip" data-val="75">75 %</div><div class="chip" data-val="100">100 %</div><div class="chip" data-val="125">125 %</div><div class="chip" data-val="150">150 %</div></div></div>
     <div class="ver" id="ver"></div>
+    <div id="licBox"></div>
   </div>
   <div id="pList" class="abs panel"><button class="x">✕</button><h2>Presets</h2><div id="list"></div></div>
 
@@ -140,6 +148,7 @@ body.vert #haze{background:radial-gradient(ellipse,rgba(190,255,215,.22),rgba(19
   <div id="hint" class="abs"></div>
   <div id="perf" class="abs"></div>
 </div>
+<script src="rl_license_ui.js"></script>
 <script>
 "use strict";
 // =============================================================================
@@ -162,7 +171,8 @@ const pct = v => Math.round(v * 100) + " %", ms = v => v < 1000 ? Math.round(v) 
 const PDEF = {
   tone:{min:0,max:1,def:.7,skew:1,fmt:pct,label:"TONE"}, space:{min:0,max:1,def:.3,skew:1,fmt:pct,label:"SPACE"},
   mod:{min:0,max:1,def:.3,skew:1,fmt:pct,label:"MOD"}, dream:{min:0,max:1,def:.2,skew:1,fmt:pct,label:"DREAM"},
-  clean:{min:0,max:1,def:.5,skew:1,fmt:pct,label:"CLEAN"}, level:{min:-30,max:12,def:-6,skew:1,fmt:v => (v > 0 ? "+" : "") + v.toFixed(1) + " dB",label:"Niveau"},
+  clean:{min:0,max:1,def:.5,skew:1,fmt:pct,label:"CLEAN"}, level:{min:-30,max:12,def:-6,skew:1,fmt:v => (v > 0 ? "+" : "") + v.toFixed(1) + " dB",label:"Niveau preset"},
+  master:{min:-24,max:6,def:0,skew:1,fmt:v => (v > 0 ? "+" : "") + v.toFixed(1) + " dB",label:"MASTER"},
   attack:{min:0,max:5000,def:5,skew:.3,fmt:ms,label:"Attaque"}, decay:{min:5,max:8000,def:1500,skew:.3,fmt:ms,label:"Decay"},
   sustain:{min:0,max:1,def:.6,skew:1,fmt:pct,label:"Tenue"}, release:{min:5,max:12000,def:500,skew:.3,fmt:ms,label:"Relâchement"},
   bright:{min:0,max:1,def:.5,skew:1,fmt:pct,label:"Couleur"}, tremolo:{min:0,max:1,def:0,skew:1,fmt:pct,label:"Trémolo"},
@@ -202,14 +212,15 @@ function knob(id, x, y, size, img) {
   const el = document.createElement("div"); el.className = "abs knob"; Object.assign(el.style, {left: x - size / 2 + "px", top: y - size / 2 + "px", width: size + "px", height: size + "px"});
   const r = 54, a0 = 135, sweep = 270, pol = a => { const t = (a - 90) * Math.PI / 180; return [60 + r * Math.cos(t), 60 + r * Math.sin(t)]; };
   const arc = (a1, a2) => { const [x1, y1] = pol(a1), [x2, y2] = pol(a2); return `M${x1.toFixed(2)} ${y1.toFixed(2)} A${r} ${r} 0 ${a2 - a1 > 180 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`; };
-  el.innerHTML = `<img class="face tint" src="${ASSET(img)}" alt=""><svg viewBox="0 0 120 120"><path class="track" stroke-width="3.2" d="${arc(-a0, -a0 + sweep)}"/><path class="ring" stroke-width="3.6" d=""/><g class="ptr"><line x1="60" y1="${size > 120 ? 30 : 27}" x2="60" y2="${size > 120 ? 17 : 19}" stroke="var(--acc2)" stroke-width="${size > 120 ? 3.4 : 4.2}" stroke-linecap="round" style="filter:drop-shadow(0 0 3px var(--acc))"/></g></svg>
+  el.innerHTML = `<img class="face tint" src="${ASSET(img)}" alt="" draggable="false"><svg viewBox="0 0 120 120"><path class="track" stroke-width="3.2" d="${arc(-a0, -a0 + sweep)}"/><path class="ring" stroke-width="3.6" d=""/><g class="ptr"><line x1="60" y1="${size > 120 ? 30 : 27}" x2="60" y2="${size > 120 ? 17 : 19}" stroke="var(--acc2)" stroke-width="${size > 120 ? 3.4 : 4.2}" stroke-linecap="round" style="filter:drop-shadow(0 0 3px var(--acc))"/></g></svg>
     <div class="kl" style="top:${size + 4}px">${PDEF[id].label}</div><div class="kv" style="top:${size + 24}px"></div>`;
   $("#knobs").appendChild(el);
   const ptr = el.querySelector(".ptr"), ring = el.querySelector(".ring"), kv = el.querySelector(".kv");
   ui[id] = v => { const n = toN(id, v), a = -a0 + sweep * n; ptr.setAttribute("transform", `rotate(${a.toFixed(1)} 60 60)`); ring.setAttribute("d", n > .002 ? arc(-a0, a) : ""); kv.textContent = PDEF[id].fmt(v); };
   let sy = 0, sn = 0;
   let moved = 0;
-  el.addEventListener("pointerdown", e => { el.setPointerCapture(e.pointerId); sy = e.clientY; sn = toN(id, P[id]); gesture(id, true); smokeAt(el, .7, 8); });
+  el.addEventListener("dragstart", e => e.preventDefault());
+  el.addEventListener("pointerdown", e => { e.preventDefault(); el.setPointerCapture(e.pointerId); sy = e.clientY; sn = toN(id, P[id]); gesture(id, true); smokeAt(el, .7, 8); });
   el.addEventListener("pointermove", e => { if (!el.hasPointerCapture(e.pointerId)) return;
     const k = (e.shiftKey ? .0012 : .0055) / stageScale; moved += Math.abs(sy - e.clientY); sn = clamp(sn + (sy - e.clientY) * k, 0, 1); sy = e.clientY; setParam(id, fromN(id, sn));
     if (moved > 18) { moved = 0; smokeAt(el, .35 + .4 * toN(id, P[id]), 8); } });
@@ -266,7 +277,7 @@ function build() {
   // panneau Son
   const sr = $("#soundRows");
   segment(sr, "model", "Modèle", MODELS);
-  ["attack","decay","sustain","release","bright","tremolo","rise","glide","tune","level"].forEach(k => slider(sr, k));
+  ["master","attack","decay","sustain","release","bright","tremolo","rise","glide","tune","level"].forEach(k => slider(sr, k));
   ui.chord(P.chord);
   // clavier (C2 à B4, 3 octaves)
   const kb = $("#keys"), whites = [], W = 956 / 21; let wi = 0;
@@ -338,6 +349,7 @@ function applyPrefs() {
   fx.setSprite(ASSET(T.smoke), th);
   $$("#pPrefs .seg").forEach(s => s.querySelectorAll(".chip").forEach(c => c.classList.toggle("on", String(prefs[s.dataset.pref]) === c.dataset.val)));
   $("#bPow").classList.toggle("on", prefs.visual !== "statique"); $("#bPow").classList.toggle("off", prefs.visual === "statique");
+  const ps = $("#powState"); if (ps) ps.textContent = prefs.visual === "statique" ? "OFF" : "ON";
   anim.wake("prefs");
 }
 
@@ -363,7 +375,21 @@ function noteOff(n) { if (NATIVE) call("noteOff", n, 1); else synth.noteOff(n); 
 // Retour du moteur : e énergie, i intensité des effets, k touches tenues, h coups, vel vélocité
 // =============================================================================
 const fbk = {e:0, i:0, k:0, h:0, v:0, l:0, vel:0, at:0};
-function onFb(m) { const ph = fbk.h; Object.assign(fbk, m); fbk.at = performance.now(); if (m.h !== undefined && m.h !== ph) fx.puff(m.vel || .8); anim.wake("fb"); }
+function onFb(m) { const ph = fbk.h; Object.assign(fbk, m); fbk.at = performance.now(); if (m.h !== undefined && m.h !== ph) notePuff(m.vel || .8, (m.h - (ph || m.h - 1)) || 1); anim.wake("fb"); }
+// à chaque note : bouffée du joint (simulation) + volute d'image qui monte depuis la braise
+let puffCount = 0;
+function notePuff(vel, n) {
+  if (prefs.visual === "statique") return;
+  fx.puff(Math.min(1, vel * 1.15));
+  if (puffCount > 7) return;                                     // pas plus de 8 volutes à la fois (CPU)
+  const theme = document.body.classList.contains("bleu") ? "bleu" : document.body.classList.contains("vert") ? "vert" : "prune";
+  for (let i = 0; i < Math.min(2, n); i++) {
+    const e = document.createElement("div"); e.className = "puff abs"; e.style.backgroundImage = `url(${ASSET(`fumee_${theme}.webp`)})`;
+    e.style.left = (TIP[0] + 4) + "px"; e.style.top = (TIP[1] - 10) + "px"; e.style.setProperty("--dx", (20 + Math.random() * 60) + "px"); e.style.setProperty("--rot", (Math.random() * 60 - 30) + "deg");
+    e.style.setProperty("--op", (.25 + .3 * vel).toFixed(2)); e.style.animationDuration = (1.8 + 1.4 * vel) + "s";
+    $("#stage").appendChild(e); puffCount++; e.addEventListener("animationend", () => { e.remove(); puffCount--; });
+  }
+}
 
 // =============================================================================
 // Fumée : sprites de la maquette sur un canevas basse résolution (lissé par le navigateur)
@@ -509,8 +535,8 @@ precision highp float; precision highp sampler2D; in vec2 vUv, vL, vR, vT, vB; o
       const sp = 70 + 90 * strength;
       splat(TIP[0] + 3, TIP[1] - 4, Math.cos(ang) * sp + 25, Math.sin(ang) * sp, .2 + .35 * strength, 8 + 7 * strength); }
   }
-  function puff(v) { for (let i = 0; i < 3; i++) { const ang = -1.35 + (Math.random() - .5) * .9, sp = 140 + 260 * v;
-    splat(TIP[0] + 2, TIP[1] - 5, Math.cos(ang) * sp + 30, Math.sin(ang) * sp, .6 + .9 * v, 14 + 14 * v); } }
+  function puff(v) { for (let i = 0; i < 5; i++) { const ang = -1.35 + (Math.random() - .5) * .9, sp = 160 + 300 * v;
+    splat(TIP[0] + 2, TIP[1] - 5, Math.cos(ang) * sp + 30, Math.sin(ang) * sp, .9 + 1.2 * v, 16 + 16 * v); } }
   function puffAt(x, y, s) { for (let i = 0; i < 2; i++) { const ang = -Math.PI / 2 + (Math.random() - .5) * 1.2, sp = 90 + 140 * s;
     splat(x + (Math.random() - .5) * 14, y, Math.cos(ang) * sp, Math.sin(ang) * sp, .35 + .6 * s, 14 + 12 * s); } }
   function resize() { const r = res * stageScale * Math.min(2, window.devicePixelRatio || 1); cv.width = Math.max(2, Math.round(SW * r)); cv.height = Math.max(2, Math.round(SH * r)); }
@@ -656,6 +682,10 @@ async function boot() {
   applyPrefs();
 }
 boot();
+
+// licence Room Labs (Moonbase) + liens + © ℗ — bloc commun à tous les plugins
+if (window.RLLicenseUI) RLLicenseUI.mount($("#licBox"), { call: (...a) => (call ? call(...a) : Promise.resolve(null)), native: NATIVE, product: "Smoke",
+  version: NATIVE ? ((window.__JUCE__.initialisationData.version || [])[0] || "") : "" });
 </script>
 </body>
 </html>

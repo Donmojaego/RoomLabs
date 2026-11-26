@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Presets d'usine de Smoke : 4 banques (Keys, Rhodes, Risers, Sub) × 10. Écrit presets/factory.json et tests/factory_presets.inc.
+"""Presets d'usine de Smoke : 4 banques (Keys, Rhodes, Risers, Sub) × 15 (v0.1.2). Écrit presets/factory.json et tests/factory_presets.inc.
 Règle maison : chaque nouvelle version ajoute au moins 20 presets."""
 import json, pathlib
 
@@ -61,7 +61,33 @@ for n, r, model, br, glide, rel, cl, tone, mod in [
     add("Sub", n, r, model, bright=br, glide=float(glide), release=float(rel), clean=cl, tone=tone, mod=mod,
         decay=1500.0, sustain=0.85, attack=3.0, space=0.05, dream=0.0)
 
-assert len(presets) == 40 and len({p["name"] for p in presets}) == 40
+# ---------------- v0.1.2 : +20 presets (5 par banque)
+for n, r, ch, br, mod, sp, dr, cl, rel in [
+    ("Velours de Minuit", 57, "m9", 0.3, 0.25, 0.45, 0.4, 0.5, 1000), ("Piano Cendré", 60, "", 0.25, 0.4, 0.35, 0.3, 0.4, 800),
+    ("Sept Majeur Feutré", 60, "maj7", 0.4, 0.15, 0.35, 0.25, 0.7, 700), ("Fin de Soirée", 55, "m11", 0.3, 0.5, 0.55, 0.55, 0.4, 1300),
+    ("Touches de Soie", 64, "", 0.55, 0.1, 0.25, 0.15, 0.8, 500)]:
+    add("Keys", n, r, "felt", bright=br, mod=mod, space=sp, dream=dr, clean=cl, release=float(rel), chord=ch,
+        decay=3500.0, sustain=0.0, attack=2.0, tone=0.75)
+for n, r, ch, br, trem, mod, sp, dr, cl in [
+    ("Rhodes Cannelle", 60, "maj9", 0.45, 0.3, 0.2, 0.35, 0.25, 0.6), ("Trémolo Fumé", 57, "", 0.4, 0.65, 0.3, 0.35, 0.3, 0.4),
+    ("Rhodes Ambré", 62, "m9", 0.55, 0.2, 0.15, 0.3, 0.2, 0.7), ("Velvet Tine", 64, "", 0.75, 0.15, 0.1, 0.25, 0.15, 0.7),
+    ("Rhodes de l'Aube", 55, "9", 0.35, 0.35, 0.45, 0.55, 0.6, 0.4)]:
+    add("Rhodes", n, r, "rhodes", bright=br, tremolo=trem, mod=mod, space=sp, dream=dr, clean=cl, chord=ch,
+        decay=2800.0, sustain=0.15, release=600.0, attack=2.0, tone=0.78)
+for n, r, model, att, rise, br, mod, sp, dr in [
+    ("Volute Lente", 60, "pad", 1100, 4, 0.35, 0.5, 0.6, 0.7), ("Montée de Fumée", 57, "riser", 80, 5, 0.45, 0.35, 0.45, 0.6),
+    ("Nappe de Velours", 62, "pad", 800, 4, 0.45, 0.3, 0.5, 0.55), ("Élévation", 60, "riser", 40, 7, 0.55, 0.3, 0.5, 0.65),
+    ("Horizon Prune", 55, "pad", 1600, 4, 0.3, 0.55, 0.7, 0.85)]:
+    add("Risers", n, r, model, attack=float(att), rise=float(rise), bright=br, mod=mod, space=sp, dream=dr,
+        decay=2000.0, sustain=0.85, release=2500.0, clean=0.6, tone=0.7)
+for n, r, model, br, glide, rel, cl, tone, mod in [
+    ("Sub de Velours", 36, "sub", 0.2, 90, 300, 0.8, 0.45, 0.05), ("House de Nuit", 38, "house", 0.55, 25, 200, 0.4, 0.6, 0.05),
+    ("Glisse Fumée", 33, "sub", 0.3, 220, 450, 0.6, 0.5, 0.2), ("Basse Chaleur", 36, "house", 0.35, 60, 260, 0.6, 0.5, 0.1),
+    ("Sub Nuage", 34, "sub", 0.15, 140, 500, 0.75, 0.45, 0.3)]:
+    add("Sub", n, r, model, bright=br, glide=float(glide), release=float(rel), clean=cl, tone=tone, mod=mod,
+        decay=1500.0, sustain=0.85, attack=3.0, space=0.05, dream=0.0)
+
+assert len(presets) == 60 and len({p["name"] for p in presets}) == 60
 root = pathlib.Path(__file__).resolve().parent.parent
 lv = root / "presets" / "levels.json"
 if lv.exists():

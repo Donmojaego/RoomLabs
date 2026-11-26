@@ -13,6 +13,7 @@ struct ChoiceDef { const char* id; const char* name; std::vector<const char*> ch
 inline const std::vector<FloatDef>& floats()
 {
     static const std::vector<FloatDef> f {
+        { "master",  "Master",    -24.f,    6.f,    0.f,  1.f,   "dB" },   // volume général (hors presets), 0 dB par défaut
         { "tone",    "Tone",       0.f,     1.f,    0.7f, 1.f,  "" },
         { "space",   "Space",      0.f,     1.f,    0.3f, 1.f,  "" },
         { "mod",     "Mod",        0.f,     1.f,    0.3f, 1.f,  "" },

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(Smoke VERSION 0.1.1 LANGUAGES C CXX)
+project(Smoke VERSION 0.1.2 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -45,8 +45,8 @@ endif()
 # ---------------------------------------------------------------------------
 juce_add_plugin(Smoke
     COMPANY_NAME "Room Labs"
-    COMPANY_WEBSITE "https://7throomacademy.fr"
-    COMPANY_COPYRIGHT "Copyright 2026 Room Labs"
+    COMPANY_WEBSITE "https://roomlabsaudio.com/plugins"
+    COMPANY_COPYRIGHT "(C) 2026 Room Labs Audio - (P) 2026 Room Labs Audio"
     BUNDLE_ID com.roomlabs.smoke
     PLUGIN_NAME "Smoke"
     PRODUCT_NAME "Smoke"
@@ -71,8 +71,13 @@ juce_add_plugin(Smoke
 file(GLOB SMK_UI_FILES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/index.html
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/assets/*.webp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/licensing/rl_license_ui.js
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/assets/*.svg)
 juce_add_binary_data(SmokeData SOURCES ${SMK_UI_FILES} ${CMAKE_CURRENT_SOURCE_DIR}/presets/factory.json)
+
+# licence Moonbase (réglages propres au plugin : licensing.json)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../common/licensing/RoomLabsLicensing.cmake)
+rl_add_licensing(Smoke ${CMAKE_CURRENT_SOURCE_DIR}/licensing.json)
 
 target_sources(Smoke PRIVATE
     source/PluginProcessor.cpp
@@ -86,7 +91,7 @@ if(MSVC)
 endif()
 
 target_compile_definitions(Smoke PUBLIC
-    JUCE_USE_CURL=0
+    JUCE_USE_CURL=${RL_USE_CURL}
     JUCE_USE_WIN_WEBVIEW2_WITH_STATIC_LINKING=1
     JUCE_VST3_CAN_REPLACE_VST2=0
     JUCE_DISPLAY_SPLASH_SCREEN=0
@@ -114,7 +119,8 @@ if(SMK_BUILD_TESTS)
         source/PluginProcessor.cpp
         source/engine/SmokeEngine.cpp)
     target_include_directories(SmokeRenderTest PRIVATE source)
-    target_compile_definitions(SmokeRenderTest PRIVATE JUCE_USE_CURL=0 JUCE_WEB_BROWSER=0 SMK_HEADLESS=1
+    rl_add_licensing(SmokeRenderTest ${CMAKE_CURRENT_SOURCE_DIR}/licensing.json)
+    target_compile_definitions(SmokeRenderTest PRIVATE JUCE_USE_CURL=${RL_USE_CURL} JUCE_WEB_BROWSER=0 SMK_HEADLESS=1
         SMK_VERSION_STRING="${PROJECT_VERSION}" JucePlugin_Name="Smoke")
     if(MSVC)
         target_compile_options(SmokeRenderTest PRIVATE /utf-8)
