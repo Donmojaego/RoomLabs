@@ -58,7 +58,7 @@ public:
     static float calibrationDb (int instrument);         // gain de calibration (presets au même niveau)
 
     static constexpr int kVoices = 16;
-    static constexpr int kMaxDelay = 4096;
+    static constexpr int kMaxDelay = 8192;
 
 private:
     struct Biquad { float b0 = 1, b1 = 0, b2 = 0, a1 = 0, a2 = 0, z1 = 0, z2 = 0;

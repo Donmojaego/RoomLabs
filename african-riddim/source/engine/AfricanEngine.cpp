@@ -78,7 +78,7 @@ void Engine::startVoice (Voice& v, int note, float vel)
     v.active = true; v.held = true; v.releasing = false; v.note = note; v.inst = prm.instrument; v.vel = vel; v.age = 0;
     v.rng = 0x9E3779B9u ^ (uint32_t) (note * 7919 + ++stamp * 104729);
     const float n = (float) note + 12.f * (float) (I.octave + prm.octave) + prm.tune;
-    v.freq = (float) (440.0 * std::pow (2.0, (n - 69.0) / 12.0));
+    v.freq = (float) std::clamp (440.0 * std::pow (2.0, (n - 69.0) / 12.0), 16.0, sr * 0.2);   // registre jouable (pas d'aliasing aux extrêmes)
     const float vg = (1 - prm.velSens) + prm.velSens * std::pow (vel, 1.4f);
     v.gain = vg * std::pow (10.f, kCalib[v.inst] / 20.f);
     v.pan = std::clamp ((float) (note - 60) / 48.f, -0.35f, 0.35f);
@@ -133,7 +133,7 @@ void Engine::startVoice (Voice& v, int note, float vel)
                 apC = (float) c; delay = (float) whole; apZ = 0; lpZ = 0;
                 std::memset (buf, 0, sizeof (float) * kMaxDelay); w = 0;
                 // excitation : bruit filtré + peigne de position d'attaque
-                const int L = std::max (2, (int) std::lround (N));
+                const int L = std::clamp ((int) std::lround (N), 2, kMaxDelay - 8);      // jamais au-delà du tampon (notes très graves, 96 kHz)
                 const int P = std::max (1, (int) (L * I.pos));
                 float lp = 0; const float k = 0.15f + 0.8f * b;
                 for (int i = 0; i < L && i < kMaxDelay; ++i) { lp += k * (v.noise() - lp); buf[i] = lp; }
@@ -398,8 +398,8 @@ void Engine::process (float* L, float* R, int n)
         // limiteur de sécurité (-1 dBFS) : transparent en jeu normal, évite la saturation quand on empile les notes
         const float pk = std::max (std::abs (yl), std::abs (yr));
         const float need = pk > 0.891f ? 0.891f / pk : 1.f;
-        limG = need < limG ? need : limG + (1 - limG) * limRel;
-        yl *= limG; yr *= limG;
+        if (need < limG) limG = need; else limG += (1 - limG) * limRel;
+        yl = std::clamp (yl * limG, -1.f, 1.f); yr = std::clamp (yr * limG, -1.f, 1.f);
         if (! std::isfinite (yl) || ! std::isfinite (yr)) { yl = yr = 0; reset(); }
         L[i] = yl; R[i] = yr;
         levelS = std::max (std::abs (yl), levelS * 0.9995f);

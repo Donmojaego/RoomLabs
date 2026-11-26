@@ -125,6 +125,20 @@ int main (int argc, char** argv)
             }
         line (ok && pk <= 0.9, F ("44,1 / 48 / 96 kHz × blocs 32-1024, notes en rafale (vol de voix) : aucun NaN, crête %.2f", pk));
     }
+    // extrêmes (comme un hôte qui automatise tout) : chaque instrument, notes 0 et 127, octave ±3, transposition ±12, 96 kHz
+    {
+        bool ok = true; double pk = 0;
+        for (int i = 0; i < 54; ++i)
+            for (int oc : { -3, 3 })
+            {
+                Engine e; e.prepare (96000); Params p; p.instrument = i; p.octave = oc; p.tune = oc < 0 ? -12.f : 12.f; p.attackMs = 0; p.releaseMs = 6000; p.space = 1; e.setParams (p);
+                std::vector<float> l (9600), r (9600);
+                e.noteOn (0, 1.f); e.noteOn (127, 1.f); e.noteOn (60, 0.01f);
+                for (int b = 0; b < 9600; b += 64) { e.process (l.data() + b, r.data() + b, 64); if (b == 4800) { p.instrument = (i + 7) % 54; e.setParams (p); e.pitchBend (2); e.modWheel (1); } }
+                for (auto x : l) { ok &= std::isfinite (x); pk = std::max (pk, (double) std::abs (x)); }
+            }
+        line (ok && pk <= 0.9, F ("valeurs extrêmes (54 instruments, notes 0 et 127, octave ±3, transposition ±12, 96 kHz, changement d'instrument en jeu) : aucun NaN, crête %.2f", pk));
+    }
     // CPU : 16 voix en continu
     {
         Engine e; e.prepare (48000); Params p; p.instrument = 9; p.space = 0.5f; e.setParams (p);
