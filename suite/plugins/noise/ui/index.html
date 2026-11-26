@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><title>Noise — Room Labs Audio</title><link rel="stylesheet" href="rl.css"></head>
+<body>
+<script src="rl_license_ui.js"></script>
+<script src="rl.js"></script>
+<script>
+"use strict";
+const F = [48, 113, 564, 253];
+const db = v => v.toFixed(1) + " dB";
+const layout = {
+  product: "vst/noise", title: "NOISE",
+  header: { x: 34, y: 20, bx: 454 },
+  help: "Générateur de bruit ajouté à la piste. Il démarre muet : touche ON. BLANC / ROSE / BRUN choisit la couleur de base, COULEUR l'assombrit ou l'éclaircit (le niveau reste le même), LARGEUR va du mono à la stéréo large. ENTRÉE laisse passer le son de la piste.",
+  formats: { level: db, color: v => (v > 0 ? "+" : "") + Math.round(v * 100) + " %", width: v => Math.round(v * 100) + " %" },
+  build(RL) {
+    RL.key({ id: "on", label: "ON", x: 34, y: 66, w: 84, h: 38, tip: "Active le bruit (fondu sans clic)" });
+    const types = ["BLANC", "ROSE", "BRUN"];
+    types.forEach((t, i) => RL.key({ id: "type", label: t, x: 150 + i * 92, y: 66, w: 86, h: 38, value: i, tip: "Couleur du bruit : " + t.toLowerCase() }));
+    RL.key({ id: "thru", label: "ENTRÉE", x: 532, y: 66, w: 96, h: 38, tip: "Laisse passer le son de la piste sous le bruit" });
+    RL.screen({ frame: 0, draw: scope });
+    RL.knob({ id: "level", label: "NIVEAU", x: 160, y: 424, d: 78, size: 2, tip: "Niveau RMS du bruit" });
+    RL.knob({ id: "color", label: "COULEUR", x: 330, y: 424, d: 78, size: 2, tip: "Plus sombre (gauche) ou plus brillant (droite)" });
+    RL.knob({ id: "width", label: "LARGEUR", x: 500, y: 424, d: 78, size: 2, tip: "Mono à stéréo large" });
+  },
+  async mockState() { const r = { on: [0,1,0,1], type: [0,2,1,1,["White","Pink","Brown"]], level: [-60,0,-18,1], color: [-1,1,0,1], width: [0,1,1,1], thru: [0,1,1,1] };
+    const params = {}; for (const k in r) params[k] = r[k][2]; params.on = 1; return { params, ranges: r }; },
+  mock: () => Promise.resolve(null),
+  mockFb() { const sc = []; for (let i = 0; i < 64; i++) sc.push(.1 + Math.random() * .12); return { l: -18 + Math.random(), r: -18.5 + Math.random(), sc }; }
+};
+const hist = [];
+function scope(c, w, h, f) {
+  c.fillStyle = RL.css("--scr"); c.fillRect(0, 0, w, h);
+  const ink = RL.css("--scrInk"), on = RL.P("on") > .5;
+  // grain du bruit : barres qui défilent (enveloppe réelle reçue du moteur)
+  if (f && f.sc) { hist.push(...f.sc.slice(0, 6)); while (hist.length > 140) hist.shift(); }
+  const mid = h / 2, bw = w / 140;
+  c.fillStyle = ink;
+  hist.forEach((v, i) => { const a = Math.min(1, v * 3) * (h * .42) * (on ? 1 : .08); c.globalAlpha = .25 + .75 * i / hist.length; c.fillRect(i * bw, mid - a, Math.max(1, bw - .6), a * 2); });
+  c.globalAlpha = 1; c.font = "700 13px " + RL.css("--ui"); c.textBaseline = "top";
+  c.fillText(["BRUIT BLANC", "BRUIT ROSE", "BRUIT BRUN"][Math.round(RL.P("type"))] + (on ? "" : " · MUET"), 14, 12);
+  if (f && f.l !== undefined) { c.textAlign = "right"; c.fillText(`L ${Math.max(-60, f.l).toFixed(1)}  R ${Math.max(-60, f.r).toFixed(1)} dB RMS`, w - 14, 12); c.textAlign = "left"; }
+}
+RL.start(layout);
+</script></body></html>

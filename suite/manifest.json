@@ -10,7 +10,19 @@
       "target": "NoiseTools",
       "description": "Restauration : souffle, ronflement 50/60 Hz, clics, écrêtage",
       "status": "prototype",
-      "formats": ["vst3"]
+      "formats": [
+        "vst3"
+      ]
+    },
+    {
+      "id": "noise",
+      "name": "Noise",
+      "target": "Noise",
+      "description": "Générateur de bruit blanc, rose, brun (couleur, largeur)",
+      "status": "prototype",
+      "formats": [
+        "vst3"
+      ]
     }
   ]
 }

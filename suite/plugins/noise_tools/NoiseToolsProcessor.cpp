@@ -68,6 +68,7 @@ public:
         engine.process (buf.getArrayOfWritePointers(), buf.getNumChannels(), buf.getNumSamples());
         auto mx = [] (std::atomic<float>& a, float v) { float o = a.load(); while (v > o && ! a.compare_exchange_weak (o, v)) {} };
         mx (pk[0], engine.meter.inL.load()); mx (pk[1], engine.meter.inR.load()); mx (pk[2], engine.meter.outL.load()); mx (pk[3], engine.meter.outR.load());
+        licenseGate (buf);
     }
 
     juce::var feedback() override

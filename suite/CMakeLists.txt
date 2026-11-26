@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.22)
 # Room Labs Audio — suite de plugins (un CMake pour tous ; chaque plugin s'ajoute via rl_add_plugin)
 # Version de la suite = version des installeurs RoomLabsAudio_Plugins_<version>_Win_x64.exe
 # =============================================================================
-project(RoomLabsAudioSuite VERSION 0.1.0 LANGUAGES C CXX)
+project(RoomLabsAudioSuite VERSION 0.2.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -19,6 +19,7 @@ endif()
 # ---------------------------------------------------------------------------
 # Tests DSP sans JUCE
 # ---------------------------------------------------------------------------
+add_executable(NoiseTest tests/NoiseTest.cpp plugins/noise/NoiseDSP.cpp)
 add_executable(NoiseToolsTest tests/NoiseToolsTest.cpp plugins/noise_tools/NoiseToolsDSP.cpp)
 target_include_directories(NoiseToolsTest PRIVATE plugins/noise_tools)
 
@@ -34,6 +35,8 @@ else()
     FetchContent_Declare(JUCE GIT_REPOSITORY https://github.com/juce-framework/JUCE.git GIT_TAG 8.0.15 GIT_SHALLOW TRUE)
     FetchContent_MakeAvailable(JUCE)
 endif()
+
+include(${CMAKE_CURRENT_SOURCE_DIR}/../common/licensing/RoomLabsLicensing.cmake)
 
 # ---------------------------------------------------------------------------
 # rl_add_plugin(<Cible> NAME <nom> CODE <4 lettres> PRODUCT <vst/dossier> FACE <w> <h>
@@ -69,14 +72,16 @@ function(rl_add_plugin target)
         ${CMAKE_CURRENT_SOURCE_DIR}/plugins/${A_DIR}/ui/*
         ${CMAKE_CURRENT_SOURCE_DIR}/assets/${A_PRODUCT}/*.webp
         ${CMAKE_CURRENT_SOURCE_DIR}/assets/_commandes/*.webp
-        ${CMAKE_CURRENT_SOURCE_DIR}/assets/meta.json)
+        ${CMAKE_CURRENT_SOURCE_DIR}/assets/meta.json
+        ${CMAKE_CURRENT_SOURCE_DIR}/../common/licensing/rl_license_ui.js)
     juce_add_binary_data(${target}Data SOURCES ${ui})
     target_sources(${target} PRIVATE common/RLCommon.cpp ${A_SOURCES})
+    rl_add_licensing(${target} ${CMAKE_CURRENT_SOURCE_DIR}/plugins/${A_DIR}/licensing.json)
     target_include_directories(${target} PRIVATE common plugins/${A_DIR})
     list(GET A_FACE 0 fw)
     list(GET A_FACE 1 fh)
     target_compile_definitions(${target} PUBLIC
-        JUCE_USE_CURL=0 JUCE_USE_WIN_WEBVIEW2_WITH_STATIC_LINKING=1 JUCE_VST3_CAN_REPLACE_VST2=0
+        JUCE_USE_CURL=${RL_USE_CURL} JUCE_USE_WIN_WEBVIEW2_WITH_STATIC_LINKING=1 JUCE_VST3_CAN_REPLACE_VST2=0
         JUCE_DISPLAY_SPLASH_SCREEN=0 JUCE_REPORT_APP_USAGE=0 RL_FACE_W=${fw} RL_FACE_H=${fh})
     target_link_libraries(${target}
         PRIVATE ${target}Data juce::juce_audio_utils juce::juce_gui_extra
@@ -89,3 +94,7 @@ endfunction()
 rl_add_plugin(NoiseTools NAME "Noise Tools" CODE NsTl PRODUCT vst/noise_tools DIR noise_tools FACE 754 545
     SOURCES plugins/noise_tools/NoiseToolsProcessor.cpp plugins/noise_tools/NoiseToolsDSP.cpp
     CATEGORIES Fx Restoration)
+
+rl_add_plugin(Noise NAME "Noise" CODE Nois PRODUCT vst/noise DIR noise FACE 660 515
+    SOURCES plugins/noise/NoiseProcessor.cpp plugins/noise/NoiseDSP.cpp
+    CATEGORIES Fx Generator)

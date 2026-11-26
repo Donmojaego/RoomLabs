@@ -100,7 +100,7 @@ int main (int argc, char** argv)
           std::vector<float> l ((size_t) s * 120, 0.f), r ((size_t) s * 120, 0.f); render (e, l, r, 1024);
           double dc = 0; for (size_t i = 0; i < l.size(); ++i) { ok &= std::isfinite (l[i]); worst = std::max (worst, (double) std::abs (l[i])); dc += l[i]; }
           drift = std::max (drift, std::abs (dc / l.size())); }
-        line (ok && worst < 6 && drift < 0.05, F ("bruit brun à 0 dBFS, 120 s à 44,1 / 48 / 96 kHz : aucun NaN, crête max %.2f, composante continue moyenne %.4f", worst, drift));
+        line (ok && worst <= 1.0 && drift < 0.05, F ("bruit brun au niveau maximum (0 dBFS RMS), 120 s à 44,1 / 48 / 96 kHz : aucun NaN, crête max %.2f (jamais au-dessus de 0 dBFS), composante continue moyenne %.4f", worst, drift));
     }
     std::printf ("%s\n", fails ? "ÉCHECS" : "Tous les tests Noise passent");
     if (argc > 1) { FILE* f = std::fopen (argv[1], "a"); if (f) { std::fputs (rep.c_str(), f); std::fclose (f); } }

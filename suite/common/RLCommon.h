@@ -7,6 +7,7 @@
 // =============================================================================
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_extra/juce_gui_extra.h>
+#include "RLLicense.h"
 #include <functional>
 #include <map>
 #include <set>
@@ -31,7 +32,16 @@ class Processor : public juce::AudioProcessor
 {
 public:
     Processor (const BusesProperties& b, juce::AudioProcessorValueTreeState::ParameterLayout layout, const juce::String& productId)
-        : AudioProcessor (b), state (*this, nullptr, "RoomLabs", std::move (layout)), product (productId) {}
+        : AudioProcessor (b), state (*this, nullptr, "RoomLabs", std::move (layout)), product (productId) { license.start(); }
+
+    rl::License license;                             // Moonbase (réglages : plugins/<dossier>/licensing.json)
+    // à appeler à la fin de processBlock : silence (avec fondu) tant qu'aucune licence valide n'est active
+    void licenseGate (juce::AudioBuffer<float>& b)
+    {
+        if (! license.allowed()) { if (licOk) b.applyGainRamp (0, b.getNumSamples(), 1.f, 0.f); else b.clear(); licOk = false; }
+        else licOk = true;
+    }
+    bool licOk = true;
 
     juce::AudioProcessorValueTreeState state;
     const juce::String product;                      // ex. "vst/noise_tools"

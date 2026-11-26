@@ -15,6 +15,7 @@ void Engine::prepare (double s)
     brownLeak = (float) std::exp (-2 * PI * 5.0 / sr);          // pente -6 dB/oct au-dessus de 5 Hz (pas de dérive continue)
     tiltA = (float) std::exp (-2 * PI * 1000.0 / sr);           // pivot de la couleur : 1 kHz
     smK = (float) (1 - std::exp (-1.0 / (0.03 * sr)));          // lissages 30 ms
+    msK = (float) (1 - std::exp (-1.0 / (0.4 * sr)));
     reset();
 }
 
@@ -53,7 +54,12 @@ float Engine::tilt (Gen& g, float x)
     g.tiltZ = tiltA * g.tiltZ + (1 - tiltA) * x;
     const float lo = g.tiltZ, hi = x - lo, c = colorS;
     const float wl = 1 - c, wh = 1 + c;                            // c=-1 : sombre, c=+1 : brillant
-    return (lo * wl + hi * wh) / std::sqrt (0.5f * (wl * wl + wh * wh));
+    const float y = lo * wl + hi * wh;
+    // niveau conservé : la puissance avant / après couleur est suivie (≈ 0,4 s) et compensée doucement
+    g.msIn += msK * (x * x - g.msIn); g.msOut += msK * (y * y - g.msOut);
+    const float want = g.msOut > 1e-12f ? std::sqrt (g.msIn / g.msOut) : 1.f;
+    g.corr += 0.0005f * (std::clamp (want, 0.1f, 10.f) - g.corr);
+    return y * g.corr;
 }
 
 void Engine::process (float* const* io, int numCh, int n)
@@ -77,6 +83,9 @@ void Engine::process (float* const* io, int numCh, int n)
         const float k = gain * typeFade * typeFade * (3 - 2 * typeFade);
         float l = (cs * a + sn * b) * k, r = (cs * a - sn * b) * k;
         if (numCh == 1) { l = a * k; }
+        // sécurité : le bruit seul ne dépasse jamais 0 dBFS (genou doux à partir de -2 dBFS)
+        auto soft = [] (float v) { const float a2 = std::abs (v); return a2 < 0.8f ? v : std::copysign (0.8f + 0.2f * std::tanh ((a2 - 0.8f) / 0.2f), v); };
+        l = soft (l); r = soft (r);
         if (prm.keepInput) { io[0][i] += l; if (numCh > 1) io[1][i] += r; }
         else { io[0][i] = l; if (numCh > 1) io[1][i] = r; }
         for (int c = 2; c < numCh; ++c) io[c][i] = 0;

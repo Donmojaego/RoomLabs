@@ -38,6 +38,7 @@ private:
         float b[7] {};          // rose (Kellet)
         float brown = 0;        // brun
         float tiltZ = 0;        // filtre de couleur
+        float msIn = 1, msOut = 1, corr = 1;   // compensation de niveau de la couleur
         float next (int type, float brownLeak);
         float white();
     };
@@ -47,7 +48,7 @@ private:
     Gen g1, g2;
     float gain = 0, colorS = 0, widthS = 1, typeFade = 1;
     int curType = 1, pendingType = -1;
-    float tiltA = 0, brownLeak = 0, smK = 0;
+    float tiltA = 0, brownLeak = 0, smK = 0, msK = 0;
     int scopePos = 0; float scopeAcc = 0; int scopeN = 0;
 };
 } // namespace rl::nz

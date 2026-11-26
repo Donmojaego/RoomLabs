@@ -91,3 +91,11 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:
 .hdr .name{background:linear-gradient(180deg,var(--acc2),var(--ink) 70%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 1px 0 rgba(0,0,0,.6))}
 [data-theme=pocket] .hdr .name{background:none;color:var(--ink);filter:none}
 .ib{box-shadow:0 3px 6px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.08)}
+
+/* panneau Aide · Licence · À propos */
+.pop.about{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:440px;max-height:86%;overflow:auto;z-index:60;padding:18px 22px;color:var(--ink)}
+.pop.about.on{display:block;animation:rlpop .18s ease-out}
+.pop.about h3{margin:0 0 8px;font:800 16px var(--ui);letter-spacing:2px}
+.pop.about .help{font:500 13px var(--ui);line-height:1.5;opacity:.85;margin:0}
+.pop.about .x{position:absolute;right:10px;top:10px;width:30px;height:30px}
+@keyframes rlpop{from{opacity:0;transform:translate(-50%,-48%)}to{opacity:1;transform:translate(-50%,-50%)}}

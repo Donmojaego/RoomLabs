@@ -17,6 +17,8 @@ js = open(os.path.join(root, "common", "ui", "rl.js"), encoding="utf-8").read()
 inject = f"<script>window.RL_ASSETS={json.dumps(assets)};window.RL_META={json.dumps(meta)};</script>\n<script>{js}</script>"
 html = html.replace('<link rel="stylesheet" href="rl.css">', f"<style>{css}</style>")
 html = html.replace('<script src="rl.js"></script>', inject)
+lic = open(os.path.join(root, "..", "common", "licensing", "rl_license_ui.js"), encoding="utf-8").read()
+html = html.replace('<script src="rl_license_ui.js"></script>', "<script>" + lic + "</script>")
 html = html.replace("<meta charset=\"utf-8\">", "<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no\">")
 open(out, "w", encoding="utf-8").write(html)
 print(out, round(len(html) / 1024), "Ko")

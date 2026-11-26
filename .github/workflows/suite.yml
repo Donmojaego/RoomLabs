@@ -54,7 +54,7 @@ jobs:
         run: cmake -B build -A x64 -DJUCE_WEBVIEW2_PACKAGE_LOCATION="$env:GITHUB_WORKSPACE/nuget"
 
       - name: Compilation Release
-        run: cmake --build build --config Release --target NoiseTools_VST3 NoiseTools_Standalone NoiseToolsTest --parallel
+        run: cmake --build build --config Release --target NoiseTools_VST3 NoiseTools_Standalone NoiseToolsTest Noise_VST3 NoiseTest --parallel
 
       - name: Tests audio (corpus synthétique, 44,1/48/96 kHz, blocs 64-1024)
         id: tests
@@ -62,7 +62,9 @@ jobs:
         continue-on-error: true
         run: |
           & build/Release/NoiseToolsTest.exe RAPPORT-TESTS.md
-          $code = $LASTEXITCODE
+          $c1 = $LASTEXITCODE
+          & build/Release/NoiseTest.exe RAPPORT-TESTS.md
+          $code = [Math]::Max($c1, $LASTEXITCODE)
           $txt = (Get-Content RAPPORT-TESTS.md -Raw -Encoding UTF8) -replace '%','%25' -replace "`r",'' -replace "`n",'%0A'
           if ($code -ne 0) { Write-Output "::error title=Tests audio::$txt"; exit 1 } else { Write-Output "::notice title=Tests audio::$txt" }
 
@@ -131,25 +133,18 @@ jobs:
 
       - name: Publication dans Releases
         if: github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: suite-v${{ steps.v.outputs.version }}
-          name: Room Labs Audio ${{ steps.v.outputs.version }} (version de test)
-          prerelease: true
-          make_latest: false
-          target_commitish: ${{ github.sha }}
-          body_path: suite/RAPPORT-TESTS.md
-          files: |
-            suite/installer/windows/output/*.exe
-            suite/RoomLabsAudio_Captures_*.zip
-
-      - name: Échec si un test a échoué
-        if: steps.tests.outcome == 'failure' || steps.pv.outcome == 'failure'
-        run: exit 1
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          t=suite-v${{ steps.v.outputs.version }}
+          gh release view "$t" >/dev/null 2>&1 || gh release create "$t" --prerelease --latest=false --target ${{ github.sha }} --title "Room Labs Audio ${{ steps.v.outputs.version }} (version de test)" --notes-file suite/RAPPORT-TESTS.md
+          gh release upload "$t" suite/installer/windows/output/*.exe suite/RoomLabsAudio_Captures_*.zip --clobber
 
   macos:
     name: macOS — AU + VST3 + DMG (Apple Silicon et Intel)
     needs: windows
+    if: false  # macOS en suspens (cahier des charges, point 10)
     runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v4

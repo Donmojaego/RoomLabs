@@ -87,6 +87,14 @@ Editor::Editor (Processor& p, int w, int h) : AudioProcessorEditor (p), proc (p)
                 }
             done ({});
         })
+        .withNativeFunction ("license", [this] (Args, Done done) { done (proc.license.status()); })
+        .withNativeFunction ("licensePanel", [this] (Args, Done done) { proc.license.showPanel (*this); done ({}); })
+        .withNativeFunction ("openUrl", [this] (Args a, Done done)
+        {
+            const auto u = a[0].toString();
+            if (u.startsWith ("https://") || u.startsWith ("http://")) juce::URL (u).launchInDefaultBrowser();
+            done ({});
+        })
         .withNativeFunction ("setPref", [this] (Args a, Done done)
         {
             const auto key = a[0].toString();

@@ -144,6 +144,18 @@ const RL = (() => {
     if (save) api("setPref", "theme", t);
   }
 
+  // panneau « Aide · Licence · À propos » (licence Moonbase, liens du site, © ℗)
+  function openAbout(layout) {
+    let p = $("#about");
+    if (!p) {
+      p = el("div", "pop about"); p.id = "about";
+      p.innerHTML = `<button class="ib x" title="Fermer">×</button><h3>${layout.title}</h3><p class="help">${layout.help || ""}</p><div class="lic"></div>`;
+      $("#stage").appendChild(p); p.querySelector(".x").onclick = () => p.classList.remove("on");
+      if (window.RLLicenseUI) RLLicenseUI.mount(p.querySelector(".lic"), { call: (...a) => NATIVE ? call(...a) : Promise.resolve(null), native: NATIVE, product: "Room Labs Audio · " + layout.title, version: init0("version") || "" });
+    }
+    p.classList.toggle("on");
+  }
+
   async function start(layout) {
     st.layout = layout; st.parts = []; st.screens = [];
     const meta = window.RL_META || await fetch("meta.json").then(r => r.json());
@@ -160,7 +172,7 @@ const RL = (() => {
     const hb = el("div", "hbtns");
     const thm = el("button", "ib thm", `<i></i><span id="thmName"></span>`); thm.dataset.tip = "Thème : Vert, Studio ou Pocket (le son et les réglages ne changent pas)";
     thm.onclick = () => { const i = THEMES.findIndex(x => x[0] === st.theme); setTheme(THEMES[(i + 1) % 3][0], true); };
-    const info = el("button", "ib", "i"); info.dataset.tip = "Aide"; info.onclick = () => toast(layout.help, 7000);
+    const info = el("button", "ib", "i"); info.dataset.tip = "Aide, licence et à propos"; info.onclick = () => openAbout(layout);
     const gear = el("button", "ib", '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>');
     gear.dataset.tip = "Taille de la fenêtre";
     gear.onclick = () => menu(gear, ["80 %", "100 %", "120 %", "150 %", "180 %"], -1, i => api("setPref", "zoom", [80, 100, 120, 150, 180][i]), "TAILLE");
