@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(ShakeIt VERSION 0.1.2 LANGUAGES C CXX)
+project(ShakeIt VERSION 0.1.3 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -45,8 +45,8 @@ endif()
 # ---------------------------------------------------------------------------
 juce_add_plugin(ShakeIt
     COMPANY_NAME "Room Labs"
-    COMPANY_WEBSITE "https://7throomacademy.fr"
-    COMPANY_COPYRIGHT "Copyright 2026 Room Labs"
+    COMPANY_WEBSITE "https://roomlabsaudio.com/plugins"
+    COMPANY_COPYRIGHT "(C) 2026 Room Labs Audio - (P) 2026 Room Labs Audio"
     BUNDLE_ID com.roomlabs.shakeit
     PLUGIN_NAME "Shake It"
     PRODUCT_NAME "ShakeIt"
@@ -71,8 +71,13 @@ juce_add_plugin(ShakeIt
 file(GLOB SHK_UI_FILES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/index.html
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/assets/*.webp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/licensing/rl_license_ui.js
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/assets/*.svg)
 juce_add_binary_data(ShakeItData SOURCES ${SHK_UI_FILES} ${CMAKE_CURRENT_SOURCE_DIR}/presets/factory.json)
+
+# licence Moonbase (réglages propres au plugin : licensing.json)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../common/licensing/RoomLabsLicensing.cmake)
+rl_add_licensing(ShakeIt ${CMAKE_CURRENT_SOURCE_DIR}/licensing.json)
 
 target_sources(ShakeIt PRIVATE
     source/PluginProcessor.cpp
@@ -86,7 +91,7 @@ if(MSVC)
 endif()
 
 target_compile_definitions(ShakeIt PUBLIC
-    JUCE_USE_CURL=0
+    JUCE_USE_CURL=${RL_USE_CURL}
     JUCE_USE_WIN_WEBVIEW2_WITH_STATIC_LINKING=1
     JUCE_VST3_CAN_REPLACE_VST2=0
     JUCE_DISPLAY_SPLASH_SCREEN=0
@@ -114,7 +119,8 @@ if(SHK_BUILD_TESTS)
         source/PluginProcessor.cpp
         source/engine/BassEngine.cpp)
     target_include_directories(ShakeItRenderTest PRIVATE source)
-    target_compile_definitions(ShakeItRenderTest PRIVATE JUCE_USE_CURL=0 JUCE_WEB_BROWSER=0 SHK_HEADLESS=1
+    rl_add_licensing(ShakeItRenderTest ${CMAKE_CURRENT_SOURCE_DIR}/licensing.json)
+    target_compile_definitions(ShakeItRenderTest PRIVATE JUCE_USE_CURL=${RL_USE_CURL} JUCE_WEB_BROWSER=0 SHK_HEADLESS=1
         SHK_VERSION_STRING="${PROJECT_VERSION}" JucePlugin_Name="Shake It")
     if(MSVC)
         target_compile_options(ShakeItRenderTest PRIVATE /utf-8)

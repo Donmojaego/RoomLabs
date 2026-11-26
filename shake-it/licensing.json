@@ -1,0 +1,11 @@
+{
+  "enabled": false,
+  "endpoint": "",
+  "productId": "shake-it",
+  "publicKeyFile": "moonbase_public_key.pem",
+  "maxDevices": 3,
+  "graceDays": 14,
+  "checkIntervalHours": 24,
+  "offline": true,
+  "trialDays": 0
+}

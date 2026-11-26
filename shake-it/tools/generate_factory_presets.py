@@ -176,7 +176,39 @@ for i, (n, r, m, pu, d, dr, h, t) in enumerate(basses):
     presets.append(p(n, S5, m, r, outfit=(i + 1) % 3, punch=pu, decay=d, drive=dr, harm=h,
                      tone=float(t), release=120.0, glide=60.0, output=(2.0 if m == "Moog" else -2.0), **extra))
 
-assert len(presets) == 95, len(presets)
+# ---------------------------------------------------------------- v0.1.3 : +20 (10 Sub, 5 Moog, 5 Bass)
+subs2 = [
+    ("Sous-Sol", 25, 0.10, 8.0, 0.0, 0.05, 2500, 4.0), ("Velours Grave", 27, 0.05, 7.5, 0.0, 0.10, 1100, 9.0),
+    ("Rumeur", 24, 0.20, 7.0, 0.10, 0.20, 6000, 3.0), ("Basse Fumée", 28, 0.10, 6.5, 0.15, 0.35, 3500, 5.0),
+    ("Respiration", 26, 0.0, 8.0, 0.0, 0.0, 700, 15.0), ("Poids Lourd", 24, 0.30, 7.0, 0.25, 0.30, 9000, 2.0),
+    ("Mur de Grave", 25, 0.25, 7.5, 0.35, 0.40, 12000, 2.5), ("Coton", 29, 0.0, 6.0, 0.0, 0.05, 650, 14.0),
+    ("Club Bas", 27, 0.20, 6.0, 0.20, 0.25, 7000, 3.0), ("Tremblement", 23, 0.15, 8.0, 0.05, 0.15, 4500, 4.0),
+]
+for i, (n, r, pu, d, dr, h, t, a) in enumerate(subs2):
+    presets.append(p(n, S3, "Sub", r, outfit=(i + 1) % 3, punch=pu, decay=d, drive=dr, harm=h,
+                     tone=float(t), attack=a, release=220.0, glide=100.0))
+moogs2 = [
+    ("Filtre Ouvert", 36, 0.7, 1.0, 0.1, 0.3, 1100, 0.50), ("Mono Gras", 34, 0.6, 1.6, 0.2, 0.5, 750, 0.45),
+    ("Rebond Analogique", 38, 0.85, 0.45, 0.05, 0.15, 520, 0.65), ("Velours Moog", 33, 0.35, 2.6, 0.0, 0.6, 950, 0.25),
+    ("Couac Doux", 37, 0.8, 0.5, 0.1, 0.2, 400, 0.75),
+]
+for i, (n, r, pu, d, dr, h, t, rs) in enumerate(moogs2):
+    presets.append(p(n, S4, "Moog", r, outfit=(i + 2) % 3, punch=pu, decay=d, drive=dr, harm=h,
+                     tone=float(t), reso=rs, release=90.0, glide=80.0, output=4.0))
+basses2 = [
+    ("Pouce Rond", 38, "Pluck", 0.0, 2.8, 0.0, 0.1, 4500), ("Corde Claire", 40, "Pluck", 0.0, 2.0, 0.05, 0.4, 15000),
+    ("Synthé Tiède", 35, "Moog", 0.4, 1.5, 0.1, 0.3, 900), ("Basse Soul", 38, "Pluck", 0.0, 2.4, 0.0, 0.2, 7000),
+    ("Synthé Grognon", 36, "Moog", 0.7, 0.8, 0.4, 0.3, 700),
+]
+for i, (n, r, m, pu, d, dr, h, t) in enumerate(basses2):
+    extra = {"reso": 0.35} if m == "Moog" else {}
+    presets.append(p(n, S5, m, r, outfit=i % 3, punch=pu, decay=d, drive=dr, harm=h,
+                     tone=float(t), release=120.0, glide=60.0, output=(2.0 if m == "Moog" else -2.0), **extra))
+
+# v0.1.3 : master à 0 dB par défaut -> tous les niveaux de preset baissent de 3 dB (plus de marge, presets cohérents)
+for x in presets: x["params"]["output"] = round(x["params"]["output"] - 3.0, 1)
+
+assert len(presets) == 115, len(presets)
 assert len({x["name"] for x in presets}) == len(presets), "noms en double"
 
 out = pathlib.Path(__file__).resolve().parent.parent / "presets" / "factory.json"

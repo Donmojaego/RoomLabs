@@ -135,6 +135,7 @@ select.btn{appearance:none;-webkit-appearance:none;padding:0 8px}
     <div id="tabs"><button class="btn on" id="tabPresets">Presets</button><button class="btn" id="tabAdv">Avancé</button></div>
     <div id="list"></div>
     <div id="adv">
+      <div id="licBox" style="position:relative;z-index:2"></div>
       <div id="advChoices">
         <div class="seg"><span class="label">Glide</span><button class="btn" data-gm="0">Toujours</button><button class="btn" data-gm="1">Legato</button></div>
         <div class="seg"><span class="label">Drive</span><button class="btn" data-dt="0">Doux</button><button class="btn" data-dt="1">Dur</button><button class="btn" data-dt="2">Fold</button></div>
@@ -158,6 +159,7 @@ select.btn{appearance:none;-webkit-appearance:none;padding:0 8px}
   <div id="preview"></div>
 </div>
 
+<script src="rl_license_ui.js"></script>
 <script>
 "use strict";
 // =============================================================================
@@ -178,7 +180,8 @@ const PDEF = {
   punch:  {min:0,   max:1,     def:.5,    skew:1,    fmt:v => Math.round(v*100) + " %", label:"PUNCH"},
   decay:  {min:.05, max:8,     def:1.5,   skew:.4,   fmt:v => v < 1 ? Math.round(v*1000) + " ms" : v.toFixed(2) + " s", label:"DECAY"},
   drive:  {min:0,   max:1,     def:0,     skew:1,    fmt:v => Math.round(v*100) + " %", label:"DRIVE"},
-  output: {min:-36, max:6,     def:-3,    skew:1,    fmt:v => v.toFixed(1) + " dB", label:"OUTPUT"},
+  output: {min:-36, max:6,     def:-3,    skew:1,    fmt:v => v.toFixed(1) + " dB", label:"NIVEAU PRESET"},
+  master: {min:-24, max:6,     def:0,     skew:1,    fmt:v => (v > 0 ? "+" : "") + v.toFixed(1) + " dB", label:"MASTER"},
   harm:   {min:0,   max:1,     def:0,     skew:1,    fmt:v => Math.round(v*100) + " %", label:"HARM"},
   tone:   {min:40,  max:18000, def:18000, skew:.25,  fmt:v => v >= 1000 ? (v/1000).toFixed(1) + " k" : Math.round(v) + " Hz", label:"TONE"},
   reso:   {min:0,   max:1,     def:0,     skew:1,    fmt:v => Math.round(v*100) + " %", label:"RESO"},
@@ -245,7 +248,7 @@ function makeKnob(parent, id) {
   el.addEventListener("wheel", e => { e.preventDefault(); setParam(id, fromNorm(id, toNorm(id, P[id]) + (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? .005 : .02))); }, {passive:false});
   knobs[id] = k; k.set(P[id]);
 }
-["tune","glide","punch","decay","drive","output"].forEach(id => makeKnob($("#knobs"), id));
+["tune","glide","punch","decay","drive","master"].forEach(id => makeKnob($("#knobs"), id));
 ["harm","tone","reso","attack","release"].forEach(id => makeKnob($("#adv"), id));
 $("#adv").appendChild($("#advChoices"));
 
@@ -370,7 +373,7 @@ function onMotion(m) { const prevO = motion.o; Object.assign(motion, m); motion.
 //  Même logique quelle que soit la tenue.
 // =============================================================================
 const dance = (() => {
-  let y = 0, v = 0, energy = 0, groove = 0, pose = 0, poseFrom = 0, poseT = 1, sway = 0, squat = 0, phase = 0, hold = 0;
+  let y = 0, v = 0, energy = 0, groove = 0, pose = 0, poseFrom = 0, poseT = 1, sway = 0, squat = 0, phase = 0, hold = 0, idle = 0;
   function kick() { const amp = prefs.visual === "reduit" ? .55 : 1; v += (7.5 + 3 * Math.min(1, motion.e)) * amp; hold = .45;
     if (squat < .5) phase = 2 / 12; }   // elle descend dès l'attaque
   function step(dt) {
@@ -395,7 +398,9 @@ const dance = (() => {
     squat += (down - squat) * Math.min(1, dt * (down > squat ? 11 : 3.2));
     // mouvement du bassin de haut en bas : boucle de 12 images, plus rapide avec l'énergie, étirée par le glide
     phase = (phase + dt * (1.5 + 1.6 * Math.min(1, energy)) * (1 - .45 * motion.g) * (model === 1 ? .8 : 1) * squat) % 1;
-    return {y: yd, energy, groove, pose, poseFrom, poseT, sway, squat, phase};
+    // au repos (mode Animé) : elle se balance doucement, elle ne reste jamais figée
+    idle = (idle + dt * .9) % 1;
+    return {y: yd, energy, groove, pose, poseFrom, poseT, sway, squat, phase, idle};
   }
   function reset() { y = v = energy = 0; pose = poseFrom = 0; poseT = 1; squat = 0; phase = 0; hold = 0; }
   function atRest() { return Math.abs(y) < .01 && Math.abs(v) < .01 && energy < .005 && squat < .004; }
@@ -443,17 +448,18 @@ const scene = (() => {
 
   function frame(t) {
     if (!running) return;
-    const vis = prefs.visual, minDt = vis === "reduit" || scale < .7 ? 1 / 31 : 0;
+    const restNow = motion.e < .003 && (performance.now() - motion.at > 300) && dance.atRest();
+    const vis = prefs.visual, minDt = vis === "reduit" || scale < .7 || restNow ? 1 / 31 : 0;
     const dtRaw = Math.min(.05, (t - last) / 1000);
     if (dtRaw < minDt - .002) { requestAnimationFrame(frame); return; }
     last = t;
     const t0 = performance.now();
-    if (vis === "statique") { staticDrawn = true; dance.reset(); draw({y:0, energy:0, groove:0, pose:0, poseFrom:0, poseT:1, sway:0, squat:0, phase:0}, 0, t); }
+    if (vis === "statique") { staticDrawn = true; dance.reset(); draw({y:0, energy:0, groove:0, pose:0, poseFrom:0, poseT:1, sway:0, squat:0, phase:0, idle:0}, 0, t); }
     else draw(dance.step(dtRaw), dtRaw, t);
     perf.sample(dtRaw, performance.now() - t0);
     // arrêt du rendu : silence + danseur au repos depuis 3 s (ou mode statique)
     const quiet = motion.e < .003 && (performance.now() - motion.at > 300) && dance.atRest();
-    if (vis === "statique" || (quiet && t - idleSince > 1000) || document.hidden) { running = false; perf.idle(); return; }
+    if (vis === "statique" || (vis === "reduit" && quiet && t - idleSince > 1000) || document.hidden) { running = false; perf.idle(); return; }
     if (!quiet) idleSince = t;
     requestAnimationFrame(frame);
   }
@@ -503,20 +509,25 @@ const scene = (() => {
         put(1 + i0, s.squat); put(1 + i1, s.squat * a); }   // A opaque puis B par-dessus : pas de transparence
       bg2.globalAlpha = 1;
       // déplacement du bassin (en px de scène) : boucle + rebond des attaques
-      const pump = (Math.sin(s.phase * Math.PI * 2) * (5 + 6 * Math.min(1, s.energy)) + s.y * 9) * s.squat * reduce;
+      const pump = (Math.sin(s.phase * Math.PI * 2) * (15 + 13 * Math.min(1, s.energy)) + s.y * 14) * s.squat * reduce
+                 + Math.sin((s.idle || 0) * Math.PI * 2) * 4 * (1 - s.squat) * reduce;                  // repos : léger rebond
+      const shakeX = (Math.sin(s.phase * Math.PI * 4) * (6 + 8 * Math.min(1, s.energy)) * s.squat
+                 + Math.sin((s.idle || 0) * Math.PI * 2 + 1.2) * 5 * (1 - s.squat)) * reduce * scale;     // hanches gauche / droite
       const w = fw * k, x0 = CX + jx - w / 2, top = footY + jy - dispH, pad = Math.ceil(16 * scale);
       // déformation par bandes sur des lignes entières de pixels (aucune couture visible)
-      if (wrp.width !== bw || wrp.height !== bh + 2 * pad) { wrp.width = bw; wrp.height = bh + 2 * pad; }
+      const padX = Math.ceil(20 * scale);
+      if (wrp.width !== bw + 2 * padX || wrp.height !== bh + 2 * pad) { wrp.width = bw + 2 * padX; wrp.height = bh + 2 * pad; }
       wg.clearRect(0, 0, wrp.width, wrp.height);
       const N = 40, d = v => { const hip = Math.exp(-Math.pow((v - .5) / .2, 2)), feet = Math.max(0, (v - .82) / .18); return pump * hip * (1 - feet) + pump * .45 * (v < .5 ? 1 - hip : 0) * (1 - v * 2); };
       let prev = Math.round(pad + d(0) * scale);
       for (let b = 0; b < N; b++) {
         const v1 = (b + 1) / N, next = Math.round(pad + v1 * bh + d(v1) * scale), sy0 = Math.round(b / N * bh), sy1 = Math.round(v1 * bh);
-        if (next > prev && sy1 > sy0) wg.drawImage(buf, 0, sy0, bw, sy1 - sy0, 0, prev, bw, next - prev);
+        const hipW = Math.exp(-Math.pow(((b + .5) / N - .52) / .16, 2)) * (1 - Math.max(0, ((b + .5) / N - .8) / .2));
+        if (next > prev && sy1 > sy0) wg.drawImage(buf, 0, sy0, bw, sy1 - sy0, padX + Math.round(shakeX * hipW), prev, bw, next - prev);
         prev = next;
       }
       ctx.translate(CX + jx, footY + jy); ctx.rotate(rot); ctx.translate(-(CX + jx), -(footY + jy));
-      ctx.drawImage(wrp, x0, top - pad / scale, w, (bh + 2 * pad) / scale);
+      ctx.drawImage(wrp, x0 - padX / scale, top - pad / scale, w + 2 * padX / scale, (bh + 2 * pad) / scale);
     }
     ctx.restore(); ctx.globalAlpha = 1;
     // accent lumineux à l'attaque
@@ -564,7 +575,7 @@ const synth = (() => {
     shaper.curve = d > .001 ? c : null;
     const m = Math.round(P.model);
     filt.frequency.value = m === 3 ? Math.min(18000, P.tone) : P.tone; filt.Q.value = m === 2 ? .7 + P.reso * 18 : .5;
-    out.gain.value = Math.pow(10, P.output / 20) * (m === 2 ? .9 : .8);
+    out.gain.value = Math.pow(10, (P.output + (P.master || 0)) / 20) * (m === 2 ? .9 : .8);
   }
   function start(n, v) {
     const t = ac.currentTime, m = Math.round(P.model);
@@ -618,6 +629,10 @@ async function boot() {
 // crochet pour les tests automatiques (aperçu uniquement)
 if (!NATIVE) window.SHK_TEST = { feed: onMotion, motion, dance, perf, prefs, setPref, poses: () => document.querySelector(".stg.on")?.dataset.p };
 boot();
+
+// licence Room Labs (Moonbase) + liens + © ℗ — bloc commun à tous les plugins
+if (window.RLLicenseUI) RLLicenseUI.mount($("#licBox"), { call: (...a) => (call ? call(...a) : Promise.resolve(null)), native: NATIVE, product: "Shake It",
+  version: NATIVE ? ((window.__JUCE__.initialisationData.version || [])[0] || "") : "" });
 </script>
 </body>
 </html>

@@ -34,6 +34,8 @@ ShakeItProcessor::ShakeItProcessor()
     raw = { get ("tune"), get ("glide"), get ("punch"), get ("decay"), get ("drive"), get ("output"), get ("harm"),
             get ("tone"), get ("reso"), get ("attack"), get ("release"), get ("model"), get ("glideMode"), get ("driveType") };
     if (! presets.empty()) loadPreset (0);
+    masterDb = state.getRawParameterValue ("master");
+    license.start();
 }
 
 bool ShakeItProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -95,6 +97,11 @@ void ShakeItProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mid
     }
     if (pos < n) engine.render (l + pos, r ? r + pos : nullptr, n - pos);
     midi.clear();
+    // volume général (0 dB par défaut ; les presets sont calibrés au même niveau)
+    if (masterDb) { const float mg = juce::Decibels::decibelsToGain (masterDb->load()); buffer.applyGainRamp (0, buffer.getNumSamples(), lastMaster, mg); lastMaster = mg; }
+    // licence : sans licence valide (une fois Moonbase configuré), silence avec un fondu court
+    if (! license.allowed()) { if (wasLicensed) buffer.applyGainRamp (0, buffer.getNumSamples(), 1.f, 0.f); else buffer.clear(); wasLicensed = false; }
+    else wasLicensed = true;
 }
 
 // ---------------------------------------------------------------------------
