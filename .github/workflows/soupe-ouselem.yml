@@ -169,20 +169,16 @@ jobs:
 
       - name: Publication dans Releases
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/soupe-ouselem-v')
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: soupe-ouselem-v${{ steps.v.outputs.version }}
-          name: Ma petite soupe ouselem ${{ steps.v.outputs.version }} (version de test)
-          prerelease: true
-          make_latest: false
-          target_commitish: ${{ github.sha }}
-          body_path: soupe-ouselem/RAPPORT-TESTS.md
-          files: |
-            soupe-ouselem/installer/windows/output/*.exe
-            soupe-ouselem/SoupeOuselem-Windows-*.zip
-            soupe-ouselem/SoupeOuselem-VST3-Windows-*.zip
-            soupe-ouselem/SoupeOuselem-Symboles-Windows-*.zip
-            soupe-ouselem/SoupeOuselem-Captures-Windows-*.zip
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "soupe-ouselem-v${{ steps.v.outputs.version }}"
+          $files = @(Get-ChildItem installer/windows/output/*.exe) + @(Get-ChildItem SoupeOuselem-*.zip) | ForEach-Object { $_.FullName }
+          gh release view $tag -R $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -ne 0) { gh release create $tag -R $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --prerelease --title "Ma petite soupe ouselem ${{ steps.v.outputs.version }} (version de test)" --notes-file RAPPORT-TESTS.md; if ($LASTEXITCODE -ne 0) { exit 1 } }
+          gh release upload $tag @files --clobber -R $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { exit 1 }
 
       - name: Échec si un test a échoué
         if: steps.tests.outcome == 'failure' || steps.pv.outcome == 'failure'
@@ -249,10 +245,9 @@ jobs:
           path: soupe-ouselem/SoupeOuselem-macOS-*.dmg
 
       - name: Publication dans Releases
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: soupe-ouselem-v${{ steps.v.outputs.version }}
-          prerelease: true
-          make_latest: false
-          target_commitish: ${{ github.sha }}
-          files: soupe-ouselem/SoupeOuselem-macOS-*.dmg
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="soupe-ouselem-v${{ steps.v.outputs.version }}"
+          gh release view "$tag" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create "$tag" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "Ma petite soupe ouselem ${{ steps.v.outputs.version }} (version de test)" --notes "Version de test"
+          gh release upload "$tag" SoupeOuselem-macOS-*.dmg --clobber -R "$GITHUB_REPOSITORY"

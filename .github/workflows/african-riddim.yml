@@ -169,20 +169,16 @@ jobs:
 
       - name: Publication dans Releases
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/african-riddim-v')
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: african-riddim-v${{ steps.v.outputs.version }}
-          name: African Riddim ${{ steps.v.outputs.version }} (version de test)
-          prerelease: true
-          make_latest: false
-          target_commitish: ${{ github.sha }}
-          body_path: african-riddim/RAPPORT-TESTS.md
-          files: |
-            african-riddim/installer/windows/output/*.exe
-            african-riddim/AfricanRiddim-Windows-*.zip
-            african-riddim/AfricanRiddim-VST3-Windows-*.zip
-            african-riddim/AfricanRiddim-Symboles-Windows-*.zip
-            african-riddim/AfricanRiddim-Captures-Windows-*.zip
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "african-riddim-v${{ steps.v.outputs.version }}"
+          $files = @(Get-ChildItem installer/windows/output/*.exe) + @(Get-ChildItem AfricanRiddim-*.zip) | ForEach-Object { $_.FullName }
+          gh release view $tag -R $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -ne 0) { gh release create $tag -R $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --prerelease --title "African Riddim ${{ steps.v.outputs.version }} (version de test)" --notes-file RAPPORT-TESTS.md; if ($LASTEXITCODE -ne 0) { exit 1 } }
+          gh release upload $tag @files --clobber -R $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { exit 1 }
 
       - name: Échec si un test a échoué
         if: steps.tests.outcome == 'failure' || steps.pv.outcome == 'failure'
@@ -249,10 +245,9 @@ jobs:
           path: african-riddim/AfricanRiddim-macOS-*.dmg
 
       - name: Publication dans Releases
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: african-riddim-v${{ steps.v.outputs.version }}
-          prerelease: true
-          make_latest: false
-          target_commitish: ${{ github.sha }}
-          files: african-riddim/AfricanRiddim-macOS-*.dmg
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="african-riddim-v${{ steps.v.outputs.version }}"
+          gh release view "$tag" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create "$tag" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "African Riddim ${{ steps.v.outputs.version }} (version de test)" --notes "Version de test"
+          gh release upload "$tag" AfricanRiddim-macOS-*.dmg --clobber -R "$GITHUB_REPOSITORY"
