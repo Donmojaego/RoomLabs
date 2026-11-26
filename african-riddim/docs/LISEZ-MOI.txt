@@ -1,0 +1,27 @@
+AFRICAN RIDDIM — Room Labs Audio
+
+54 instruments d'Afrique, un par pays de la carte : cordes (kora, ngoni, oud, krar, valiha…),
+percussions (sabar, dùndún, balafon, timbila, agogo…), lamellophones (likembe, mbira, sanza,
+kissanje, kondi) et vents (gasba, zummara, mezoued, kakaki, lesiba).
+
+Jouer
+- Cliquer un pays sur la carte : son instrument se charge dans le panneau de droite.
+- Les catégories (Cordes, Percussions, Lamellophones, Vents) et la liste déroulante donnent
+  accès directement à n'importe quel instrument.
+- Loupe : chercher un pays ou un instrument. + / − : zoomer ; glisser pour se déplacer.
+- Volume, Attaque, Relâchement ; ‹ Octave › ; clavier à l'écran ou clavier MIDI.
+- Molette de modulation : vibrato (vents, archet). Pitch bend : ± 2 demi-tons
+  (sur les tambours parlants, il fait « parler » la peau).
+
+Paramètres (roue dentée)
+- Layout Bronze ou Multicolore (gardé au prochain lancement), couleur du son, espace,
+  toucher, transposition, taille de la fenêtre.
+
+Niveaux
+- Le volume général est à 0 dB et tous les instruments sont calibrés au même niveau
+  (une note à mi-force tourne autour de -24 dB RMS, crêtes sous -3 dBFS).
+
+À propos des instruments
+Les sons sont des modèles de synthèse physique créés pour ce plugin et les illustrations
+sont des interprétations. Beaucoup de ces instruments se jouent dans plusieurs pays :
+la correspondance pays / instrument est un choix de représentation, pas une exclusivité.

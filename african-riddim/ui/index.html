@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>African Riddim — Room Labs Audio</title>
+<style>
+:root{--ui:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:#111722;font-family:var(--ui)}
+#stage{position:absolute;left:0;top:0;width:1536px;height:1024px;transform-origin:0 0;overflow:hidden}
+#bg{position:absolute;inset:0;width:100%;height:100%;transition:opacity .35s}
+
+/* ------------------------------------------------ thèmes */
+[data-l=bronze]{--pn:rgba(20,24,34,.94);--pn2:rgba(32,36,48,.96);--edge:#b9784a;--edge2:#e2a774;--ink:#f3e6d6;--ink2:#c9b29b;--acc:#de9660;--acc2:#f3bf8e;--glow:rgba(222,150,96,.55);--hl:rgba(236,160,98,.55);--key:#f1e6d3}
+[data-l=uno]{--pn:rgba(22,70,72,.95);--pn2:rgba(18,56,60,.97);--edge:#f2c230;--edge2:#ffe07a;--ink:#fffaf0;--ink2:#cfe9e2;--acc:#ffd23a;--acc2:#fff0a8;--glow:rgba(255,210,58,.55);--hl:rgba(255,225,90,.6);--key:#fbf1dc}
+
+/* ------------------------------------------------ carte */
+#mapvp{position:absolute;left:0;top:96px;width:770px;height:900px;overflow:hidden;touch-action:none;cursor:grab}
+#mapvp.drag{cursor:grabbing}
+#mapback{position:absolute;inset:14px;border-radius:26px;opacity:0;transition:opacity .3s;background:radial-gradient(closest-side,rgba(0,0,0,.25),rgba(0,0,0,.05));backdrop-filter:blur(6px)}
+[data-l=uno] #mapback{background:radial-gradient(closest-side,rgba(255,248,232,.55),rgba(255,248,232,.25))}
+#mapvp.zoomed #mapback{opacity:1}
+#mapw{position:absolute;left:0;top:0;transform-origin:0 0;transition:transform .45s cubic-bezier(.2,.7,.2,1)}
+#mapw.nodelay{transition:none}
+#mapimg,#mapfx{position:absolute;left:0;top:0;width:1000px;height:1000px}
+#mapimg{filter:drop-shadow(0 18px 26px rgba(0,0,0,.45))}
+[data-l=uno] #mapimg{filter:drop-shadow(0 14px 18px rgba(60,40,20,.35))}
+#mapfx{pointer-events:none}
+.lbl{position:absolute;transform:translate(-50%,-50%);font:700 22px var(--ui);color:#fff;white-space:nowrap;pointer-events:none;text-shadow:0 2px 6px rgba(0,0,0,.85),0 0 2px rgba(0,0,0,.9);transition:opacity .25s,transform .25s}
+[data-l=uno] .lbl{color:#1d2a3a;text-shadow:0 0 6px rgba(255,255,255,.95),0 0 2px #fff}
+.lbl.sel{font-size:34px;color:#fff;letter-spacing:.5px}
+[data-l=bronze] .lbl.sel{color:#fff4e6;text-shadow:0 0 14px rgba(255,170,90,.9),0 2px 6px #000}
+[data-l=uno] .lbl.sel{color:#1a1a1a;text-shadow:0 0 10px #fff,0 0 3px #fff}
+.lbl.faint{font-size:15px;font-weight:600;opacity:.85}
+.isle{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.isle::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 2px rgba(0,0,0,.45),0 0 10px var(--glow);transition:transform .2s}
+.isle:hover::after,.isle.on::after{transform:scale(1.6);background:var(--acc2)}
+
+/* zoom / recherche */
+.mapctl{position:absolute;left:62px;z-index:5}
+#zoomCtl{top:668px;width:52px;height:96px}
+#zoomCtl button{position:absolute;left:0;width:52px;height:48px;background:transparent;border:0;cursor:pointer}
+#zoomCtl .bz{position:absolute;inset:0;border-radius:26px}
+[data-l=bronze] #zoomCtl .bz{background:linear-gradient(180deg,#2a2f3b,#171b24);box-shadow:inset 0 0 0 1.5px rgba(222,150,96,.55),0 6px 14px rgba(0,0,0,.5)}
+[data-l=bronze] #zoomCtl .bz::before,[data-l=bronze] #zoomCtl .bz::after{content:"";position:absolute;left:16px;right:16px;height:2.5px;background:var(--acc2);border-radius:2px}
+[data-l=bronze] #zoomCtl .bz::before{top:23px;box-shadow:0 0 0 0 transparent}
+[data-l=bronze] #zoomCtl .bz::after{top:70px}
+[data-l=bronze] #zoomCtl .plusv{position:absolute;left:25px;top:12px;width:2.5px;height:24px;background:var(--acc2);border-radius:2px}
+[data-l=uno] #zoomCtl .bz{background:url(ctl_uno_08.webp) center/contain no-repeat}
+[data-l=uno] #zoomCtl .plusv{display:none}
+#zoomCtl button:active{transform:scale(.94)}
+#searchBtn{top:600px;width:52px;height:52px;border-radius:50%;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
+[data-l=bronze] #searchBtn{background:linear-gradient(180deg,#2a2f3b,#171b24);box-shadow:inset 0 0 0 1.5px rgba(222,150,96,.55),0 6px 14px rgba(0,0,0,.5)}
+[data-l=uno] #searchBtn{background:radial-gradient(circle at 40% 35%,#2c56c9,#0d2a7a);box-shadow:inset 0 0 0 2.5px #f2c230,0 6px 12px rgba(0,0,0,.35)}
+#searchBtn svg{width:24px;height:24px;stroke:var(--acc2);fill:none;stroke-width:2.6}
+#search{position:absolute;left:126px;top:600px;width:330px;z-index:6;display:none}
+#search.on{display:block;animation:pop .2s}
+#search input{width:100%;height:52px;border-radius:26px;border:0;padding:0 22px;font:600 19px var(--ui);color:var(--ink);background:var(--pn2);box-shadow:inset 0 0 0 1.5px var(--edge),0 8px 18px rgba(0,0,0,.45);outline:none;-webkit-user-select:text;user-select:text}
+#search input::placeholder{color:var(--ink2);opacity:.75}
+#results{margin-top:8px;max-height:300px;overflow:auto;border-radius:16px;background:var(--pn2);box-shadow:inset 0 0 0 1.5px var(--edge),0 10px 22px rgba(0,0,0,.5)}
+#results div{padding:11px 18px;font:600 17px var(--ui);color:var(--ink);cursor:pointer;display:flex;justify-content:space-between;gap:12px}
+#results div span{color:var(--ink2);font-weight:500}
+#results div:hover,#results div.hl{background:rgba(255,255,255,.10)}
+#midiIn{position:absolute;left:62px;bottom:62px;font:700 18px var(--ui);letter-spacing:4px;color:var(--ink);display:flex;align-items:center;gap:12px;z-index:5}
+[data-l=uno] #midiIn{color:#2a2010}
+#midiIn i{width:10px;height:10px;border-radius:50%;background:var(--acc);opacity:.25;transition:opacity .12s;box-shadow:0 0 10px var(--glow)}
+#midiIn i.on{opacity:1}
+#midiIn::after{content:"";position:absolute;left:0;right:22px;bottom:-9px;height:2px;background:linear-gradient(90deg,var(--acc),transparent)}
+#arrow{position:absolute;left:688px;top:528px;width:84px;height:56px;z-index:4;pointer-events:none;transition:transform .3s}
+[data-l=bronze] #arrow{background:linear-gradient(90deg,rgba(222,150,96,0),#de9660 55%,#f3bf8e);clip-path:polygon(0 38%,62% 38%,62% 12%,100% 50%,62% 88%,62% 62%,0 62%)}
+[data-l=uno] #arrow{background:url(ctl_uno_09.webp) center/contain no-repeat;width:96px;height:68px;top:522px}
+
+/* ------------------------------------------------ panneau instrument */
+#panel{position:absolute;left:778px;top:152px;width:738px;height:800px;border-radius:22px;background:linear-gradient(180deg,var(--pn),var(--pn2));box-shadow:0 0 0 2px var(--edge),0 0 0 4px rgba(0,0,0,.35),0 0 26px var(--glow),0 24px 44px rgba(0,0,0,.55);z-index:3}
+[data-l=bronze] #panel::before{content:"";position:absolute;inset:0;border-radius:22px;padding:2px;background:linear-gradient(160deg,#f2b582,#7a4a2a 35%,#d18c55 65%,#6a3e22);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+[data-l=uno] #panel::after{content:"";position:absolute;left:12px;right:12px;bottom:6px;height:12px;background:repeating-linear-gradient(135deg,#e5482f 0 10px,#f2c230 10px 20px,#2fae5a 20px 30px,#2a7fd4 30px 40px);-webkit-mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);opacity:.9;border-radius:0 0 12px 12px}
+#ph{position:absolute;left:0;right:0;top:0;height:78px;display:flex;align-items:center;border-bottom:1.5px solid rgba(255,255,255,.10)}
+#back{height:44px;margin-left:22px;padding:0 16px 0 10px;border-radius:22px;border:0;background:transparent;color:var(--ink);font:600 21px var(--ui);display:flex;align-items:center;gap:8px;cursor:pointer;transition:background .15s}
+#back:hover{background:rgba(255,255,255,.08)}
+#back svg{width:20px;height:20px;stroke:var(--ink);fill:none;stroke-width:3}
+#ph .sep{width:2px;height:40px;background:var(--edge);opacity:.7;margin:0 26px 0 14px}
+#cname{font:700 34px var(--ui);color:var(--ink);letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px;transition:opacity .2s}
+#cname.small{font-size:26px}
+#zig{position:absolute;right:76px;top:12px;width:150px;height:54px;border-radius:0 12px 0 0}
+[data-l=bronze] #zig{background:repeating-linear-gradient(135deg,transparent 0 8px,rgba(196,128,80,.55) 8px 11px),repeating-linear-gradient(45deg,transparent 0 8px,rgba(196,128,80,.35) 8px 11px);-webkit-mask:linear-gradient(90deg,transparent,#000 40%)}
+[data-l=uno] #zig{background:repeating-linear-gradient(135deg,#e5482f 0 6px,transparent 6px 9px,#f2c230 9px 15px,transparent 15px 18px,#2fae5a 18px 24px,transparent 24px 27px,#2a7fd4 27px 33px,transparent 33px 36px);-webkit-mask:linear-gradient(90deg,transparent,#000 40%)}
+#gear{position:absolute;right:18px;top:15px;width:48px;height:48px;border-radius:50%;border:0;cursor:pointer;background:rgba(0,0,0,.35);box-shadow:inset 0 0 0 1.5px var(--edge);display:flex;align-items:center;justify-content:center;z-index:2;transition:transform .3s}
+#gear:hover{transform:rotate(35deg)}
+#gear svg{width:26px;height:26px;fill:var(--acc2)}
+#tabs{position:absolute;left:22px;right:22px;top:98px;height:56px;display:flex;gap:12px}
+.tab{flex:1;height:56px;border:0;border-radius:28px;cursor:pointer;font:600 19px var(--ui);position:relative;transition:transform .12s,filter .2s,opacity .2s}
+.tab:active{transform:scale(.97)}
+[data-l=bronze] .tab{background:linear-gradient(180deg,#2c313d,#1c2029);color:var(--ink);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.10),0 4px 10px rgba(0,0,0,.4)}
+[data-l=bronze] .tab.on{background:linear-gradient(180deg,#f0b07c,#c37944);color:#221309;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 0 18px var(--glow),0 4px 10px rgba(0,0,0,.4)}
+[data-l=uno] .tab{background:var(--spr) center/100% 100% no-repeat;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.7);filter:saturate(.55) brightness(.82);opacity:.88}
+[data-l=uno] .tab.on{filter:none;opacity:1;box-shadow:0 0 18px var(--tg)}
+#drop{position:absolute;left:22px;top:178px;width:418px;height:64px;border:0;cursor:pointer;display:flex;align-items:center;padding:0 60px 0 28px;font:700 26px var(--ui);color:var(--ink);text-align:left;border-radius:16px;transition:filter .15s}
+#drop:hover{filter:brightness(1.12)}
+#drop .chev{position:absolute;right:24px;top:22px;width:20px;height:20px;border-right:3px solid var(--ink);border-bottom:3px solid var(--ink);transform:rotate(45deg) scale(.8)}
+[data-l=bronze] #drop{background:linear-gradient(180deg,#262b36,#191d26);box-shadow:inset 0 0 0 1.5px rgba(222,150,96,.45),0 6px 14px rgba(0,0,0,.4)}
+[data-l=uno] #drop{background:url(ctl_uno_04.webp) center/100% 100% no-repeat;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+[data-l=uno] #drop .chev{border-color:#ffd23a}
+#list{position:absolute;left:22px;top:248px;width:418px;max-height:470px;overflow:auto;z-index:9;border-radius:16px;background:var(--pn2);box-shadow:inset 0 0 0 1.5px var(--edge),0 16px 30px rgba(0,0,0,.6);display:none}
+#list.on{display:block;animation:pop .18s}
+#list div{padding:12px 22px;font:600 19px var(--ui);color:var(--ink);cursor:pointer;display:flex;justify-content:space-between;gap:14px}
+#list div span{color:var(--ink2);font-weight:500;font-size:16px;text-align:right}
+#list div:hover{background:rgba(255,255,255,.09)}
+#list div.cur{background:rgba(255,255,255,.14);box-shadow:inset 4px 0 0 var(--acc)}
+#art{position:absolute;left:28px;top:258px;width:430px;height:384px;display:flex;align-items:center;justify-content:center}
+#artImg{max-width:100%;max-height:100%;filter:drop-shadow(0 16px 22px rgba(0,0,0,.6));transition:opacity .25s,transform .18s cubic-bezier(.3,1.6,.5,1);cursor:pointer}
+#artImg.fade{opacity:0;transform:scale(.96)}
+#artImg.hit{transform:scale(1.035)}
+#cap{position:absolute;left:20px;top:652px;width:446px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;font:500 13px var(--ui);color:var(--ink2);opacity:.85}
+#knobs{position:absolute;left:478px;top:188px;width:240px;height:460px;border-left:1.5px solid rgba(255,255,255,.10)}
+.kn{position:absolute;left:24px;width:210px;height:96px;display:flex;align-items:center;gap:16px;cursor:ns-resize;touch-action:none}
+.kn .kb{position:relative;width:78px;height:78px;flex:none}
+.kn .kb img{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 6px 8px rgba(0,0,0,.55))}
+.kn .kb svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.kn .t{font:600 18px var(--ui);color:var(--ink)}
+.kn .v{font:500 14px var(--ui);color:var(--ink2);margin-top:3px;font-variant-numeric:tabular-nums}
+#oct{position:absolute;left:516px;top:594px;width:184px;height:52px;border-radius:26px;display:flex;align-items:center;justify-content:space-between;padding:0 6px}
+[data-l=bronze] #oct{background:rgba(0,0,0,.25);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.16)}
+[data-l=uno] #oct{background:rgba(0,0,0,.25);box-shadow:inset 0 0 0 2px #f2c230}
+#oct button{width:42px;height:42px;border-radius:50%;border:0;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#oct button:hover{background:rgba(255,255,255,.1)}
+#oct button svg{width:18px;height:18px;stroke:var(--ink);fill:none;stroke-width:3}
+#oct b{font:700 24px var(--ui);color:var(--ink);font-variant-numeric:tabular-nums}
+#oct small{position:absolute;left:0;right:0;top:-26px;text-align:center;font:600 13px var(--ui);color:var(--ink2);letter-spacing:1px}
+#kbd{position:absolute;left:24px;right:24px;top:690px;height:92px;border-radius:12px;background:rgba(0,0,0,.45);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.12);padding:6px;touch-action:none}
+#keys{position:relative;width:100%;height:100%}
+.wk,.bk{position:absolute;top:0;border-radius:0 0 6px 6px;cursor:pointer}
+.wk{height:100%;background:linear-gradient(180deg,#fffaf0,var(--key) 70%,#d8cbb4);box-shadow:inset -1px 0 0 rgba(0,0,0,.25),inset 0 -4px 0 rgba(0,0,0,.12);transition:background .06s}
+.bk{height:60%;background:linear-gradient(180deg,#2a2a2e,#0b0b0d);box-shadow:inset 0 -3px 0 #3a3a40,0 2px 3px rgba(0,0,0,.5);z-index:2}
+.wk.on{background:linear-gradient(180deg,var(--acc2),var(--acc))}
+.bk.on{background:linear-gradient(180deg,var(--acc),#6b3c18)}
+.wk.c::after{content:attr(data-n);position:absolute;bottom:8px;left:0;right:0;text-align:center;font:600 12px var(--ui);color:#7a6a55}
+
+/* ------------------------------------------------ paramètres */
+#prefs{color:var(--ink);position:absolute;right:30px;top:120px;width:460px;max-height:880px;overflow:auto;z-index:20;border-radius:20px;background:var(--pn2);box-shadow:inset 0 0 0 2px var(--edge),0 22px 44px rgba(0,0,0,.6);padding:22px 26px;display:none}
+#prefs.on{display:block;animation:pop .2s}
+#prefs h3{font:700 22px var(--ui);color:var(--ink);margin-bottom:14px}
+#prefs .row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:10px 0;font:600 17px var(--ui);color:var(--ink)}
+#prefs .seg{display:flex;gap:6px}
+#prefs .seg button{height:40px;padding:0 14px;border-radius:20px;border:0;cursor:pointer;font:600 16px var(--ui);color:var(--ink);background:rgba(255,255,255,.08)}
+#prefs .seg button.on{background:var(--acc);color:#1d1208}
+#prefs input[type=range]{width:190px;accent-color:var(--acc)}
+#prefs p{font:500 13px var(--ui);color:var(--ink2);margin-top:14px;line-height:1.45}
+#prefs .close{position:absolute;right:14px;top:12px;width:36px;height:36px;border-radius:50%;border:0;background:rgba(255,255,255,.08);color:var(--ink);font:700 20px var(--ui);cursor:pointer}
+#tip{position:absolute;z-index:30;padding:8px 14px;border-radius:10px;background:rgba(10,12,18,.92);color:#fff;font:600 15px var(--ui);pointer-events:none;opacity:0;transition:opacity .15s;white-space:nowrap}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div id="stage" data-l="bronze">
+  <img id="bg" alt="">
+  <div id="mapvp">
+    <div id="mapback"></div>
+    <div id="mapw"><img id="mapimg" alt="Carte de l'Afrique" draggable="false"><canvas id="mapfx" width="1000" height="1000"></canvas><div id="labels"></div></div>
+  </div>
+  <button id="searchBtn" class="mapctl" title="Rechercher un pays ou un instrument"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6.5"/><path d="M15 15l6 6" stroke-linecap="round"/></svg></button>
+  <div id="search"><input id="q" placeholder="Pays ou instrument…" autocomplete="off"><div id="results"></div></div>
+  <div id="zoomCtl" class="mapctl"><div class="bz"></div><i class="plusv"></i><button id="zin" style="top:0" title="Zoomer"></button><button id="zout" style="top:48px" title="Dézoomer"></button></div>
+  <div id="midiIn" title="Activité des notes">ENTRÉE <i id="led"></i></div>
+  <div id="arrow"></div>
+
+  <div id="panel">
+    <div id="ph">
+      <button id="back" title="Revenir à la carte entière"><svg viewBox="0 0 24 24"><path d="M15 4l-8 8 8 8" stroke-linecap="round" stroke-linejoin="round"/></svg>Carte</button>
+      <div class="sep"></div>
+      <div id="cname">—</div>
+      <div id="zig"></div>
+    </div>
+    <div id="tabs"></div>
+    <button id="drop"><span id="dropT">—</span><i class="chev"></i></button>
+    <div id="list"></div>
+    <div id="art"><img id="artImg" alt="" draggable="false"></div>
+    <div id="cap"></div>
+    <div id="knobs"></div>
+    <div id="oct"><small>OCTAVE</small><button id="om" title="Octave plus bas"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" stroke-linecap="round"/></svg></button><b id="ov">0</b><button id="op" title="Octave plus haut"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-linecap="round"/></svg></button></div>
+    <div id="kbd"><div id="keys"></div></div>
+  </div>
+  <button id="gear" title="Paramètres" style="position:absolute;left:1446px;top:167px;z-index:6"><svg viewBox="0 0 24 24"><path d="M19.4 13a7.5 7.5 0 000-2l2.1-1.6-2-3.5-2.5 1a7.6 7.6 0 00-1.7-1L15 3.2h-4l-.4 2.7a7.6 7.6 0 00-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 000 2l-2.1 1.6 2 3.5 2.5-1a7.6 7.6 0 001.7 1l.4 2.7h4l.4-2.7a7.6 7.6 0 001.7-1l2.5 1 2-3.5L19.4 13zM12 15.5A3.5 3.5 0 1112 8.5a3.5 3.5 0 010 7z"/></svg></button>
+
+  <div id="prefs">
+    <button class="close" id="pclose">×</button>
+    <h3>Paramètres</h3>
+    <div class="row">Layout<div class="seg" id="segL"><button data-v="bronze">Bronze</button><button data-v="uno">Multicolore</button></div></div>
+    <div class="row">Couleur du son<input type="range" id="p_tone" min="0" max="1" step="0.01"></div>
+    <div class="row">Espace (réverbération)<input type="range" id="p_space" min="0" max="1" step="0.01"></div>
+    <div class="row">Toucher (vélocité)<input type="range" id="p_velsens" min="0" max="1" step="0.01"></div>
+    <div class="row">Transposition<div class="seg"><button id="tm">−</button><button id="tv" style="min-width:64px">0</button><button id="tp">+</button></div></div>
+    <div class="row">Taille de la fenêtre<div class="seg" id="segZ"><button data-v="45">S</button><button data-v="60">M</button><button data-v="80">L</button><button data-v="100">XL</button></div></div>
+    <div id="licBox"></div>
+    <p>Les instruments et leurs illustrations sont des interprétations : beaucoup de ces instruments se jouent dans plusieurs pays et les traditions musicales ne s'arrêtent pas aux frontières. Clavier de l'ordinateur : touches Q à M pour jouer.</p>
+  </div>
+  <div id="tip"></div>
+</div>
+<script src="data.js"></script>
+<script src="rl_license_ui.js"></script>
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const D = window.AFR_DATA, CS = D.countries;
+const CATS = ["Cordes", "Percussions", "Lamellophones", "Vents"];
+const CAT_SPR = { Cordes: ["ctl_uno_03.webp", "rgba(40,200,255,.7)"], Percussions: ["ctl_uno_02.webp", "rgba(60,220,90,.7)"], Lamellophones: ["ctl_uno_01.webp", "rgba(255,210,40,.75)"], Vents: ["ctl_uno_00.webp", "rgba(255,70,60,.7)"] };
+
+// ---------------------------------------------------------------- pont natif (JUCE) ou aperçu
+const NATIVE = !!(window.__JUCE__ && window.__JUCE__.backend);
+const call = (() => { if (!NATIVE) return async () => null; let n = 0; const pend = new Map();
+  window.__JUCE__.backend.addEventListener("__juce__complete", ({promiseId, result}) => { const f = pend.get(promiseId); if (f) { pend.delete(promiseId); f(result); } });
+  return (name, ...params) => new Promise(res => { const id = n++; pend.set(id, res); window.__JUCE__.backend.emitEvent("__juce__invoke", {name, params, resultId: id}); }); })();
+const initPrefs = NATIVE ? ((window.__JUCE__.initialisationData.prefs || [])[0] || {}) : {};
+const lsGet = k => { try { return localStorage.getItem("afr_" + k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem("afr_" + k, v); } catch (e) {} };
+const pref = (k, d) => (initPrefs[k] !== undefined ? initPrefs[k] : (lsGet(k) ?? d));
+const setPref = (k, v) => { if (NATIVE) call("setPref", k, v); else lsSet(k, v); };
+
+const P = { instrument: 25, volume: 0, attack: 0, release: 400, octave: 0, tune: 0, tone: .5, space: .25, velsens: .7 };
+const RANGE = { volume: [-36, 6, 1], attack: [0, 2000, .35], release: [10, 6000, .35] };
+const listeners = [];
+function setParam(id, v, fromHost) {
+  P[id] = v; listeners.forEach(f => f(id, v));
+  if (!fromHost) { if (NATIVE) call("setParam", id, v); else preview.param(id, v); }
+}
+
+// ---------------------------------------------------------------- mise à l'échelle
+let stageScale = 1;
+function fit() { stageScale = Math.min(innerWidth / 1536, innerHeight / 1024); const s = $("#stage"); s.style.transform = `scale(${stageScale})`; s.style.left = ((innerWidth - 1536 * stageScale) / 2) + "px"; s.style.top = ((innerHeight - 1024 * stageScale) / 2) + "px"; }
+addEventListener("resize", fit); fit();
+
+// ---------------------------------------------------------------- layout
+let layout = pref("layout", "bronze"); if (layout !== "uno") layout = "bronze";
+const regions = {};                       // layout -> {w,h,ids:Uint16Array}
+function loadLabels(l) {
+  if (regions[l]) return Promise.resolve(regions[l]);
+  return new Promise(res => { const im = new Image(); im.onload = () => { const c = document.createElement("canvas"); c.width = im.width; c.height = im.height; const x = c.getContext("2d", {willReadFrequently: true}); x.drawImage(im, 0, 0);
+    const d = x.getImageData(0, 0, c.width, c.height).data, ids = new Uint16Array(c.width * c.height); for (let i = 0; i < ids.length; i++) ids[i] = d[i * 4] + d[i * 4 + 1] * 256;
+    regions[l] = {w: c.width, h: c.height, ids, masks: {}}; res(regions[l]); }; im.src = `lab_${l}.png`; });
+}
+function applyLayout(l, save) {
+  layout = l; $("#stage").dataset.l = l;
+  $("#bg").src = `bg_${l}.webp`; $("#mapimg").src = `map_${l}.webp`;
+  document.querySelectorAll("#segL button").forEach(b => b.classList.toggle("on", b.dataset.v === l));
+  buildTabs(); buildKnobs(); placeLabels();
+  loadLabels(l).then(() => drawFx());
+  if (save) setPref("layout", l);
+}
+
+// ---------------------------------------------------------------- carte : zoom / déplacement
+const MP = D.mapPlace;                     // [x, y, taille] de la carte 1000 px dans la scène
+const view = { z: 1, x: 0, y: 0 };         // zoom autour de la carte
+function mapTransform(anim = true) {
+  const w = $("#mapw"); w.classList.toggle("nodelay", !anim);
+  const s = MP[2] / 1000 * view.z;
+  w.style.transform = `translate(${MP[0] + view.x}px,${MP[1] - 96 + view.y}px) scale(${s})`;
+  $("#mapvp").classList.toggle("zoomed", view.z > 1.05);
+  document.querySelectorAll(".lbl").forEach(e => { const inv = 1 / s; e.style.transform = `translate(-50%,-50%) scale(${Math.max(1.05, inv) * .92})`; });
+  placeLabels();
+}
+function clampView() {
+  const s = MP[2] * view.z, vw = 770, vh = 900;
+  const minX = vw - (MP[0] + s) - 40, maxX = -MP[0] + 40;
+  const minY = vh - (MP[1] - 96 + s) - 40, maxY = -(MP[1] - 96) + 40;
+  if (view.z <= 1.001) { view.x = 0; view.y = 0; return; }
+  view.x = Math.min(maxX, Math.max(minX, view.x)); view.y = Math.min(maxY, Math.max(minY, view.y));
+}
+function zoomAt(f, cx = 385, cy = 450, anim = true) {
+  const z2 = Math.min(4, Math.max(1, view.z * f)); const k = z2 / view.z;
+  const ox = MP[0] + view.x, oy = MP[1] - 96 + view.y;
+  view.x = cx - (cx - ox) * k - MP[0]; view.y = cy - (cy - oy) * k - (MP[1] - 96); view.z = z2; clampView(); mapTransform(anim);
+}
+function focusCountry(i) {
+  const a = D.anchors[layout][CS[i].id]; if (!a) return;
+  const z = Math.max(view.z, 1.9); view.z = z; const s = MP[2] / 1000 * z;
+  view.x = 385 - (MP[0] + a[0] * s) + 0; view.y = 450 - (MP[1] - 96 + a[1] * s); clampView(); mapTransform(true);
+}
+$("#zin").onclick = () => zoomAt(1.4); $("#zout").onclick = () => zoomAt(1 / 1.4);
+$("#back").onclick = () => { view.z = 1; view.x = view.y = 0; mapTransform(true); };
+$("#mapvp").addEventListener("wheel", e => { e.preventDefault(); const r = $("#mapvp").getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, (e.clientX - r.left) / stageScale, (e.clientY - r.top) / stageScale, false); }, {passive: false});
+
+// coordonnées écran → carte (0..1000)
+function toMap(ev) {
+  const r = $("#mapvp").getBoundingClientRect(); const s = MP[2] / 1000 * view.z;
+  return [((ev.clientX - r.left) / stageScale - (MP[0] + view.x)) / s, ((ev.clientY - r.top) / stageScale - (MP[1] - 96 + view.y)) / s];
+}
+function regionAt(mx, my) { const R = regions[layout]; if (!R) return 0; const x = Math.round(mx), y = Math.round(my); if (x < 0 || y < 0 || x >= R.w || y >= R.h) return 0; return R.ids[y * R.w + x]; }
+function countryAt(mx, my) {
+  const reg = regionAt(mx, my); const A = D.anchors[layout]; let best = -1, bd = 1e9;
+  for (const c of CS) { const a = A[c.id]; if (!a) continue; const d = Math.hypot(a[0] - mx, a[1] - my);
+    if (reg && a[2] === reg && d < bd + 1e6) { if (best < 0 || A[CS[best].id][2] !== reg || d < bd) { best = c.i; bd = d; } } }
+  if (best >= 0) return best;
+  if (!reg) { // mer : petite île proche ?
+    for (const c of CS) { const a = A[c.id]; const d = Math.hypot(a[0] - mx, a[1] - my); if (d < 22 && d < bd) { bd = d; best = c.i; } } return best; }
+  for (const c of CS) { const a = A[c.id]; const d = Math.hypot(a[0] - mx, a[1] - my); if (d < bd) { bd = d; best = c.i; } }   // région sans ancre : pays le plus proche
+  return best;
+}
+let drag = null, hover = -1;
+const vp = $("#mapvp");
+vp.addEventListener("pointerdown", e => { if (e.target.closest(".isle")) return; vp.setPointerCapture(e.pointerId); drag = {x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, moved: false}; });
+vp.addEventListener("pointermove", e => {
+  if (drag) { const dx = (e.clientX - drag.x) / stageScale, dy = (e.clientY - drag.y) / stageScale; if (Math.hypot(dx, dy) > 6) drag.moved = true;
+    if (drag.moved && view.z > 1.001) { vp.classList.add("drag"); view.x = drag.vx + dx; view.y = drag.vy + dy; clampView(); mapTransform(false); } return; }
+  const [mx, my] = toMap(e); const c = countryAt(mx, my);
+  if (c !== hover) { hover = c; drawFx(); }
+  const t = $("#tip"); if (c >= 0) { t.textContent = `${CS[c].name} — ${CS[c].inst}`; t.style.opacity = 1; const r = $("#stage").getBoundingClientRect(); t.style.left = ((e.clientX - r.left) / stageScale + 18) + "px"; t.style.top = ((e.clientY - r.top) / stageScale + 18) + "px"; } else t.style.opacity = 0;
+});
+vp.addEventListener("pointerleave", () => { hover = -1; drawFx(); $("#tip").style.opacity = 0; });
+vp.addEventListener("pointerup", e => { vp.classList.remove("drag"); const d = drag; drag = null; if (d && !d.moved) { const [mx, my] = toMap(e); const c = countryAt(mx, my); if (c >= 0) selectCountry(c, true); } });
+
+// surbrillance des régions (calque au-dessus de la carte)
+function regionMask(reg) {
+  const R = regions[layout]; if (!R || !reg) return null; if (R.masks[reg]) return R.masks[reg];
+  const c = document.createElement("canvas"); c.width = R.w; c.height = R.h; const x = c.getContext("2d"); const im = x.createImageData(R.w, R.h);
+  for (let i = 0; i < R.ids.length; i++) if (R.ids[i] === reg) { im.data[i * 4 + 3] = 255; im.data[i * 4] = im.data[i * 4 + 1] = im.data[i * 4 + 2] = 255; }
+  x.putImageData(im, 0, 0); R.masks[reg] = c; return c;
+}
+function tinted(mask, color, blur) {
+  const c = document.createElement("canvas"); c.width = mask.width; c.height = mask.height; const x = c.getContext("2d");
+  x.drawImage(mask, 0, 0); x.globalCompositeOperation = "source-in"; x.fillStyle = color; x.fillRect(0, 0, c.width, c.height); return c;
+}
+let pulse = 0;
+function drawFx() {
+  const cv = $("#mapfx"), x = cv.getContext("2d"); x.clearRect(0, 0, 1000, 1000);
+  const A = D.anchors[layout]; const sel = CS[P.instrument]; const selReg = A[sel.id] ? A[sel.id][2] : 0;
+  if (hover >= 0 && hover !== P.instrument) { const hr = A[CS[hover].id][2]; const m = regionMask(hr); if (m) { x.globalAlpha = .35; x.drawImage(tinted(m, layout === "uno" ? "#ffffff" : "#ffd2a0"), 0, 0); x.globalAlpha = 1; } }
+  const m = regionMask(selReg);
+  if (m) {
+    const glowCol = layout === "uno" ? "#ffe14a" : "#ff9c4a";
+    x.save(); x.shadowColor = glowCol; x.shadowBlur = 26 + 8 * pulse; x.globalAlpha = .95; x.drawImage(tinted(m, layout === "uno" ? "rgba(255,214,40,.88)" : "rgba(214,118,52,.80)"), 0, 0); x.restore();
+    x.save(); x.globalCompositeOperation = "source-atop"; x.globalAlpha = .25; x.drawImage($("#mapimg"), 0, 0, 1000, 1000); x.restore();
+  }
+  document.querySelectorAll(".isle").forEach(e => e.classList.toggle("on", +e.dataset.i === P.instrument));
+}
+// étiquettes : pays choisi en grand, quelques repères, tous les noms quand on zoome
+const MAJOR = ["ma", "ml", "sn", "ke", "mg", "eg", "za", "ng", "et", "cd"];
+function placeLabels() {
+  const box = $("#labels"); const A = D.anchors[layout]; if (!A) return;
+  if (!box.childElementCount) {
+    for (const c of CS) { const e = document.createElement("div"); e.className = "lbl"; e.dataset.i = c.i; e.textContent = c.short; box.appendChild(e);
+      if (A[c.id] && A[c.id][2] === 0) { const s = document.createElement("div"); s.className = "isle"; s.dataset.i = c.i; s.title = `${c.name} — ${c.inst}`; s.onclick = ev => { ev.stopPropagation(); selectCountry(c.i, true); }; box.appendChild(s); } }
+  }
+  const s = MP[2] / 1000 * view.z, inv = 1 / s;
+  box.querySelectorAll(".lbl").forEach(e => { const c = CS[+e.dataset.i], a = A[c.id]; const isle = a[2] === 0;
+    e.style.left = (a[0] + (isle ? 0 : 0)) + "px"; e.style.top = (a[1] + (isle ? -26 * inv : 0)) + "px";
+    const sel = c.i === P.instrument, show = sel || (view.z >= 1.6) || MAJOR.includes(c.id);
+    e.classList.toggle("sel", sel); e.classList.toggle("faint", !sel && !MAJOR.includes(c.id));
+    e.style.opacity = show ? 1 : 0; e.style.transform = `translate(-50%,-50%) scale(${(inv * .9).toFixed(3)})`; });
+  box.querySelectorAll(".isle").forEach(e => { const a = A[CS[+e.dataset.i].id]; e.style.left = a[0] + "px"; e.style.top = a[1] + "px"; e.style.transform = `scale(${(inv).toFixed(3)})`; });
+}
+
+// ---------------------------------------------------------------- panneau
+let cat = CS[P.instrument].cat;
+function buildTabs() {
+  const t = $("#tabs"); t.innerHTML = "";
+  for (const c of CATS) { const b = document.createElement("button"); b.className = "tab" + (c === cat ? " on" : ""); b.textContent = c;
+    b.style.setProperty("--spr", `url(${CAT_SPR[c][0]})`); b.style.setProperty("--tg", CAT_SPR[c][1]);
+    b.onclick = () => { cat = c; buildTabs(); openList(true); }; t.appendChild(b); }
+}
+function inCat(c) { return CS.filter(x => x.cat === c).sort((a, b) => a.inst.localeCompare(b.inst, "fr") || a.name.localeCompare(b.name, "fr")); }
+function openList(on) {
+  const L = $("#list"); if (!on) { L.classList.remove("on"); return; }
+  L.innerHTML = ""; for (const c of inCat(cat)) { const d = document.createElement("div"); if (c.i === P.instrument) d.className = "cur";
+    d.innerHTML = `${c.inst}<span>${c.name}</span>`; d.onclick = () => { selectCountry(c.i, true); openList(false); }; L.appendChild(d); }
+  L.classList.add("on"); const cur = L.querySelector(".cur"); if (cur) cur.scrollIntoView({block: "nearest"});
+}
+$("#drop").onclick = e => { e.stopPropagation(); openList(!$("#list").classList.contains("on")); };
+document.addEventListener("pointerdown", e => { if (!e.target.closest("#list,#drop")) openList(false); if (!e.target.closest("#prefs,#gear")) $("#prefs").classList.remove("on"); if (!e.target.closest("#search,#searchBtn")) $("#search").classList.remove("on"); });
+
+function showCountry(fromMap) {
+  const c = CS[P.instrument]; cat = c.cat;
+  const n = $("#cname"); const nm = c.name.length > 22 ? c.short : c.name; n.textContent = nm; n.title = c.name; n.classList.toggle("small", nm.length > 16);
+  $("#dropT").textContent = c.inst;
+  $("#cap").textContent = `${c.inst} · ${c.name} — une interprétation, l'instrument se joue aussi ailleurs`;
+  const img = $("#artImg"); img.classList.add("fade");
+  setTimeout(() => { img.src = `inst_${String(c.i).padStart(2, "0")}.webp`; img.alt = c.inst; img.onload = () => img.classList.remove("fade"); }, 140);
+  buildTabs(); placeLabels(); drawFx();
+}
+function selectCountry(i, user) {
+  if (i === P.instrument && !user) return;
+  setParam("instrument", i); showCountry();
+  if (user) setPref("country", i);
+  if (user && view.z > 1.05) focusCountry(i);
+}
+listeners.push((id, v) => { if (id === "instrument") showCountry(); if (id === "octave") $("#ov").textContent = (v > 0 ? "+" : "") + v; if (id === "tune") $("#tv").textContent = (v > 0 ? "+" : "") + Math.round(v);
+  if (["tone", "space", "velsens"].includes(id)) $("#p_" + id).value = v; });
+
+// molettes : plaque du pack + arc et repère dessinés
+const KN = [["volume", "Volume", v => (v > 0 ? "+" : "") + v.toFixed(1) + " dB"], ["attack", "Attaque", v => v < 10 ? v.toFixed(1) + " ms" : v < 1000 ? Math.round(v) + " ms" : (v / 1000).toFixed(2) + " s"], ["release", "Relâchement", v => v < 1000 ? Math.round(v) + " ms" : (v / 1000).toFixed(2) + " s"]];
+const UNO_ARC = ["#ff8a1c", "#2fd0ff", "#a05cff"];
+const norm = (id, v) => { const [a, b, sk] = RANGE[id]; return Math.pow((v - a) / (b - a), sk); };
+const denorm = (id, n) => { const [a, b, sk] = RANGE[id]; return a + Math.pow(Math.min(1, Math.max(0, n)), 1 / sk) * (b - a); };
+function arcPath(n) { const a0 = -135 * Math.PI / 180, a1 = a0 + n * 270 * Math.PI / 180, r = 44.5, c = 50;
+  const p = a => [c + r * Math.sin(a), c - r * Math.cos(a)]; const [x0, y0] = p(a0), [x1, y1] = p(a1); return `M${x0},${y0} A${r},${r} 0 ${n > 2 / 3 ? 1 : 0} 1 ${x1},${y1}`; }
+function buildKnobs() {
+  const box = $("#knobs"); box.innerHTML = "";
+  KN.forEach(([id, label, fmt], k) => {
+    const e = document.createElement("div"); e.className = "kn"; e.style.top = (20 + k * 126) + "px";
+    const plate = layout === "uno" ? `knob_uno_${k}.webp` : "knob_bronze_0.webp", col = layout === "uno" ? UNO_ARC[k] : "#e0995e";
+    e.innerHTML = `<div class="kb"><img src="${plate}" draggable="false"><svg viewBox="0 0 100 100"><path class="tr" d="${arcPath(1)}" stroke="rgba(0,0,0,.35)" stroke-width="6.5" fill="none" stroke-linecap="round"/><path class="ar" stroke="${col}" stroke-width="6.5" fill="none" stroke-linecap="round" style="filter:drop-shadow(0 0 4px ${col})"/><line class="nd" x1="50" y1="50" x2="50" y2="26" stroke="#fff" stroke-width="4.2" stroke-linecap="round"/></svg></div><div><div class="t">${label}</div><div class="v"></div></div>`;
+    box.appendChild(e);
+    const upd = () => { const n = norm(id, P[id]); e.querySelector(".ar").setAttribute("d", n > .002 ? arcPath(n) : ""); e.querySelector(".nd").setAttribute("transform", `rotate(${-135 + 270 * n} 50 50)`); e.querySelector(".v").textContent = fmt(P[id]); };
+    upd(); listeners.push((pid) => { if (pid === id) upd(); });
+    let y0 = 0, n0 = 0;
+    e.addEventListener("pointerdown", ev => { ev.preventDefault(); e.setPointerCapture(ev.pointerId); y0 = ev.clientY; n0 = norm(id, P[id]); if (NATIVE) call("gesture", id, true);
+      const mv = m => setParam(id, denorm(id, n0 + (y0 - m.clientY) / stageScale / (m.shiftKey ? 900 : 260)));
+      const up = () => { e.removeEventListener("pointermove", mv); e.removeEventListener("pointerup", up); if (NATIVE) call("gesture", id, false); };
+      e.addEventListener("pointermove", mv); e.addEventListener("pointerup", up); });
+    e.addEventListener("dblclick", () => setParam(id, id === "volume" ? 0 : id === "attack" ? 0 : 400));
+    e.addEventListener("wheel", ev => { ev.preventDefault(); setParam(id, denorm(id, norm(id, P[id]) - Math.sign(ev.deltaY) * .02)); }, {passive: false});
+  });
+}
+$("#om").onclick = () => setParam("octave", Math.max(-3, P.octave - 1)); $("#op").onclick = () => setParam("octave", Math.min(3, P.octave + 1));
+$("#tm").onclick = () => setParam("tune", Math.max(-12, P.tune - 1)); $("#tp").onclick = () => setParam("tune", Math.min(12, P.tune + 1)); $("#tv").onclick = () => setParam("tune", 0);
+["tone", "space", "velsens"].forEach(id => { const r = $("#p_" + id); r.value = P[id]; r.oninput = () => setParam(id, +r.value); });
+$("#gear").onclick = e => { e.stopPropagation(); $("#prefs").classList.toggle("on"); };
+$("#pclose").onclick = () => $("#prefs").classList.remove("on");
+document.querySelectorAll("#segL button").forEach(b => b.onclick = () => applyLayout(b.dataset.v, true));
+document.querySelectorAll("#segZ button").forEach(b => b.onclick = () => { setPref("zoom", +b.dataset.v); document.querySelectorAll("#segZ button").forEach(x => x.classList.toggle("on", x === b)); });
+{ const z = +pref("zoom", 60); document.querySelectorAll("#segZ button").forEach(x => x.classList.toggle("on", +x.dataset.v === z)); }
+
+// ---------------------------------------------------------------- recherche
+const strip = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[’']/g, "");
+function doSearch() {
+  const q = strip($("#q").value.trim()); const R = $("#results"); R.innerHTML = "";
+  if (!q) return;
+  const hits = CS.filter(c => strip(c.name).includes(q) || strip(c.inst).includes(q) || strip(c.short).includes(q) || strip(c.cat).includes(q)).slice(0, 10);
+  hits.forEach((c, k) => { const d = document.createElement("div"); if (!k) d.className = "hl"; d.innerHTML = `${c.name}<span>${c.inst}</span>`; d.onclick = () => { selectCountry(c.i, true); focusCountry(c.i); $("#search").classList.remove("on"); }; R.appendChild(d); });
+}
+$("#searchBtn").onclick = e => { e.stopPropagation(); const s = $("#search"); s.classList.toggle("on"); if (s.classList.contains("on")) { $("#q").value = ""; $("#results").innerHTML = ""; $("#q").focus(); } };
+$("#q").addEventListener("input", doSearch);
+$("#q").addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Enter") { const f = $("#results div"); if (f) f.click(); } if (e.key === "Escape") $("#search").classList.remove("on"); });
+
+// ---------------------------------------------------------------- clavier
+const KEYS = { 0: "C", 2: "D", 4: "E", 5: "F", 7: "G", 9: "A", 11: "B" };
+const LOW = 48, HIGH = 83;                     // do2 → si4 (3 octaves) ; l'octave se règle avec ‹ ›
+const keyEls = {};
+function buildKeys() {
+  const box = $("#keys"); const whites = []; for (let n = LOW; n <= HIGH; n++) if (KEYS[n % 12]) whites.push(n);
+  const W = 100 / whites.length;
+  whites.forEach((n, k) => { const e = document.createElement("div"); e.className = "wk" + (n % 12 === 0 ? " c" : ""); e.dataset.n = "C" + (Math.floor(n / 12) - 1); e.style.left = (k * W) + "%"; e.style.width = W + "%"; keyEls[n] = e; box.appendChild(e); });
+  for (let n = LOW; n <= HIGH; n++) if (!KEYS[n % 12]) { const k = whites.indexOf(n - 1); const e = document.createElement("div"); e.className = "bk"; e.style.left = ((k + 1) * W - W * .32) + "%"; e.style.width = (W * .64) + "%"; keyEls[n] = e; box.appendChild(e); }
+  const playing = new Map();
+  const noteAt = ev => { const el = document.elementFromPoint(ev.clientX, ev.clientY); if (!el) return null; for (const n in keyEls) if (keyEls[n] === el) return +n; return null; };
+  const kb = $("#kbd");
+  kb.addEventListener("pointerdown", ev => { ev.preventDefault(); kb.setPointerCapture(ev.pointerId); const n = noteAt(ev); if (n == null) return; const r = keyEls[n].getBoundingClientRect(); const vel = Math.min(1, Math.max(.3, (ev.clientY - r.top) / r.height * 1.1)); playing.set(ev.pointerId, n); noteOn(n, vel); });
+  kb.addEventListener("pointermove", ev => { if (!playing.has(ev.pointerId)) return; const n = noteAt(ev); const o = playing.get(ev.pointerId); if (n != null && n !== o) { noteOff(o); noteOn(n, .75); playing.set(ev.pointerId, n); } });
+  const end = ev => { if (!playing.has(ev.pointerId)) return; noteOff(playing.get(ev.pointerId)); playing.delete(ev.pointerId); };
+  kb.addEventListener("pointerup", end); kb.addEventListener("pointercancel", end);
+}
+function noteOn(n, v) { keyEls[n] && keyEls[n].classList.add("on"); if (NATIVE) call("noteOn", n, v); else { preview.noteOn(n, v); onHit(v); } }
+function noteOff(n) { keyEls[n] && keyEls[n].classList.remove("on"); if (NATIVE) call("noteOff", n); else preview.noteOff(n); }
+const QW = "qzsedftgyhujkolpm";            // AZERTY : Q Z S E D F T G Y H U J K O L P M
+const QWERTY = "awsedftgyhujkolp;";
+const down = new Set();
+addEventListener("keydown", e => { if (e.repeat || e.ctrlKey || e.metaKey) return; const k = e.key.toLowerCase(); let i = QW.indexOf(k); if (i < 0) i = QWERTY.indexOf(k); if (i < 0) return; const n = 60 + i; if (down.has(n)) return; down.add(n); noteOn(n, .8); });
+addEventListener("keyup", e => { const k = e.key.toLowerCase(); let i = QW.indexOf(k); if (i < 0) i = QWERTY.indexOf(k); if (i < 0) return; const n = 60 + i; down.delete(n); noteOff(n); });
+
+// ---------------------------------------------------------------- animation des notes
+let lastHits = -1, ledT = 0;
+function onHit(vel) {
+  const img = $("#artImg"); img.classList.add("hit"); setTimeout(() => img.classList.remove("hit"), 110);
+  $("#led").classList.add("on"); clearTimeout(ledT); ledT = setTimeout(() => $("#led").classList.remove("on"), 140);
+  pulse = Math.min(1, .5 + vel); drawFx(); fadePulse();
+}
+let pulseRaf = 0;
+function fadePulse() { cancelAnimationFrame(pulseRaf); const step = () => { pulse *= .86; drawFx(); if (pulse > .03) pulseRaf = requestAnimationFrame(step); else pulse = 0; }; pulseRaf = requestAnimationFrame(step); }
+function onFb(o) {
+  if (o.h !== undefined && lastHits >= 0 && o.h !== lastHits) onHit(o.vel || .7);
+  if (o.h !== undefined) lastHits = o.h;
+  if (o.k) { const held = new Set(o.k); for (const n in keyEls) keyEls[n].classList.toggle("on", held.has(+n)); }
+}
+$("#artImg").addEventListener("pointerdown", () => { noteOn(60, .8); setTimeout(() => noteOff(60), 400); });
+
+// ---------------------------------------------------------------- aperçu sans plugin (navigateur) : petit son de démonstration
+const preview = (() => {
+  let ac = null, out = null; const voices = new Map();
+  const ensure = () => { if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); out = ac.createGain(); out.gain.value = .5; out.connect(ac.destination); } if (ac.state === "suspended") ac.resume(); };
+  function noteOn(n, v) {
+    ensure(); const c = CS[P.instrument]; const f = 440 * Math.pow(2, (n + 12 * P.octave + P.tune - 69) / 12) * (c.cat === "Percussions" ? .5 : 1);
+    const t = ac.currentTime, g = ac.createGain(), o = ac.createOscillator(), o2 = ac.createOscillator(), lp = ac.createBiquadFilter();
+    o.type = c.cat === "Vents" ? "sawtooth" : c.cat === "Percussions" ? "sine" : "triangle"; o2.type = "sine"; o.frequency.value = f; o2.frequency.value = f * (c.cat === "Lamellophones" ? 5.4 : 2.01);
+    if (c.cat === "Percussions") { o.frequency.setValueAtTime(f * 1.6, t); o.frequency.exponentialRampToValueAtTime(f, t + .06); }
+    lp.type = "lowpass"; lp.frequency.value = 900 + 5000 * P.tone; const g2 = ac.createGain(); g2.gain.value = c.cat === "Lamellophones" ? .25 : .12;
+    o.connect(lp); o2.connect(g2); g2.connect(lp); lp.connect(g); g.connect(out);
+    const peak = .25 * v * Math.pow(10, P.volume / 20), dec = c.cat === "Vents" ? 8 : c.cat === "Percussions" ? .35 : 1.6;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + Math.max(.004, P.attack / 1000 + (c.cat === "Vents" ? .04 : 0)));
+    if (c.cat !== "Vents") g.gain.setTargetAtTime(0, t + .01, dec / 4);
+    o.start(t); o2.start(t); voices.set(n, {g, o, o2});
+  }
+  function noteOff(n) { const v = voices.get(n); if (!v || !ac) return; const t = ac.currentTime; v.g.gain.cancelScheduledValues(t); v.g.gain.setTargetAtTime(0, t, Math.max(.01, P.release / 4000)); v.o.stop(t + P.release / 1000 + .5); v.o2.stop(t + P.release / 1000 + .5); voices.delete(n); }
+  return { noteOn, noteOff, param() {} };
+})();
+
+// ---------------------------------------------------------------- démarrage
+if (window.RLLicenseUI) RLLicenseUI.mount($("#licBox"), { call, native: NATIVE, product: "African Riddim", version: NATIVE ? window.__JUCE__.initialisationData.version : "0.1.0" });
+buildKeys();
+applyLayout(layout, false);
+mapTransform(false);
+(async () => {
+  if (NATIVE) {
+    const st = await call("getState"); if (st && st.params) for (const k in st.params) setParam(k, st.params[k], true);
+    window.__JUCE__.backend.addEventListener("params", o => { for (const k in o) setParam(k, o[k], true); });
+    window.__JUCE__.backend.addEventListener("fb", onFb);
+  } else { const c = +pref("country", 25); if (c >= 0 && c < 54) P.instrument = c; }
+  showCountry(); $("#ov").textContent = (P.octave > 0 ? "+" : "") + P.octave; $("#tv").textContent = (P.tune > 0 ? "+" : "") + Math.round(P.tune);
+  ["tone", "space", "velsens"].forEach(id => $("#p_" + id).value = P[id]);
+})();
+</script>
+</body>
+</html>

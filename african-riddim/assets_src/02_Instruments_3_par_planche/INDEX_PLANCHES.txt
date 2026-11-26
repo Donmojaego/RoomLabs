@@ -1,0 +1,57 @@
+AFRICAN RIDDIM — INDEX DES 18 PLANCHES D’INSTRUMENTS
+
+Chaque PNG contient trois illustrations, de gauche à droite dans l’ordre indiqué.
+
+01_Maghreb_Maroc_Algerie_Tunisie.png
+  Maroc — guembri | Algérie — gasba | Tunisie — mezoued
+
+02_Libye_Egypte_Soudan.png
+  Libye — zummara | Égypte — oud | Soudan — tanbura
+
+03_Mauritanie_Mali_Senegal.png
+  Mauritanie — ardin | Mali — ngoni | Sénégal — sabar
+
+04_Gambie_Guinee_Guinee_Bissau.png
+  Gambie — kora | Guinée — balafon | Guinée-Bissau — tina
+
+05_Sierra_Leone_Liberia_Cote_Ivoire.png
+  Sierra Leone — kondi | Liberia — gbi (tambour à fente) | Côte d’Ivoire — attoungblan
+
+06_Burkina_Ghana_Togo.png
+  Burkina Faso — bendré | Ghana — seperewa | Togo — kologo
+
+07_Benin_Niger_Nigeria.png
+  Bénin — agogo | Niger — goge | Nigeria — dùndún
+
+08_Tchad_Cameroun_RCA.png
+  Tchad — kakaki | Cameroun — mvet | République centrafricaine — sanza
+
+09_Congo_RDC_Gabon.png
+  République du Congo — ngoma | République démocratique du Congo — likembe | Gabon — ngombi
+
+10_Guinee_Equatoriale_Sao_Tome_Angola.png
+  Guinée équatoriale — mvet | São Tomé-et-Príncipe — puita | Angola — kissanje
+
+11_Cap_Vert_Comores_Madagascar.png
+  Cabo Verde — cavaquinho | Comores — gabusi | Madagascar — valiha
+
+12_Maurice_Seychelles_Mozambique.png
+  Maurice — ravanne | Seychelles — moutya | Mozambique — timbila
+
+13_Malawi_Zambie_Zimbabwe.png
+  Malawi — bangwe | Zambie — silimba | Zimbabwe — mbira
+
+14_Botswana_Namibie_Afrique_du_Sud.png
+  Botswana — segaba | Namibie — !gais-tsab | Afrique du Sud — uhadi
+
+15_Lesotho_Eswatini_Burundi.png
+  Lesotho — lesiba | Eswatini — makhweyane | Burundi — inanga
+
+16_Rwanda_Ouganda_Kenya.png
+  Rwanda — inanga | Ouganda — adungu | Kenya — nyatiti
+
+17_Tanzanie_Ethiopie_Erythree.png
+  Tanzanie — zeze | Éthiopie — krar | Érythrée — krar
+
+18_Djibouti_Somalie_Soudan_du_Sud.png
+  Djibouti — kaban | Somalie — kaban | Soudan du Sud — adungu

@@ -1,0 +1,2 @@
+Nom du plugin : AFRICAN RIDDIM (remplacer Africa Rhythm).
+Deux designs : Bronze et Bleu multicolore façon UNO. Le bouton Paramètres doit permettre de changer le layout, en basculant ensemble le fond, la carte, les boutons et les commandes.

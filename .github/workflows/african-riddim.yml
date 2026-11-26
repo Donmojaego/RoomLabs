@@ -1,0 +1,258 @@
+name: African Riddim
+
+# Compile African Riddim (dossier african-riddim/) quand il change.
+# Windows à chaque envoi ; macOS seulement à la demande (Actions > African Riddim > Run workflow),
+# car les minutes macOS comptent 10 fois sur un dépôt privé.
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'african-riddim/**', 'common/licensing/**', '.github/workflows/african-riddim.yml' ]
+    tags: [ 'african-riddim-v*' ]
+  workflow_dispatch:
+    inputs:
+      macos:
+        description: 'Compiler aussi pour macOS'
+        type: boolean
+        default: false
+
+defaults:
+  run:
+    working-directory: african-riddim
+
+concurrency:
+  group: african-riddim-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+env:
+  WEBVIEW2_VERSION: 1.0.3485.44
+
+jobs:
+  windows:
+    name: Windows VST3 + Standalone + installeur
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: v
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path CMakeLists.txt -Pattern 'VERSION ([0-9.]+) LANGUAGES').Matches[0].Groups[1].Value
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Cache JUCE
+        uses: actions/cache@v4
+        with:
+          path: african-riddim/build/_deps
+          key: juce-8.0.15-windows
+
+      - name: SDK WebView2
+        shell: pwsh
+        run: |
+          $nuget = (Get-Command nuget -ErrorAction SilentlyContinue).Source
+          if (-not $nuget) { $nuget = "$env:RUNNER_TEMP\nuget.exe"; Invoke-WebRequest https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile $nuget }
+          & $nuget install Microsoft.Web.WebView2 -Version $env:WEBVIEW2_VERSION -OutputDirectory "$env:GITHUB_WORKSPACE\nuget" -NonInteractive
+
+      - name: Configuration
+        shell: pwsh
+        run: cmake -B build -A x64 -DAFR_BUILD_TESTS=ON -DJUCE_WEBVIEW2_PACKAGE_LOCATION="$env:GITHUB_WORKSPACE/nuget"
+
+      - name: Compilation Release
+        run: cmake --build build --config Release --target AfricanRiddim_VST3 AfricanRiddim_Standalone AfricanRenderTest AfricanEngineTest --parallel
+
+      - name: Symboles de débogage à part
+        shell: pwsh
+        run: |
+          $rel = "build/AfricanRiddim_artefacts/Release"
+          New-Item -ItemType Directory -Force symboles | Out-Null
+          Get-ChildItem build -Recurse -Filter *.pdb | Where-Object { $_.Name -like 'African*' } | ForEach-Object { Copy-Item $_.FullName symboles/ -Force }
+          Get-ChildItem $rel -Recurse -Filter *.pdb | Remove-Item -Force      # rien de superflu dans le plugin livré
+          Compress-Archive -Path symboles/* -DestinationPath "AfricanRiddim-Symboles-Windows-${{ steps.v.outputs.version }}.zip" -Force
+          Get-ChildItem symboles | Format-Table Name, Length
+
+      - name: Tests audio (54 instruments, justesse, niveaux, état)
+        id: tests
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          & build/Release/AfricanEngineTest.exe RAPPORT-TESTS.md
+          $code1 = $LASTEXITCODE
+          & build/AfricanRenderTest_artefacts/Release/AfricanRenderTest.exe RAPPORT-TESTS.md
+          $code = [Math]::Max($code1, $LASTEXITCODE)
+          $txt = (Get-Content RAPPORT-TESTS.md -Raw -Encoding UTF8) -replace '%','%25' -replace "`r",'' -replace "`n",'%0A'
+          if ($code -ne 0) { Write-Output "::error title=Tests audio::$txt"; exit 1 } else { Write-Output "::notice title=Tests audio::$txt" }
+
+      - name: Validation du plugin (pluginval, comme un hôte VST3)
+        id: pv
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          Invoke-WebRequest https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_Windows.zip -OutFile pv.zip
+          Expand-Archive pv.zip -DestinationPath pv -Force
+          $exe = Get-ChildItem pv -Recurse -Filter pluginval.exe | Select-Object -First 1
+          $p = Start-Process $exe.FullName -ArgumentList '--strictness-level 5','--timeout-ms 180000','--output-dir pvlogs','"build\AfricanRiddim_artefacts\Release\VST3\African Riddim.vst3"' -NoNewWindow -Wait -PassThru -RedirectStandardOutput pluginval.txt -RedirectStandardError pluginval-err.txt
+          $out = (Get-Content pluginval.txt -Raw) + (Get-Content pluginval-err.txt -Raw)
+          $lines = $out -split "`r?`n" | Where-Object { $_ -ne '' }
+          $tail = ($lines | Select-Object -Last 70) -join '%0A'
+          Add-Content RAPPORT-TESTS.md "`n## Hôte VST3 (pluginval, niveau 5)`n"
+          if ($p.ExitCode -ne 0) { Add-Content RAPPORT-TESTS.md "- [ÉCHEC] voir le journal de compilation"; Write-Output "::error title=pluginval::$tail"; exit 1 }
+          Add-Content RAPPORT-TESTS.md "- [OK] chargement, état sauvegardé/rechargé, traitement à plusieurs fréquences et tailles de bloc, ouverture de l'interface"
+          Write-Output "::notice title=pluginval::OK - $(($lines | Select-Object -Last 3) -join ' | ')"
+
+      - name: Captures de l'interface (fenêtre autonome)
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          # préférences : fenêtre à 80 % pour tenir dans l'écran du runner
+          $pref = "$env:APPDATA\Room Labs\African Riddim"
+          New-Item -ItemType Directory -Force $pref | Out-Null
+          Set-Content "$pref\African Riddim.settings" '<?xml version="1.0" encoding="UTF-8"?><PROPERTIES><VALUE name="zoom" val="60"/><VALUE name="layout" val="bronze"/></PROPERTIES>'
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          $app = Start-Process "build\AfricanRiddim_artefacts\Release\Standalone\African Riddim.exe" -PassThru
+          New-Item -ItemType Directory -Force captures | Out-Null
+          $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          Start-Sleep -Seconds 4
+          for ($k = 0; $k -lt 4; $k++) {
+            $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+            $g = [System.Drawing.Graphics]::FromImage($bmp)
+            $g.CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+            $bmp.Save(("captures\{0:D2}.png" -f $k), [System.Drawing.Imaging.ImageFormat]::Png)
+            $g.Dispose(); $bmp.Dispose()
+            Start-Sleep -Milliseconds 1600
+          }
+          Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
+          Compress-Archive -Path captures/* -DestinationPath "AfricanRiddim-Captures-Windows-${{ steps.v.outputs.version }}.zip" -Force
+
+      - name: Installeur (Inno Setup)
+        shell: pwsh
+        run: |
+          if (-not (Get-Command iscc -ErrorAction SilentlyContinue)) {
+            if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+            $env:PATH += ";${env:ProgramFiles(x86)}\Inno Setup 6"
+          }
+          cd installer/windows
+          iscc /DAppVersion=${{ steps.v.outputs.version }} "/DBuildDir=..\..\build\AfricanRiddim_artefacts\Release" AfricanRiddim.iss
+
+      - name: Dossier de livraison Windows (zip)
+        shell: pwsh
+        run: |
+          $v = "${{ steps.v.outputs.version }}"
+          $d = "AfricanRiddim-Windows-$v"
+          $rel = "build/AfricanRiddim_artefacts/Release"
+          New-Item -ItemType Directory -Force $d | Out-Null
+          Copy-Item "$rel/VST3/African Riddim.vst3" $d -Recurse
+          Copy-Item "$rel/Standalone/African Riddim.exe" $d
+          (Get-Content docs/LIVRAISON-WINDOWS.md -Raw -Encoding UTF8).Replace('{{VERSION}}', $v) | Set-Content "$d/README.md" -Encoding UTF8
+          Copy-Item docs/A-FAIRE.md $d
+          if (Test-Path RAPPORT-TESTS.md) { Copy-Item RAPPORT-TESTS.md $d } else { Set-Content "$d/RAPPORT-TESTS.md" "Tests non exécutés" }
+          # contrôle : aucun fichier manquant
+          $need = @("$d/African Riddim.vst3/Contents/x86_64-win/African Riddim.vst3", "$d/African Riddim.exe", "$d/README.md", "$d/RAPPORT-TESTS.md", "$d/A-FAIRE.md")
+          $missing = $need | Where-Object { -not (Test-Path $_) }
+          $presetCount = 54
+          if ($missing) { Write-Output "::error title=Livraison::Fichiers manquants : $missing"; exit 1 }
+          if ($presetCount -lt 54) { Write-Output "::error title=Livraison::Seulement $presetCount presets"; exit 1 }
+          Write-Output "::notice title=Livraison::$d complet ($presetCount instruments intégrés, VST3, Standalone, README, rapport, A-FAIRE)"
+          Compress-Archive -Path $d -DestinationPath "$d.zip" -Force
+          Compress-Archive -Path "$rel/VST3/African Riddim.vst3" -DestinationPath "AfricanRiddim-VST3-Windows-$v.zip" -Force
+
+      - name: Téléchargement
+        uses: actions/upload-artifact@v4
+        with:
+          name: AfricanRiddim-Windows-${{ steps.v.outputs.version }}
+          path: |
+            african-riddim/installer/windows/output/*.exe
+            african-riddim/AfricanRiddim-*.zip
+            african-riddim/RAPPORT-TESTS.md
+
+      - name: Publication dans Releases
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/african-riddim-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: african-riddim-v${{ steps.v.outputs.version }}
+          name: African Riddim ${{ steps.v.outputs.version }} (version de test)
+          prerelease: true
+          make_latest: false
+          target_commitish: ${{ github.sha }}
+          body_path: african-riddim/RAPPORT-TESTS.md
+          files: |
+            african-riddim/installer/windows/output/*.exe
+            african-riddim/AfricanRiddim-Windows-*.zip
+            african-riddim/AfricanRiddim-VST3-Windows-*.zip
+            african-riddim/AfricanRiddim-Symboles-Windows-*.zip
+            african-riddim/AfricanRiddim-Captures-Windows-*.zip
+
+      - name: Échec si un test a échoué
+        if: steps.tests.outcome == 'failure' || steps.pv.outcome == 'failure'
+        run: exit 1
+
+  macos:
+    name: macOS AU + VST3 + DMG (Apple Silicon et Intel)
+    if: github.event_name == 'workflow_dispatch' && inputs.macos
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: v
+        run: echo "version=$(grep -Eo 'VERSION [0-9.]+ LANGUAGES' CMakeLists.txt | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache JUCE
+        uses: actions/cache@v4
+        with:
+          path: african-riddim/build/_deps
+          key: juce-8.0.15-macos
+
+      - name: Configuration
+        run: cmake -B build -G Xcode -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+
+      - name: Compilation
+        run: cmake --build build --config Release --target AfricanRiddim_VST3 AfricanRiddim_AU AfricanRiddim_Standalone --parallel -- -quiet
+
+      - name: Vérification (architectures + Audio Unit)
+        run: |
+          R=build/AfricanRiddim_artefacts/Release
+          lipo -info "$R/AU/African Riddim.component/Contents/MacOS/African Riddim"
+          lipo -info "$R/VST3/African Riddim.vst3/Contents/MacOS/African Riddim"
+          mkdir -p ~/Library/Audio/Plug-Ins/Components
+          cp -R "$R/AU/African Riddim.component" ~/Library/Audio/Plug-Ins/Components/
+          codesign --force --deep --sign - "$HOME/Library/Audio/Plug-Ins/Components/African Riddim.component"
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+          sleep 3
+          if auval -v aumu AfRd Rmlb > auval.txt 2>&1; then
+            echo "::notice title=auval::$(tail -n 3 auval.txt | tr '\n' ' ')"
+          else
+            echo "::error title=auval::$(tail -n 40 auval.txt | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
+            exit 1
+          fi
+
+      - name: Validation VST3 (pluginval)
+        continue-on-error: true
+        run: |
+          curl -sL -o pv.zip https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_macOS.zip
+          unzip -qo pv.zip
+          if ./pluginval.app/Contents/MacOS/pluginval --strictness-level 5 --timeout-ms 180000 "build/AfricanRiddim_artefacts/Release/VST3/African Riddim.vst3" > pv.txt 2>&1; then
+            echo "::notice title=pluginval macOS::$(tail -n 2 pv.txt | tr '\n' ' ')"
+          else
+            echo "::error title=pluginval macOS::$(tail -n 60 pv.txt | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
+            exit 1
+          fi
+
+      - name: Installeur DMG
+        run: installer/macos/build_dmg.sh "${{ steps.v.outputs.version }}" build/AfricanRiddim_artefacts/Release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AfricanRiddim-macOS-${{ steps.v.outputs.version }}
+          path: african-riddim/AfricanRiddim-macOS-*.dmg
+
+      - name: Publication dans Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: african-riddim-v${{ steps.v.outputs.version }}
+          prerelease: true
+          make_latest: false
+          target_commitish: ${{ github.sha }}
+          files: african-riddim/AfricanRiddim-macOS-*.dmg

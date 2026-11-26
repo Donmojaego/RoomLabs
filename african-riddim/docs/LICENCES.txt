@@ -1,0 +1,4 @@
+African Riddim — © 2026 Room Labs Audio.
+Sons : synthèse physique et modale écrite pour ce plugin (aucun échantillon tiers).
+Images : pack d'assets fourni par Room Labs Audio.
+JUCE 8 (licence JUCE / AGPLv3 selon l'offre de l'éditeur), Microsoft WebView2 (licence Microsoft).

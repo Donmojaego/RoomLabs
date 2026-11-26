@@ -1,0 +1,29 @@
+AFRICAN RIDDIM — NOTE DE MISE EN ŒUVRE POUR CLAUDE
+
+Nom du plugin
+- Nom affiché partout : African Riddim (orthographe exacte : African, puis Riddim).
+- Remplacer l’ancien titre « Africa Rhythm ».
+
+Deux layouts sélectionnables
+1. Bronze : layout classique, fond sombre et carte avec texture bronze/cuivre.
+2. Pastel multicolore : fond décoré et coloré, pays de la carte en couleurs pastel texturées avec motifs géométriques inspirés de l’art africain. Garder une finition travaillée, lisible et cohérente avec le niveau du layout Bronze.
+- L’utilisateur change de layout depuis le bouton Paramètres.
+- Le changement de layout doit mettre à jour ensemble le fond, la carte, les boutons, les commandes et les accents visuels. Le layout choisi doit rester sélectionné au prochain lancement.
+- Reprendre les fichiers correspondants dans 01_Assets_Interface. Les deux layouts doivent conserver les mêmes fonctions et la même disposition des contrôles.
+
+Planches d’instruments
+- 18 PNG, trois instruments par planche, soit 54 illustrations au total.
+- L’ordre est de gauche à droite. Le fichier INDEX_PLANCHES.txt donne, pour chaque planche, le pays et l’instrument visé.
+- Utiliser l’illustration du pays sélectionné dans le panneau instrument. Garder le PNG proportionnel, sans l’étirer; recadrer à l’intérieur de sa zone si nécessaire.
+- Les instruments sont des références culturelles de représentation pour ce plugin : plusieurs instruments existent dans plusieurs pays et les traditions musicales ne sont pas limitées par les frontières nationales. Ne pas présenter la correspondance comme une exclusivité historique.
+- Les illustrations sont des interprétations visuelles. Si Claude détecte une représentation incertaine, ne pas inventer d’attribution supplémentaire; garder la légende pays/instrument de l’index et permettre à l’équipe de la corriger.
+
+Carte et interaction
+- La carte permet de sélectionner un pays; après sélection, afficher le nom du pays, l’instrument associé et ses contrôles/instruments disponibles.
+- Conserver la navigation, la recherche/zoom et les catégories de sons existantes. Le passage d’un layout ne doit pas réinitialiser le pays ni les réglages audio.
+- Respecter lisibilité, contraste et accessibilité des libellés sur les deux fonds.
+
+Contenu
+- 01_Assets_Interface : fonds, cartes, panneaux/commandes, instrument d’interface et titre pour les deux layouts.
+- 02_Instruments_3_par_planche : 18 PNG d’illustrations et leur index.
+- Les PNG d’instruments mesurent 1536 × 1024. Les assets d’interface gardent leurs dimensions d’origine. Préserver la transparence alpha lorsqu’elle est présente.
