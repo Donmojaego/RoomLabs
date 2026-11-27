@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><title>Audio to MIDI — Room Labs Audio</title><link rel="stylesheet" href="rl.css"></head>
+<body>
+<script src="rl_license_ui.js"></script>
+<script src="rl.js"></script>
+<script>
+"use strict";
+const NAMES = ["Do", "Do#", "Ré", "Ré#", "Mi", "Fa", "Fa#", "Sol", "Sol#", "La", "La#", "Si"];
+const nn = n => n < 0 ? "—" : NAMES[n % 12] + (Math.floor(n / 12) - 1);
+const layout = {
+  product: "vst/audio_to_midi", title: "AUDIO TO MIDI",
+  header: { x: 48, y: 22, bx: 730 },
+  help: "Convertit l'audio de la piste en notes MIDI, en temps réel. MÉLODIE : voix, basse, instrument joué note par note. BATTERIE : chaque coup devient une note (grosse caisse 36, caisse claire 38, charley 42). Les notes sortent sur la sortie MIDI du plugin (à router vers un instrument) et sont capturées : EXPORT .MID enregistre un fichier à glisser dans ton projet. SEUIL ignore le son trop faible, DURÉE MIN évite les notes parasites. Le son de la piste n'est pas modifié.",
+  formats: { thresh: v => v.toFixed(1) + " dB", minlen: v => Math.round(v) + " ms", transpose: v => (v > 0 ? "+" : "") + Math.round(v) + " dt", low: v => nn(Math.round(v)), high: v => nn(Math.round(v)), velsens: v => Math.round(v * 100) + " %" },
+  build(RL) {
+    RL.key({ id: "mode", label: "MÉLODIE", value: 0, x: 69, y: 64, w: 130, h: 38, tip: "Notes jouées une par une (voix, basse, lead)" });
+    RL.key({ id: "mode", label: "BATTERIE", value: 1, x: 207, y: 64, w: 130, h: 38, tip: "Chaque coup devient une note (36 / 38 / 42)" });
+    RL.key({ id: "rec", label: "CAPTURE", x: 469, y: 64, w: 120, h: 38, tip: "Garde les notes détectées pour l'export" });
+    RL.key({ label: "EXPORT .MID", x: 597, y: 64, w: 150, h: 38, tip: "Enregistrer les notes capturées dans un fichier MIDI",
+      onClick: () => RL.plug("export").then(r => { if (r === false) RL.toast("Aucune note capturée pour l'instant"); }) });
+    RL.key({ label: "EFFACER", x: 755, y: 64, w: 126, h: 38, onClick: () => { RL.plug("clear"); roll = []; }, tip: "Vider les notes capturées" });
+    RL.screen({ frame: 0, draw: drawRoll });
+    RL.screen({ frame: 1, draw: drawNow });
+    [["thresh", "SEUIL", "Niveau minimum pour déclencher une note"], ["minlen", "DURÉE MIN", "Durée minimale (évite les notes parasites)"], ["transpose", "TRANSPO", "Transposition en demi-tons"],
+     ["low", "NOTE BASSE", "Note la plus grave acceptée"], ["high", "NOTE HAUTE", "Note la plus aiguë acceptée"], ["velsens", "VÉLOCITÉ", "0 % : vélocité fixe · 100 % : suit le niveau"]]
+      .forEach(([id, label, tip], i) => RL.knob({ id, label, tip, x: 150 + i * 130, y: 452, d: 62, size: 2 }));
+  },
+  async mockState() { const r = { mode: [0, 1, 0, 1, ["Mélodie", "Batterie"]], thresh: [-70, -10, -45, 1], minlen: [20, 400, 60, 1], transpose: [-24, 24, 0, 1], low: [0, 127, 28, 1], high: [0, 127, 96, 1], velsens: [0, 1, .7, 1], rec: [0, 1, 1, 1] };
+    const params = {}; for (const k in r) params[k] = r[k][2]; return { params, ranges: r }; },
+  mock: () => Promise.resolve(null),
+  mockFb() { const t = Date.now() / 1000, mel = [57, 60, 64, 62, 60, 64, 67, 69]; const r = [];
+    for (let i = 0; i < 16; i++) { const st = Math.floor(t * 2) / 2 - 8 + i * .5; const n = mel[(Math.floor(st * 2) % 8 + 8) % 8]; r.push([st, n, 96], [st + .4, n, 0]); }
+    const cur = mel[(Math.floor(t * 2) % 8 + 8) % 8]; return { note: cur, hz: 440 * Math.pow(2, (cur - 69) / 12), conf: .93, db: -16, t, count: 42, roll: r }; }
+};
+let roll = [];
+function drawRoll(c, w, h, f) {
+  c.fillStyle = RL.css("--scr"); c.fillRect(0, 0, w, h);
+  const ink = RL.css("--scrInk"); c.fillStyle = ink; c.strokeStyle = ink;
+  if (f && f.roll) roll = f.roll;
+  const now = f && f.t !== undefined ? f.t : 0, span = 8;
+  const notes = []; const open = {};
+  roll.forEach(([t, n, v]) => { if (v > 0) open[n] = [t, v]; else if (open[n]) { notes.push([open[n][0], t, n, open[n][1]]); delete open[n]; } });
+  for (const n in open) notes.push([open[n][0], now, +n, open[n][1]]);
+  let lo = 127, hi = 0; notes.forEach(q => { lo = Math.min(lo, q[2]); hi = Math.max(hi, q[2]); });
+  if (lo > hi) { lo = 48; hi = 72; } lo -= 2; hi += 2;
+  const y = n => 22 + (h - 30) * (1 - (n - lo) / Math.max(1, hi - lo));
+  c.globalAlpha = .15; for (let s = 1; s < span; s++) c.fillRect(w * s / span, 20, 1, h - 24); c.globalAlpha = 1;
+  notes.forEach(([a, b, n, v]) => { const x0 = w * (1 - (now - a) / span), x1 = w * (1 - (now - b) / span); if (x1 < 0) return;
+    c.globalAlpha = .45 + .55 * v / 127; c.fillRect(Math.max(0, x0), y(n) - 3, Math.max(3, x1 - Math.max(0, x0)), 6); });
+  c.globalAlpha = 1; c.font = "700 12px " + RL.css("--ui"); c.textBaseline = "top";
+  c.fillText(`NOTES CAPTURÉES · ${f && f.count !== undefined ? f.count : 0}`, 8, 4); c.textAlign = "right"; c.fillText("8 DERNIÈRES SECONDES", w - 8, 4); c.textAlign = "left";
+}
+function drawNow(c, w, h, f) {
+  c.fillStyle = RL.css("--scr"); c.fillRect(0, 0, w, h);
+  const ink = RL.css("--scrInk"); c.fillStyle = ink; f = f || {};
+  const drum = RL.P("mode") > .5, n = f.note ?? -1;
+  c.font = "800 46px " + RL.css("--ui"); c.textBaseline = "middle";
+  c.fillText(n < 0 ? "—" : drum ? ({ 36: "KICK", 38: "SNARE", 42: "HI-HAT" }[n - Math.round(RL.P("transpose"))] || nn(n)) : nn(n), 24, h / 2 + 4);
+  c.font = "700 13px " + RL.css("--ui"); c.textBaseline = "top";
+  c.fillText(drum ? "MODE BATTERIE" : "MODE MÉLODIE", 24, 8);
+  if (!drum) { c.fillText(f.hz > 0 ? f.hz.toFixed(1) + " Hz" : "— Hz", 260, 38); c.fillText("FIABILITÉ " + Math.round((f.conf || 0) * 100) + " %", 260, 62); c.fillText(n >= 0 ? "MIDI " + n : "", 260, 86); }
+  // niveau d'entrée et seuil
+  const x0 = 470, bw = w - x0 - 24, db = Math.max(-80, f.db ?? -80), th = RL.P("thresh"), X = v => x0 + bw * (v + 80) / 80;
+  c.fillText("NIVEAU D'ENTRÉE", x0, 30);
+  c.globalAlpha = .2; c.fillRect(x0, 54, bw, 18); c.globalAlpha = db > th ? 1 : .5; c.fillRect(x0, 54, X(db) - x0, 18); c.globalAlpha = 1;
+  c.fillRect(X(th) - 1, 48, 3, 30); c.fillText("SEUIL " + th.toFixed(0) + " dB", Math.min(X(th) - 30, x0 + bw - 110), 84);
+}
+RL.start(layout);
+</script></body></html>

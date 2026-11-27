@@ -54,7 +54,7 @@ jobs:
         run: cmake -B build -A x64 -DJUCE_WEBVIEW2_PACKAGE_LOCATION="$env:GITHUB_WORKSPACE/nuget"
 
       - name: Compilation Release
-        run: cmake --build build --config Release --target NoiseTools_VST3 NoiseTools_Standalone NoiseToolsTest Noise_VST3 NoiseTest Reverb_VST3 ReverbTest --parallel
+        run: cmake --build build --config Release --target NoiseTools_VST3 NoiseTools_Standalone NoiseToolsTest Noise_VST3 NoiseTest Reverb_VST3 ReverbTest LoopRemixLab_VST3 RemixTest AudioToMidi_VST3 A2MTest --parallel
 
       - name: Tests audio (corpus synthétique, 44,1/48/96 kHz, blocs 64-1024)
         id: tests
@@ -66,7 +66,11 @@ jobs:
           & build/Release/NoiseTest.exe RAPPORT-TESTS.md
           $c2 = $LASTEXITCODE
           & build/Release/ReverbTest.exe RAPPORT-TESTS.md
-          $code = [Math]::Max([Math]::Max($c1, $c2), $LASTEXITCODE)
+          $c3 = $LASTEXITCODE
+          & build/Release/RemixTest.exe RAPPORT-TESTS.md
+          $c4 = $LASTEXITCODE
+          & build/Release/A2MTest.exe RAPPORT-TESTS.md
+          $code = [Math]::Max([Math]::Max([Math]::Max($c1, $c2), [Math]::Max($c3, $c4)), $LASTEXITCODE)
           $txt = (Get-Content RAPPORT-TESTS.md -Raw -Encoding UTF8) -replace '%','%25' -replace "`r",'' -replace "`n",'%0A'
           if ($code -ne 0) { Write-Output "::error title=Tests audio::$txt"; exit 1 } else { Write-Output "::notice title=Tests audio::$txt" }
 
@@ -164,7 +168,7 @@ jobs:
         run: cmake -B build -G Xcode -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
 
       - name: Compilation
-        run: cmake --build build --config Release --target NoiseTools_VST3 NoiseTools_AU Noise_VST3 Noise_AU Reverb_VST3 Reverb_AU --parallel -- -quiet
+        run: cmake --build build --config Release --target NoiseTools_VST3 NoiseTools_AU Noise_VST3 Noise_AU Reverb_VST3 Reverb_AU LoopRemixLab_VST3 LoopRemixLab_AU AudioToMidi_VST3 AudioToMidi_AU --parallel -- -quiet
 
       - name: Vérification (architectures + auval)
         run: |

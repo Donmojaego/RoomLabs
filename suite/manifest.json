@@ -36,6 +36,28 @@
         "vst3",
         "au"
       ]
+    },
+    {
+      "id": "loop_remix_lab",
+      "name": "Loop Remix Lab",
+      "target": "LoopRemixLab",
+      "description": "Remix temps réel : 16 pas, 16 effets, 12 styles, 2 LFO synchronisés",
+      "status": "prototype",
+      "formats": [
+        "vst3",
+        "au"
+      ]
+    },
+    {
+      "id": "audio_to_midi",
+      "name": "Audio to MIDI",
+      "target": "AudioToMidi",
+      "description": "Conversion audio → MIDI (mélodie, batterie), export .mid",
+      "status": "prototype",
+      "formats": [
+        "vst3",
+        "au"
+      ]
     }
   ]
 }

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><title>Loop Remix Lab — Room Labs Audio</title><link rel="stylesheet" href="rl.css"></head>
+<body>
+<script src="rl_license_ui.js"></script>
+<script src="rl.js"></script>
+<script>
+"use strict";
+const FX = ["—", "REPEAT", "ROLL", "REVERSE", "RALENTI", "TAPE STOP", "SCRATCH", "GATE", "MUTE", "CRUSH", "FILTRE", "RING", "ÉCHO", "PAN", "PITCH +12", "DRIFT"];
+const FXS = ["·", "RPT", "ROL", "REV", "½", "STOP", "SCR", "GATE", "MUTE", "CRSH", "FLT", "RING", "ECHO", "PAN", "+12", "DRFT"];
+// pondérations des 16 effets par style (Thru, Repeat, Roll, Reverse, Half, Stop, Scratch, Gate, Mute, Crush, Sweep, Ring, Echo, Pan, PitchUp, Drift)
+const STYLES = {
+  0: [0,3,3,2,1,1,1,2,1,3,1,2,0,1,2,0], 1: [0,6,5,0,0,0,0,2,1,0,0,0,0,0,1,0], 2: [0,0,0,1,4,6,0,0,1,0,1,0,1,0,0,4],
+  3: [0,1,0,1,1,1,0,1,2,0,4,0,6,3,0,1], 4: [0,1,0,0,2,1,0,0,0,7,4,0,1,0,0,3], 5: [0,2,8,0,0,0,0,2,0,0,0,0,0,1,3,0],
+  6: [0,1,0,8,2,0,1,0,0,0,1,0,1,0,0,1], 7: [0,1,1,2,0,1,8,0,0,0,0,0,0,1,0,1], 8: [0,0,0,0,0,0,0,8,4,0,1,0,0,3,0,0],
+  9: [0,0,0,3,5,1,0,0,0,0,3,1,6,1,0,4], 10: [0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2], 11: [0,2,1,1,0,0,0,1,2,0,2,0,1,0,0,0] };
+const STYLE_NAMES = ["Glitch", "Stutter", "Tape", "Dub", "Lo-Fi", "Trap Roll", "Reverse", "Scratch", "Gate", "Ambient", "Chaos", "Minimal"];
+function generate(RL) {
+  const w = STYLES[Math.round(RL.P("style"))], dens = RL.P("density"), tot = w.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < 16; i++) {
+    let fx = 0;
+    const strong = i % 4 === 0;   // les temps forts restent plus souvent intacts
+    if (Math.random() < dens * (strong ? .55 : 1)) { let r = Math.random() * tot; for (let k = 0; k < 16; k++) { r -= w[k]; if (r < 0) { fx = k; break; } } }
+    RL.set("s" + i, fx);
+  }
+}
+const layout = {
+  product: "vst/loop_remix_lab", title: "LOOP REMIX LAB",
+  header: { x: 44, y: 20, bx: 660 },
+  help: "Remix en temps réel calé sur le tempo de l'hôte : la boucle est découpée en 16 pas (double-croches) et chaque pas reçoit un effet. Clique un pas pour choisir son effet (clic droit : remettre à zéro). STYLE + VARIATION génèrent un motif (DENSITÉ = quantité d'effets). Deux LFO synchronisés modulent filtre, volume, pan, crush, ring ou résonance. Tous les pas à « — » : le son passe intact.",
+  formats: { cutoff: v => v >= 1000 ? (v / 1000).toFixed(1) + " kHz" : Math.round(v) + " Hz", reso: v => Math.round(v / .95 * 100) + " %", mix: v => Math.round(v * 100) + " %",
+    out: v => (v > 0 ? "+" : "") + v.toFixed(1) + " dB", density: v => Math.round(v * 100) + " %", l1depth: v => Math.round(v * 100) + " %", l2depth: v => Math.round(v * 100) + " %" },
+  build(RL) {
+    RL.key({ id: "style", choice: true, label: "STYLE", x: 64, y: 66, w: 170, h: 38, menuTitle: "STYLE", tip: "Style de remix" });
+    RL.key({ label: "VARIATION", x: 244, y: 66, w: 130, h: 38, onClick: () => generate(RL), tip: "Nouveau motif dans le style choisi" });
+    RL.key({ label: "EFFACER", x: 384, y: 66, w: 110, h: 38, onClick: () => { for (let i = 0; i < 16; i++) RL.set("s" + i, 0); }, tip: "Tous les pas à « — » (son intact)" });
+    RL.knob({ id: "density", label: "DENSITÉ", x: 560, y: 78, d: 34, size: 1, tip: "Quantité d'effets générés" });
+    const grid = RL.screen({ frame: 0, draw: drawGrid });
+    grid.e.style.cursor = "pointer";
+    const stepAt = ev => { const r = grid.e.getBoundingClientRect(); return Math.min(15, Math.max(0, Math.floor((ev.clientX - r.left) / r.width * 16))); };
+    grid.e.addEventListener("click", ev => { const i = stepAt(ev); RL.menu(grid.e, FX, Math.round(RL.P("s" + i)), k => RL.set("s" + i, k), "PAS " + (i + 1)); });
+    grid.e.addEventListener("contextmenu", ev => { ev.preventDefault(); RL.set("s" + stepAt(ev), 0); });
+    RL.screen({ frame: 1, draw: drawWave });
+    [["cutoff", "FILTRE", "Fréquence du passe-bas"], ["reso", "RÉSO", "Résonance du filtre"], ["mix", "MIX", "Dosage sec / remix"], ["out", "SORTIE", "Niveau de sortie (0 dB par défaut)"]]
+      .forEach(([id, label, tip], i) => RL.knob({ id, label, tip, x: 104 + i * 82, y: 466, d: 56, size: 2 }));
+    [1, 2].forEach((k, j) => {
+      const x = 430 + j * 214;
+      RL.label && RL.label({ text: "LFO " + k, x: x, y: 404 });
+      RL.key({ id: `l${k}shape`, choice: true, label: "FORME", x, y: 420, w: 104, h: 30, menuTitle: "FORME LFO " + k, tip: "Forme du LFO " + k });
+      RL.key({ id: `l${k}rate`, choice: true, label: "VITESSE", x, y: 456, w: 104, h: 30, menuTitle: "VITESSE LFO " + k, tip: "Vitesse synchronisée au tempo" });
+      RL.key({ id: `l${k}dest`, choice: true, label: "CIBLE", x, y: 492, w: 104, h: 30, menuTitle: "CIBLE LFO " + k, tip: "Ce que le LFO module" });
+      RL.knob({ id: `l${k}depth`, label: "PROF.", x: x + 150, y: 466, d: 56, size: 2, tip: "Profondeur du LFO " + k });
+    });
+  },
+  async mockState() {
+    const r = { style: [0, 11, 0, 1, STYLE_NAMES], density: [0, 1, .5, 1], cutoff: [20, 20000, 20000, 1], reso: [0, .95, .2, 1], mix: [0, 1, 1, 1], out: [-24, 6, 0, 1],
+      l1shape: [0, 4, 0, 1, ["Sinus", "Triangle", "Scie", "Carré", "Aléatoire"]], l1rate: [0, 6, 3, 1, ["4 mesures", "2 mesures", "1 mesure", "1/2", "1/4", "1/8", "1/16"]], l1depth: [0, 1, .4, 1], l1dest: [0, 5, 0, 1, ["Filtre", "Volume", "Pan", "Crush", "Ring", "Résonance"]],
+      l2shape: [0, 4, 4, 1, ["Sinus", "Triangle", "Scie", "Carré", "Aléatoire"]], l2rate: [0, 6, 2, 1, ["4 mesures", "2 mesures", "1 mesure", "1/2", "1/4", "1/8", "1/16"]], l2depth: [0, 1, 0, 1], l2dest: [0, 5, 2, 1, ["Filtre", "Volume", "Pan", "Crush", "Ring", "Résonance"]] };
+    for (let i = 0; i < 16; i++) r["s" + i] = [0, 15, [0, 1, 0, 3, 0, 0, 2, 7, 0, 9, 0, 0, 5, 0, 14, 12][i], 1, FX];
+    const params = {}; for (const k in r) params[k] = r[k][2]; return { params, ranges: r };
+  },
+  mock: () => Promise.resolve(null),
+  mockFb() { const t = Date.now() / 1000; const w = []; for (let i = 0; i < 64; i++) w.push(.2 + .5 * Math.abs(Math.sin(i * .7 + t))); return { st: Math.floor(t * 8) % 16, l1: Math.sin(t * 3), l2: Math.sign(Math.sin(t)), w }; }
+};
+let curStep = 0;
+function drawGrid(c, w, h, f) {
+  c.fillStyle = RL.css("--scr"); c.fillRect(0, 0, w, h);
+  const ink = RL.css("--scrInk"); if (f && f.st !== undefined) curStep = f.st;
+  const cw = w / 16, pad = 4;
+  c.font = "700 12px " + RL.css("--ui"); c.textAlign = "center"; c.textBaseline = "middle";
+  for (let i = 0; i < 16; i++) {
+    const fx = Math.round(RL.P("s" + i)), x = i * cw + pad / 2, on = i === curStep;
+    c.strokeStyle = ink; c.fillStyle = ink;
+    c.globalAlpha = on ? .9 : fx ? .35 : .08; c.fillRect(x, 26, cw - pad, h - 52);
+    c.globalAlpha = 1; c.lineWidth = i % 4 === 0 ? 2 : 1; c.strokeRect(x + .5, 26.5, cw - pad - 1, h - 53);
+    c.fillStyle = on ? RL.css("--scr") : ink; c.fillText(FXS[fx], x + (cw - pad) / 2, h / 2);
+    c.fillStyle = ink; c.globalAlpha = .7; c.fillText(String(i + 1), x + (cw - pad) / 2, h - 12); c.globalAlpha = 1;
+  }
+  c.textAlign = "left"; c.textBaseline = "top"; c.fillText("MOTIF · " + STYLE_NAMES[Math.round(RL.P("style"))].toUpperCase(), 8, 6);
+}
+const lfoHist = [[], []];
+function drawWave(c, w, h, f) {
+  c.fillStyle = RL.css("--scr"); c.fillRect(0, 0, w, h);
+  const ink = RL.css("--scrInk"); c.fillStyle = ink; c.strokeStyle = ink;
+  if (f && f.w) { const bw = w / 64; f.w.forEach((v, i) => { const a = Math.min(1, v) * (h * .38); c.globalAlpha = .5; c.fillRect(i * bw, h / 2 - a, bw - 1, a * 2); }); }
+  c.globalAlpha = 1;
+  if (f && f.l1 !== undefined) { lfoHist[0].push(f.l1); lfoHist[1].push(f.l2); lfoHist.forEach(a => { while (a.length > 120) a.shift(); }); }
+  lfoHist.forEach((a, k) => { if (RL.P(`l${k + 1}depth`) < .001) return; c.lineWidth = 2; c.setLineDash(k ? [5, 4] : []); c.beginPath();
+    a.forEach((v, i) => { const x = w * i / 120, y = h / 2 - v * h * .36; i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.stroke(); });
+  c.setLineDash([]); c.font = "700 12px " + RL.css("--ui"); c.textBaseline = "top"; c.fillText("SORTIE · LFO 1 (plein) · LFO 2 (pointillé)", 8, 6);
+}
+RL.start(layout);
+</script></body></html>

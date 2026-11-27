@@ -20,6 +20,8 @@ endif()
 # Tests DSP sans JUCE
 # ---------------------------------------------------------------------------
 add_executable(NoiseTest tests/NoiseTest.cpp plugins/noise/NoiseDSP.cpp)
+add_executable(A2MTest tests/A2MTest.cpp plugins/audio_to_midi/A2MDSP.cpp)
+add_executable(RemixTest tests/RemixTest.cpp plugins/loop_remix_lab/RemixDSP.cpp)
 add_executable(ReverbTest tests/ReverbTest.cpp plugins/reverb/ReverbDSP.cpp)
 add_executable(NoiseToolsTest tests/NoiseToolsTest.cpp plugins/noise_tools/NoiseToolsDSP.cpp)
 target_include_directories(NoiseToolsTest PRIVATE plugins/noise_tools)
@@ -45,7 +47,13 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../common/licensing/RoomLabsLicensing.cmake)
 # Interface : ui/ commun + ui/ du plugin + face/cadres du produit + sprites partagés + meta.json
 # ---------------------------------------------------------------------------
 function(rl_add_plugin target)
-    cmake_parse_arguments(A "SYNTH" "NAME;CODE;PRODUCT;DIR" "FACE;SOURCES;CATEGORIES" ${ARGN})
+    cmake_parse_arguments(A "SYNTH;MIDIOUT" "NAME;CODE;PRODUCT;DIR" "FACE;SOURCES;CATEGORIES" ${ARGN})
+    set(au_type kAudioUnitType_Effect)
+    if(A_MIDIOUT)
+        set(au_type kAudioUnitType_MusicEffect)
+    else()
+        set(A_MIDIOUT FALSE)
+    endif()
     juce_add_plugin(${target}
         COMPANY_NAME "Room Labs Audio"
         COMPANY_WEBSITE "https://7throomacademy.fr"
@@ -57,14 +65,14 @@ function(rl_add_plugin target)
         VERSION ${PROJECT_VERSION}
         IS_SYNTH ${A_SYNTH}
         NEEDS_MIDI_INPUT FALSE
-        NEEDS_MIDI_OUTPUT FALSE
+        NEEDS_MIDI_OUTPUT ${A_MIDIOUT}
         EDITOR_WANTS_KEYBOARD_FOCUS FALSE
         COPY_PLUGIN_AFTER_BUILD FALSE
         PLUGIN_MANUFACTURER_CODE Rmlb
         PLUGIN_CODE ${A_CODE}
         FORMATS VST3 AU Standalone
         VST3_CATEGORIES ${A_CATEGORIES}
-        AU_MAIN_TYPE kAudioUnitType_Effect
+        AU_MAIN_TYPE ${au_type}
         NEEDS_WEB_BROWSER TRUE
         NEEDS_WEBVIEW2 TRUE)
     get_filename_component(pdir ${A_PRODUCT} NAME)
@@ -103,3 +111,11 @@ rl_add_plugin(Noise NAME "Noise" CODE Nois PRODUCT vst/noise DIR noise FACE 660 
 rl_add_plugin(Reverb NAME "Reverb" CODE Rvrb PRODUCT vst/reverb DIR reverb FACE 740 640
     SOURCES plugins/reverb/ReverbProcessor.cpp plugins/reverb/ReverbDSP.cpp
     CATEGORIES Fx Reverb)
+
+rl_add_plugin(LoopRemixLab NAME "Loop Remix Lab" CODE LpRx PRODUCT vst/loop_remix_lab DIR loop_remix_lab FACE 880 545
+    SOURCES plugins/loop_remix_lab/RemixProcessor.cpp plugins/loop_remix_lab/RemixDSP.cpp
+    CATEGORIES Fx)
+
+rl_add_plugin(AudioToMidi NAME "Audio to MIDI" CODE A2Md PRODUCT vst/audio_to_midi DIR audio_to_midi FACE 950 530 MIDIOUT
+    SOURCES plugins/audio_to_midi/A2MProcessor.cpp plugins/audio_to_midi/A2MDSP.cpp
+    CATEGORIES Fx Analyzer)
