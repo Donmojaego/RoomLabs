@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.22)
 # Room Labs Audio — suite de plugins (un CMake pour tous ; chaque plugin s'ajoute via rl_add_plugin)
 # Version de la suite = version des installeurs RoomLabsAudio_Plugins_<version>_Win_x64.exe
 # =============================================================================
-project(RoomLabsAudioSuite VERSION 0.2.0 LANGUAGES C CXX)
+project(RoomLabsAudioSuite VERSION 0.3.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -20,6 +20,7 @@ endif()
 # Tests DSP sans JUCE
 # ---------------------------------------------------------------------------
 add_executable(NoiseTest tests/NoiseTest.cpp plugins/noise/NoiseDSP.cpp)
+add_executable(ReverbTest tests/ReverbTest.cpp plugins/reverb/ReverbDSP.cpp)
 add_executable(NoiseToolsTest tests/NoiseToolsTest.cpp plugins/noise_tools/NoiseToolsDSP.cpp)
 target_include_directories(NoiseToolsTest PRIVATE plugins/noise_tools)
 
@@ -98,3 +99,7 @@ rl_add_plugin(NoiseTools NAME "Noise Tools" CODE NsTl PRODUCT vst/noise_tools DI
 rl_add_plugin(Noise NAME "Noise" CODE Nois PRODUCT vst/noise DIR noise FACE 660 515
     SOURCES plugins/noise/NoiseProcessor.cpp plugins/noise/NoiseDSP.cpp
     CATEGORIES Fx Generator)
+
+rl_add_plugin(Reverb NAME "Reverb" CODE Rvrb PRODUCT vst/reverb DIR reverb FACE 740 640
+    SOURCES plugins/reverb/ReverbProcessor.cpp plugins/reverb/ReverbDSP.cpp
+    CATEGORIES Fx Reverb)

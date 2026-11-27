@@ -11,7 +11,8 @@
       "description": "Restauration : souffle, ronflement 50/60 Hz, clics, écrêtage",
       "status": "prototype",
       "formats": [
-        "vst3"
+        "vst3",
+        "au"
       ]
     },
     {
@@ -21,7 +22,19 @@
       "description": "Générateur de bruit blanc, rose, brun (couleur, largeur)",
       "status": "prototype",
       "formats": [
-        "vst3"
+        "vst3",
+        "au"
+      ]
+    },
+    {
+      "id": "reverb",
+      "name": "Reverb",
+      "target": "Reverb",
+      "description": "Réverbération Room / Hall / Plate, queue continue en bypass",
+      "status": "prototype",
+      "formats": [
+        "vst3",
+        "au"
       ]
     }
   ]

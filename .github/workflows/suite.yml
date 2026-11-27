@@ -54,7 +54,7 @@ jobs:
         run: cmake -B build -A x64 -DJUCE_WEBVIEW2_PACKAGE_LOCATION="$env:GITHUB_WORKSPACE/nuget"
 
       - name: Compilation Release
-        run: cmake --build build --config Release --target NoiseTools_VST3 NoiseTools_Standalone NoiseToolsTest Noise_VST3 NoiseTest --parallel
+        run: cmake --build build --config Release --target NoiseTools_VST3 NoiseTools_Standalone NoiseToolsTest Noise_VST3 NoiseTest Reverb_VST3 ReverbTest --parallel
 
       - name: Tests audio (corpus synthétique, 44,1/48/96 kHz, blocs 64-1024)
         id: tests
@@ -64,7 +64,9 @@ jobs:
           & build/Release/NoiseToolsTest.exe RAPPORT-TESTS.md
           $c1 = $LASTEXITCODE
           & build/Release/NoiseTest.exe RAPPORT-TESTS.md
-          $code = [Math]::Max($c1, $LASTEXITCODE)
+          $c2 = $LASTEXITCODE
+          & build/Release/ReverbTest.exe RAPPORT-TESTS.md
+          $code = [Math]::Max([Math]::Max($c1, $c2), $LASTEXITCODE)
           $txt = (Get-Content RAPPORT-TESTS.md -Raw -Encoding UTF8) -replace '%','%25' -replace "`r",'' -replace "`n",'%0A'
           if ($code -ne 0) { Write-Output "::error title=Tests audio::$txt"; exit 1 } else { Write-Output "::notice title=Tests audio::$txt" }
 
@@ -144,7 +146,6 @@ jobs:
   macos:
     name: macOS — AU + VST3 + DMG (Apple Silicon et Intel)
     needs: windows
-    if: false  # macOS en suspens (cahier des charges, point 10)
     runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v4
@@ -163,7 +164,7 @@ jobs:
         run: cmake -B build -G Xcode -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
 
       - name: Compilation
-        run: cmake --build build --config Release --target NoiseTools_VST3 NoiseTools_AU --parallel -- -quiet
+        run: cmake --build build --config Release --target NoiseTools_VST3 NoiseTools_AU Noise_VST3 Noise_AU Reverb_VST3 Reverb_AU --parallel -- -quiet
 
       - name: Vérification (architectures + auval)
         run: |
@@ -191,10 +192,7 @@ jobs:
 
       - name: Publication dans Releases
         if: github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: suite-v${{ steps.v.outputs.version }}
-          prerelease: true
-          make_latest: false
-          target_commitish: ${{ github.sha }}
-          files: suite/RoomLabsAudio_Plugins_*_macOS.dmg
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "suite-v${{ steps.v.outputs.version }}" RoomLabsAudio_Plugins_*_macOS.dmg --clobber -R ${{ github.repository }}
