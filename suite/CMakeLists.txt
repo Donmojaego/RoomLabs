@@ -21,6 +21,7 @@ endif()
 # ---------------------------------------------------------------------------
 add_executable(NoiseTest tests/NoiseTest.cpp plugins/noise/NoiseDSP.cpp)
 add_executable(A2MTest tests/A2MTest.cpp plugins/audio_to_midi/A2MDSP.cpp)
+add_executable(RackTest tests/RackTest.cpp plugins/rack/RackDSP.cpp plugins/noise/NoiseDSP.cpp plugins/reverb/ReverbDSP.cpp plugins/loop_remix_lab/RemixDSP.cpp)
 add_executable(RemixTest tests/RemixTest.cpp plugins/loop_remix_lab/RemixDSP.cpp)
 add_executable(ReverbTest tests/ReverbTest.cpp plugins/reverb/ReverbDSP.cpp)
 add_executable(NoiseToolsTest tests/NoiseToolsTest.cpp plugins/noise_tools/NoiseToolsDSP.cpp)
@@ -119,3 +120,7 @@ rl_add_plugin(LoopRemixLab NAME "Loop Remix Lab" CODE LpRx PRODUCT vst/loop_remi
 rl_add_plugin(AudioToMidi NAME "Audio to MIDI" CODE A2Md PRODUCT vst/audio_to_midi DIR audio_to_midi FACE 950 530 MIDIOUT
     SOURCES plugins/audio_to_midi/A2MProcessor.cpp plugins/audio_to_midi/A2MDSP.cpp
     CATEGORIES Fx Analyzer)
+
+rl_add_plugin(SevenRoomRack NAME "7 Room Rack" CODE Rk7R PRODUCT rack/chassis DIR rack FACE 950 630
+    SOURCES plugins/rack/RackProcessor.cpp plugins/rack/RackDSP.cpp plugins/noise/NoiseDSP.cpp plugins/reverb/ReverbDSP.cpp plugins/loop_remix_lab/RemixDSP.cpp
+    CATEGORIES Fx)

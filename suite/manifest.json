@@ -58,6 +58,17 @@
         "vst3",
         "au"
       ]
+    },
+    {
+      "id": "rack",
+      "name": "7 Room Rack",
+      "target": "SevenRoomRack",
+      "description": "Rack 3 emplacements : Noise, Reverb, Loop Remix Lab",
+      "status": "prototype",
+      "formats": [
+        "vst3",
+        "au"
+      ]
     }
   ]
 }

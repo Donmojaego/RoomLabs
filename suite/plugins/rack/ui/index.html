@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><title>7 Room Rack — Room Labs Audio</title><link rel="stylesheet" href="rl.css"></head>
+<body>
+<script src="rl_license_ui.js"></script>
+<script src="rl.js"></script>
+<script>
+"use strict";
+const MODS = ["VIDE", "NOISE", "REVERB", "LOOP REMIX LAB"];
+const STY = ["Glitch", "Stutter", "Tape", "Dub", "Lo-Fi", "Trap Roll", "Reverse", "Scratch", "Gate", "Ambient", "Chaos", "Minimal"];
+const pct = v => Math.round(v * 100) + " %";
+// libellés et valeurs des 3 macros selon le module
+const MAC = {
+  0: [["—", pct], ["—", pct], ["—", pct]],
+  1: [["NIVEAU", v => (-60 + 60 * v).toFixed(0) + " dB"], ["COULEUR", v => (v > .5 ? "+" : "") + Math.round((v * 2 - 1) * 100) + " %"], ["LARGEUR", pct]],
+  2: [["ESPACE", v => (v < .34 ? "Room " : v < .67 ? "Hall " : "Plate ") + Math.round(v * 100)], ["DÉCLIN", v => (0.2 * Math.pow(60, v)).toFixed(1) + " s"], ["AMORTI", v => { const h = 1500 * Math.pow(12, v); return h >= 1000 ? (h / 1000).toFixed(1) + " kHz" : Math.round(h) + " Hz"; }]],
+  3: [["STYLE", v => STY[Math.round(v * 11)]], ["DENSITÉ", pct], ["FILTRE LFO", pct]] };
+const mod = k => Math.round(RL.P("m" + k));
+const formats = { out: v => (v > 0 ? "+" : "") + v.toFixed(1) + " dB" };
+for (const k of [1, 2, 3]) { formats["x" + k] = pct; ["a", "b", "c"].forEach((p, j) => formats[p + k] = v => MAC[mod(k)][j][1](v)); }
+const SLOT = ["a", "b", "c", "x", "on", "m"];
+const layout = {
+  product: "rack/chassis", title: "7 ROOM RACK",
+  header: { x: 48, y: 30, bx: 730 },
+  help: "Rack de 3 emplacements chaînés de haut en bas. Choisis un module par emplacement (NOISE, REVERB, LOOP REMIX LAB), règle ses 3 macros et son MIX. ON coupe l'emplacement sans clic (la queue de la Reverb continue). ▲ fait monter l'emplacement d'un cran. Rack vide : le son passe intact.",
+  formats,
+  build(RL) {
+    const knobs = {};
+    [1, 2, 3].forEach((k, j) => {
+      const fy = [138, 245, 352][j], cy = fy + 48;
+      RL.key({ id: "m" + k, choice: true, label: "MODULE", x: 84, y: cy - 18, w: 190, h: 36, menuTitle: "EMPLACEMENT " + k, tip: "Module de l'emplacement " + k });
+      RL.key({ id: "on" + k, label: "ON", x: 284, y: cy - 18, w: 64, h: 36, tip: "Active l'emplacement" });
+      if (k > 1) RL.key({ label: "▲", x: 356, y: cy - 18, w: 44, h: 36, tip: "Monter cet emplacement", onClick: () => {
+        const a = {}, b = {}; SLOT.forEach(p => { a[p] = RL.P(p + k); b[p] = RL.P(p + (k - 1)); });
+        SLOT.forEach(p => { RL.set(p + k, b[p]); RL.set(p + (k - 1), a[p]); }); } });
+      ["a", "b", "c", "x"].forEach((p, i) => { knobs[p + k] = RL.knob({ id: p + k, label: p === "x" ? "MIX" : "—", x: 520 + i * 92, y: cy - 10, d: 40, size: 1, tip: p === "x" ? "Dosage de l'emplacement" : "Macro " + (i + 1) }); });
+      RL.screen({ frame: j, draw: (c, w, h, f) => drawSlot(c, w, h, f, k) });
+      const relabel = () => { ["a", "b", "c"].forEach((p, i) => { knobs[p + k].e.querySelector(".lbl").textContent = MAC[mod(k)][i][0]; knobs[p + k].render(RL.P(p + k)); }); };
+      RL.watch("m" + k, relabel);
+    });
+    RL.screen({ rect: [69, 462, 560, 120], draw: drawOut });
+    RL.knob({ id: "out", label: "SORTIE", x: 760, y: 512, d: 70, size: 2, tip: "Niveau de sortie (0 dB par défaut)" });
+  },
+  async mockState() { const r = { out: [-24, 6, 0, 1] }, defA = [.5, .4, .3];
+    [1, 2, 3].forEach(k => { r["m" + k] = [0, 3, [2, 3, 1][k - 1], 1, ["Vide", "Noise", "Reverb", "Loop Remix Lab"]]; r["on" + k] = [0, 1, 1, 1]; r["a" + k] = [0, 1, defA[k - 1], 1]; r["b" + k] = [0, 1, .5, 1]; r["c" + k] = [0, 1, .5, 1]; r["x" + k] = [0, 1, k === 1 ? .3 : 1, 1]; });
+    const params = {}; for (const k in r) params[k] = r[k][2]; return { params, ranges: r }; },
+  mock: () => Promise.resolve(null),
+  mockFb() { return { lvl: [-14 + Math.random() * 3, -13 + Math.random() * 3, -12 + Math.random() * 3], out: -11 + Math.random() * 2 }; }
+};
+function drawSlot(c, w, h, f, k) {
+  c.fillStyle = RL.css("--scr"); c.fillRect(0, 0, w, h);
+  const ink = RL.css("--scrInk"), m = mod(k), on = RL.P("on" + k) > .5; c.fillStyle = ink;
+  c.globalAlpha = m && on ? 1 : .35; c.fillRect(0, 0, 5, h); c.globalAlpha = 1;
+  c.font = "700 12px " + RL.css("--ui"); c.textBaseline = "top"; c.fillText("EMPLACEMENT " + k, 14, 6);
+  const lv = f && f.lvl ? f.lvl[k - 1] : -120;
+  c.fillText((m ? "" : "VIDE · LE SON PASSE   ") + (on || !m ? "" : "OFF   ") + (lv > -100 ? lv.toFixed(1) + " dB" : ""), 140, 6);
+  c.globalAlpha = .2; c.fillRect(14, h - 9, 320, 4); c.globalAlpha = 1; c.fillRect(14, h - 9, 320 * Math.max(0, Math.min(1, (lv + 60) / 60)), 4);
+}
+const hist = [];
+function drawOut(c, w, h, f) {
+  c.fillStyle = RL.css("--scr"); c.fillRect(0, 0, w, h);
+  const ink = RL.css("--scrInk"); c.fillStyle = ink; c.strokeStyle = ink;
+  if (f && f.out !== undefined) { hist.push(f.out); while (hist.length > 160) hist.shift(); }
+  c.lineWidth = 2; c.beginPath(); hist.forEach((v, i) => { const x = w * i / 160, y = h - 10 - (h - 36) * Math.max(0, Math.min(1, (v + 60) / 60)); i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.stroke();
+  c.font = "700 12px " + RL.css("--ui"); c.textBaseline = "top";
+  c.fillText("SORTIE DU RACK · " + (hist.length ? hist[hist.length - 1].toFixed(1) + " dB RMS" : "—"), 12, 8);
+  c.textAlign = "right"; c.fillText([1, 2, 3].map(k => mod(k) ? MODS[mod(k)] : "·").join("  →  "), w - 12, 8); c.textAlign = "left";
+}
+RL.start(layout);
+</script></body></html>
